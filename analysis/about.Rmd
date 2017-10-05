@@ -5,4 +5,4 @@ output:
     toc: false
 ---
 
-Describe your project.
+This project aims to examine regulatory differences in 4 human and 4 chimpanzee induced pluripotent stem cell (iPSC) lines. Specifically, I utilize Hi-C technology on iPSCs from both species to find differences in the structure of higher-order chromatin folding and looping. These data constitute counts for pairs of individual regions in the genome, which is tiled into these regions at a given resolution (in this case, 25kb). Ultimately I also utilize orthogonal gene expression data collected from the same individuals to see how much gene expression differences correlate with 3-dimensional regulatory differences between the two species.
