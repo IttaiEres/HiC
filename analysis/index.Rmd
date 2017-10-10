@@ -7,5 +7,5 @@ output:
 
 This website details computational analyses done on my thesis project, which utilizes Hi-C to find 3-dimensional regulatory differences between humans and chimpanzees. Click on any of the links below to jump to that section of the analysis:
 
-*  [Reading in of the data and initial quality control metrics](initial_QC.html)
+*  [Reading in of the data, normalization, and initial quality control metrics](initial_QC.html)
 *  Linear modeling of the data to find quantitative contact differences between humans and chimpanzees
