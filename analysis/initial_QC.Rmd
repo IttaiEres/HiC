@@ -54,9 +54,9 @@ full.data <- full.data[complete.cases(full.data[,320:327]),]
 full.data[,320:327] <- full.contacts
 
 ###First, a quick look at histograms of the distributions of the significant Hi-C hits from homer, in both humans and chimps.
-hist(full.contacts[,c(1:2, 5:6)]) #Human dist'ns
-hist(full.contacts[,c(3:4, 7:8)]) #Chimp dist'ns
-#Both sets of distributions look fairly bimodal, with chimps in particular showing a peak around 0.
+ggplot(data=melt(full.contacts[,c(1:2, 5:6)]), aes(x=value)) + geom_histogram(binwidth=0.001, aes(group=variable)) + facet_wrap(~as.factor(variable)) + ggtitle("Distributions of Homer-Significant Hi-C Contacts, Humans") + xlab("Homer-Normalized Interaction Frequency") #Human Dist'ns
+ggplot(data=melt(full.contacts[,c(3:4, 7:8)]), aes(x=value)) + geom_histogram(binwidth=0.001, aes(group=variable)) + facet_wrap(~as.factor(variable)) + ggtitle("Distributions of Homer-Significant Hi-C Contacts, Chimps") + xlab("Homer-Normalized Interaction Frequency") #Chimp Dist'ns
+#Both sets of distributions look fairly bimodal, with chimps in particular showing a peak around 0. The distributions actually look fairly similar although here it looks like the chimps are smaller only because the scale for the y axis gets expanded due to a huge mass of hits with values around 0 in G-3624.
 
 ###As an initial quality control metric, take a look at the mean vs. variance plot for the normalized data:
 meansdata <- rowMeans(full.contacts) #Check mean against variance
@@ -91,15 +91,15 @@ select(full.data, "C-3649_norm", "D-40300_norm", "G-3624_norm", "H-3651_norm") %
 select(full.data, "A-21792_norm", "B-28126_norm", "E-28815_norm", "F-28834_norm", "C-3649_norm", "D-40300_norm", "G-3624_norm", "H-3651_norm") %>% apply(., 1, var) -> full.data$ALLvar
 
 myplot <- data.frame(disc_species=full.data$disc_species, found_in_H=full.data$found_in_H, found_in_C=full.data$found_in_C, tot_indiv_IDd=full.data$tot_indiv_IDd, Hvar=full.data$Hvar, Cvar=full.data$Cvar, ALLvar=full.data$ALLvar)
-ggplot(data=myplot, aes(group=tot_indiv_IDd, x=tot_indiv_IDd, y=ALLvar)) + geom_boxplot() + scale_y_continuous(limits=c(0, 1))
+ggplot(data=myplot, aes(group=tot_indiv_IDd, x=tot_indiv_IDd, y=ALLvar)) + geom_boxplot() + scale_y_continuous(limits=c(0, 1)) + ggtitle("Number of Individuals a Hi-C Hit is Discovered in vs. Variance") + xlab("# Individuals where Hi-C contact called significant") + ylab("Variance")
 
 ###From this, it would appear that variance drops off drastically after discovery in at least 4 individuals. Hence try repeating all of the QC analyses done above, but this time conditioned upon discovery in 4 individuals. Moving forward I will ultimately filter out all the hits that were not found in at least 4 individuals, though I sometimes check the full dataset as well just for sanity's sake. Repeating all QC with the condition of discovery in 4 individuals:
 data.4 <- filter(full.data, tot_indiv_IDd>=4) #Enforcing this condition brings us down from ~1.5 million hits to ~150k hits.
 
 ###See how distributions look with condition of 4 individuals.
-hist(data.4[,c(320:321, 324:325)]) #Human dist'ns
-hist(data.4[,c(322:323, 326:327)]) #Chimp dist'ns
-#Overall the distributions look fairly similar to before, with the bimodality seen before being much less stark here (especially in the chimp distributions; it's still more visible amongst the humans)
+ggplot(data=melt(data.4[,c(320:321, 324:325)]), aes(x=value)) + geom_histogram(binwidth=0.001, aes(group=variable)) + facet_wrap(~as.factor(variable)) + ggtitle("Distributions of Homer-Significant Hi-C Contacts, Humans | 4") + xlab("Homer-Normalized Interaction Frequency") + scale_x_continuous(limits=c(-4, 6))#Human Dist'ns
+ggplot(data=melt(data.4[,c(322:323, 326:327)]), aes(x=value)) + geom_histogram(binwidth=0.001, aes(group=variable)) + facet_wrap(~as.factor(variable)) + ggtitle("Distributions of Homer-Significant Hi-C Contacts, Chimps | 4") + xlab("Homer-Normalized Interaction Frequency") + scale_x_continuous(limits=c(-4, 6)) #Chimp Dist'ns
+#Overall the distributions look fairly similar to before, with the bimodality seen before being much less stark here. Most of the negative interaction frequency significant hits have dropped out, and there is still a strong mass around 0 (especially in the chimp distributions). Tha majority of the mass of the hits now seems to hover around 2.
 
 ###Mean vs. variance plot with condition of 4 individuals:
 meansdata4 <- rowMeans(data.4[,320:327]) #Check mean against variance
@@ -110,8 +110,8 @@ varsdata4 <- apply(data.4[,320:327], 1, var)
 
 ###Now to do PCA on the data conditioned upon discovery in 4 individuals--would expect many of the same patterns here, perhaps with even stronger separation due to only grabbing hits that are shared by 4 individuals:
 pca4 <- prcomp(t(data.4[,320:327]), scale=TRUE, center=TRUE)
-ggplot(data=as.data.frame(pca4$x), aes(x=PC1, y=PC2, shape=as.factor(meta.data$SP), color=as.factor(meta.data$Batch), size=2)) + geom_point() +labs(title="PCA on normalized Hi-C Contact Frequency") + guides(color=guide_legend(order=1), size=FALSE, shape=guide_legend(order=2)) + xlab(paste("PC1 (", 100*summary(pca4)$importance[2,1], "% of variance)")) + ylab((paste("PC2 (", 100*summary(pca4)$importance[2,2], "% of variance)"))) #Metadata hasn't changed so use the same metadata from above. PCA shows a similar separation along species lines for PC1, with this time it representing 33.121% of the variance (up from 21.6% earlier). This is rather unsurprising, since we have subset down to hits that are more shared than the total set we had before.
-barplot(summary(pca4)$importance[2,], xlab="PCs", ylab="Proportion of Variance Explained", main="PCA on normalized Hi-C contact frequency") #Scree plot showing all the PCs and the proportion of the variance they explain. This is similar to above, with no PCs beyond a 7th one, and the first PC taking the vast majority of the variance while the others hover near 12-15%. No variables in experimentation, library prep, sequencing batch, or anything else seem to correlate with these PCs.
+ggplot(data=as.data.frame(pca4$x), aes(x=PC1, y=PC2, shape=as.factor(meta.data$SP), color=as.factor(meta.data$Batch), size=2)) + geom_point() +labs(title="PCA on normalized Hi-C Contact Frequency | 4") + guides(color=guide_legend(order=1), size=FALSE, shape=guide_legend(order=2)) + xlab(paste("PC1 (", 100*summary(pca4)$importance[2,1], "% of variance)")) + ylab((paste("PC2 (", 100*summary(pca4)$importance[2,2], "% of variance)"))) #Metadata hasn't changed so use the same metadata from above. PCA shows a similar separation along species lines for PC1, with this time it representing 33.121% of the variance (up from 21.6% earlier). This is rather unsurprising, since we have subset down to hits that are more shared than the total set we had before.
+barplot(summary(pca4)$importance[2,], xlab="PCs", ylab="Proportion of Variance Explained", main="PCA on normalized Hi-C contact frequency | 4") #Scree plot showing all the PCs and the proportion of the variance they explain. This is similar to above, with no PCs beyond a 7th one, and the first PC taking the vast majority of the variance while the others hover near 12-15%. No variables in experimentation, library prep, sequencing batch, or anything else seem to correlate with these PCs.
 
 ###Heatmap clustering of these data after conditioning upon discovery in 4 individuals. Would expect to see the same clustering, with perhaps higher correlation values due to conditioning upon discovery in 4 individuals.
 corheat4 <- cor(data.4[,320:327], use="complete.obs", method="pearson") #Corheat for the full data set, and heatmap
