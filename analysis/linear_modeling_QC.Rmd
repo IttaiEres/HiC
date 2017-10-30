@@ -1,0 +1,211 @@
+---
+title: "Untitled"
+author: "First Last"
+date: YYYY-MM-DD
+output: html_document
+---
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+<!-- Add your analysis here -->
+```{r}
+#This file will examine first the inflation of p-values from the QQ plot at the end of linear_modeling.Rmd, and then the asymmetry seen in the volcano plots from linear modeling.
+
+#First, grab the qqplotting function I utilize from linear_modeling.Rmd:
+newqqplot=function(pvals, quant, title){  
+  len = length(pvals)
+  res=qqplot(-log10((1:len)/(1+len)),pvals,plot.it=F)
+  plot(res$x,res$y, main=title, xlab="Theoretical", ylab="Actual", col=ifelse(res$y>as.numeric(quantile(res$y, quant[1])), ifelse(res$y>as.numeric(quantile(res$y, quant[2])), "red", "blue"), "black"))
+  abline(0, 1)
+}
+
+#Load in necessary packages.
+library(limma)
+library(plyr)
+library(tidyr)
+library(data.table)
+library(reshape2)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(Hmisc)
+library(gplots)
+library(stringr)
+library(heatmaply)
+library(RColorBrewer)
+library(edgeR)
+library(tidyverse)
+library(compiler)
+library(bedr)
+enableJIT(3)
+
+#Now, as always, read in data files modified by initial_QC.Rmd and linear_modeling.Rmd
+full.data <- fread("~/Desktop/Hi-C/full.data.10.Oct17", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)
+data.4 <- fread("~/Desktop/Hi-C/data.4.10.Oct17", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)
+
+#This is the QQ plot for species from the linear model for Hi-C values from linear_modeling.Rmd. We can see a significant inflation of p-values here rising above the expected normal distribution alarmingly quickly:
+newqqplot(-log10(data.4$sp_pval), c(0.5, 0.75), "QQ Plot, Species P-vals, Data | 4")
+
+#In order to check that this extreme inflation of p values is not merely a technical artifact, here I try shuffling the species labels and running the linear model again. I would hope to see a more normal QQplot and this would perhaps suggest this the inflation seen is due to true biological effects, rather than technical factors. The fake designs just have some species swapped; the first two fake designs are balanced across sex and batch, and the second two are balanced with respect to batch (equal numbers of humans and chimps in both), but any sex-species interaction would be confounded with batch (since all members of a species in one batch are the same sex). Note that this ultimately shouldn't matter since I'm just for checking QQ normality here, especially since I'll start with the full model but then also remove batch and sex as covariates and re-check the QQ plot, to rule out overfitting.
+fake.meta1 <- data.frame("SP"=c("H", "C", "H", "C", "H", "C", "C", "H"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2))
+fake.meta2 <- data.frame("SP"=c("C", "H", "C", "H", "C", "H", "H", "C"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2))
+fake.meta3 <- data.frame("SP"=c("H", "C", "C", "H", "C", "H", "C", "H"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2))
+fake.meta4 <- data.frame("SP"=c("C", "H", "H", "C", "C", "H", "C", "H"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2))
+
+#First, test out the fake metadataframess utilizing the linear model with all covariates included--species, sex, and batch.
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta1$SP+fake.meta1$SX+fake.meta1$Batch)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake1
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta2$SP+fake.meta2$SX+fake.meta2$Batch)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake2
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta3$SP+fake.meta3$SX+fake.meta3$Batch)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake3
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta4$SP+fake.meta4$SX+fake.meta4$Batch)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake4
+
+newqqplot(-log10(fake1$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design 1 | 4")
+newqqplot(-log10(fake2$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design 2 | 4")
+newqqplot(-log10(fake3$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design 3 | 4")
+newqqplot(-log10(fake4$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design 4 | 4")
+
+#While these QQ plots are nice in that they no longer show inflation of p-values quickly, many of them show slight deflation. Here I try doing the same thing again but without sex and then without batch, and then without both, as covariates--to account for the possibility that inclusion of these covariates in the model is overfitting:
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta1$SP+fake.meta1$Batch)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake1
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta2$SP+fake.meta2$Batch)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake2
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta3$SP+fake.meta3$Batch)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake3
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta4$SP+fake.meta4$Batch)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake4
+newqqplot(-log10(fake1$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design no SX, 1 | 4")
+newqqplot(-log10(fake2$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design no SX, 2 | 4")
+newqqplot(-log10(fake3$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design no SX, 3 | 4")
+newqqplot(-log10(fake4$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design no SX, 4 | 4")
+
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta1$SP+fake.meta1$SX)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake1
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta2$SP+fake.meta2$SX)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake2
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta3$SP+fake.meta3$SX)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake3
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta4$SP+fake.meta4$SX)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake4
+newqqplot(-log10(fake1$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design no BTC, 1 | 4")
+newqqplot(-log10(fake2$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design no BTC, 2 | 4")
+newqqplot(-log10(fake3$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design no BTC, 3 | 4")
+newqqplot(-log10(fake4$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design no BTC, 4 | 4")
+
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta1$SP)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake1
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta2$SP)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake2
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta3$SP)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake3
+lmFit(data.4[,304:311], model.matrix(~1+fake.meta4$SP)) %>% eBayes(.) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fake4
+newqqplot(-log10(fake1$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design SP only, 1 | 4")
+newqqplot(-log10(fake2$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design SP only, 2 | 4")
+newqqplot(-log10(fake3$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design SP only, 3 | 4")
+newqqplot(-log10(fake4$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design SP only, 4 | 4")
+
+#These are slightly better, but many still show some small degree of deflation. In an attempt to ID the problem, I now add several other metrics measuring differences in bin sizes and pair distances between humans and chimps, to help identify differences that may be primarily driven by mapping of orthology or different genome builds rather than true biology. I will then subset the QQ plots to particular classes of these hits and see if any pattern emerges. This utilizes the normal set of p-values from the original design conditioned upon discovery in 4 individuals. To do this, I first have to pull out the mean start and end positions of bins for each of the species from the data:
+H1startCmean <- rowMeans(data.4[,c('Hstart1-C', 'Hstart1-D', 'Hstart1-G', 'Hstart1-H')], na.rm=TRUE)
+H1endCmean <- rowMeans(data.4[,c('Hend1-C', 'Hend1-D', 'Hend1-G', 'Hend1-H')], na.rm=TRUE)
+H2startCmean <- rowMeans(data.4[,c('Hstart2-C', 'Hstart2-D', 'Hstart2-G', 'Hstart2-H')], na.rm=TRUE)
+H2endCmean <- rowMeans(data.4[,c('Hend2-C', 'Hend2-D', 'Hend2-G', 'Hend2-H')], na.rm=TRUE)
+
+C1startHmean <- rowMeans(data.4[,c('Cstart1-A', 'Cstart1-B', 'Cstart1-E', 'Cstart1-F')], na.rm=TRUE) #this is identical and easier.
+C1endHmean <- rowMeans(data.4[,c('Cend1-A', 'Cend1-B', 'Cend1-E', 'Cend1-F')], na.rm=TRUE)
+C2startHmean <- rowMeans(data.4[,c('Cstart2-A', 'Cstart2-B', 'Cstart2-E', 'Cstart2-F')], na.rm=TRUE)
+C2endHmean <- rowMeans(data.4[,c('Cend2-A', 'Cend2-B', 'Cend2-E', 'Cend2-F')], na.rm=TRUE)
+  
+#Now, I use these data to add columns to the data frame for the sizes of bins and distance between bins. Note that I am only really looking at differences in the size of the "orthologous" bins called through liftover, as compared to their original size (10kb). Bin size differences in the values at the start of each individual's portion of the data frame for coordinates matching that species are merely due to size differences in reciprocal best hits liftover. The true size of bins within their own species is always 10kb. So here bin sizes being appended to the data frame are for lifted-over bins. I do the distance differences based on the HC-pair values (H1/H2 and C1/C2) that have been rounded to the nearest 10kb from the original values given by homer; since this should be balanced across species it shouldn't matter much. Worst case it would make the estimate off by 20kb, maximum.
+H1sizeC <- H1endCmean-H1startCmean
+H2sizeC <- H2endCmean-H2startCmean
+data.4$H1diff <- abs(10000-H1sizeC)
+data.4$H2diff <- abs(10000-H2sizeC)
+C1sizeH <- C1endHmean-C1startHmean
+C2sizeH <- C2endHmean-C2startHmean
+data.4$C1diff <- abs(10000-C1sizeH)
+data.4$C2diff <- abs(10000-C2sizeH)
+data.4$Hdist <- abs(as.numeric(sub(".*-", "", data.4$H2))-as.numeric(sub(".*-", "", data.4$H1)))
+data.4$Cdist <- abs(as.numeric(sub(".*-", "", data.4$C2))-as.numeric(sub(".*-", "", data.4$C1)))
+data.4$dist_diff <- abs(data.4$Hdist-data.4$Cdist)
+
+#Now I look at the distributions of some of these metrics to inform me about how best to bin the data for filtering and further QC checking.
+quantile(data.4$H1diff, na.rm=TRUE)
+quantile(data.4$H2diff, na.rm=TRUE)
+quantile(data.4$C1diff, na.rm=TRUE)
+quantile(data.4$C2diff, na.rm=TRUE)
+quantile(data.4$dist_diff, na.rm=TRUE)
+
+#From this I can see that the majority of bin size differences are relatively small (<25 bp), and the majority of hits do not have a difference in distance between the mates in a pair across the species (all the way up to 50th percentile the distance difference is still 0). Now I'll take a look at some QQ plots filtering along these values to get an idea of if any of these technical orthology-calling artifacts are driving the inflation we see.
+newqqplot(-log10(filter(data.4, H1diff<21&H2diff<21&C1diff<21&C2diff<21)$sp_pval), c(0.5, 0.75), "QQ Plot, Bin Size Changes < 21 bp | 4") #We can see that the QQplot looks a bit better if we only utilize hits where the bin size difference is less than the 50% percentile of their distribution.
+newqqplot(-log10(filter(data.4, H1diff>=21&H2diff>=21&C1diff>=21&C2diff>=21)$sp_pval), c(0.5, 0.75), "QQ Plot, Bin Size Changes >= 21bp | 4") #This doesn't look much different--what about the case where there are large differences in the size?
+newqqplot(-log10(filter(data.4, H1diff>=100|H2diff>=100|C1diff>=100|C2diff>=100)$sp_pval), c(0.5, 0.75), "QQ Plot, Bin Size Changes >= 100 bp | 4") #It's hard to know what to make of this since here I am just allowing for any bin to have a size change greater than 100 bp. It looks fairly similar to the QQplot of the full data.
+newqqplot(-log10(filter(data.4, H1diff>=500|H2diff>=500|C1diff>=500|C2diff>=500)$sp_pval), c(0.5, 0.75), "QQ Plot, Bin Size Changes >= 500 bp | 4") #It's hard to know what to make of this since here I am just allowing for any bin to have a size change greater than 500 bp.
+newqqplot(-log10(filter(data.4, H1diff>=1000|H2diff>=1000|C1diff>=1000|C2diff>=1000)$sp_pval), c(0.5, 0.75), "QQ Plot, Bin Size Changes >= 100 bp | 4") #It's hard to know what to make of this since here I am just allowing for any bin to have a size change greater than 1kb.
+#It may be hard to say anything super definitive about the bin size changes from these plots, but the fact that they all still show inflation, and I don't see any stark difference between bin size changes exceeding 100 bp, suggests to me that bin size is having a minimal effect here. Still, we will include it when looking at filtering criteria below for figuring out what hits might need to be removed still.
+
+newqqplot(-log10(filter(data.4, dist_diff>=100000)$sp_pval), c(0.5, 0.75), "QQ Plot, Distance Diff >= 100kb | 4") #This is good to know--see EXTREMELY strong inflation amongst this class of p-values, perhaps giving another criteria for filtering
+newqqplot(-log10(filter(data.4, dist_diff>=50000)$sp_pval), c(0.5, 0.75), "QQ Plot, Distance Diff >= 50kb | 4") #This is good to know--see that the inflation is a little weaker if we move towards including more pairs that have smaller distance differences between the species. What about pairs where there is no difference?
+newqqplot(-log10(filter(data.4, dist_diff==0)$sp_pval), c(0.5, 0.75), "QQ Plot, NO Distance Diff | 4") #Values are still inflated, but the first solid 50% of the distribution stays along the normal line--this is great!
+newqqplot(-log10(filter(data.4, dist_diff<=20000)$sp_pval), c(0.5, 0.75), "QQ Plot, Distance Diff <=20kb | 4") #And now we can see the trend in the opposite direction--SLIGHT inflation of the p-values when including more hits that have a larger distance difference.
+
+#Based on the quantiles from before, the size differences have relatively little variation in their distribution. Hence I will take them and summarize them as a single value here:
+sizediffs <- rowMeans(select(data.4, H1diff, H2diff, C1diff, C2diff), na.rm=TRUE)
+quantile(sizediffs, probs=seq(0, 1, 0.2))
+
+#Now what I would like to do is find classes of hits--combinations between size and distance differences--that comprise roughly 10% of the data, or ~30k hits here. I will look at these classes in a 3-dimensional plot that includes size and distance differences as two of the axes, and the FDR from linear modeling on the 3rd. What I am in search of are classes of hits that show inflated FDR.
+plot3d <- data.frame(bin_min=pmin(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), bin_max=pmax(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), bin_mean=sizediffs, dist_diff=data.4$dist_diff, FDR=data.4$sp_BH_pval)
+
+#Of course, I already inherently know I will have a difficult time finding sets large enough with the bigger differences in distance, as only 10k or so of the hits even have a distance difference greater than 50kb. About half the hits have no distance difference, and of the remaining half, about half have size differences of 1-2 bins (10-20 kb), and half have greater size differences.
+
+#First, I go in search of sets that will be large enough.
+nrow(filter(plot3d, sizediffs<=13.5&dist_diff<10000)) #30k, a class of minimal changes--no distance difference, and minimal size difference.
+nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff<10000)) #30k, still minimal changes
+nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff<10000)) #30k, minimal changes still, bin size getting up there
+nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff<10000)) #30k, minimal changes still, bin size even higher though
+nrow(filter(plot3d, sizediffs>109.5&dist_diff<10000)) #And there's another 30k! With big bin size changes.
+
+nrow(filter(plot3d, sizediffs<=13.5&dist_diff>=10000&dist_diff<=20000)) #19k, a class of minimal changes--no size difference, and minimal distance difference (1-2 bins off).
+nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>=10000&dist_diff<=20000)) #19k, small size difference, and minimal distance difference (1-2 bins off, 10-20 kb).
+nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>=10000&dist_diff<=20000)) #19k, minimal changes still, bin size getting up there, and minimal distance difference (1-2 bins off, 10-20 kb).
+nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>=10000&dist_diff<=20000)) #19k, minimal changes still, bin size even higher though, and minimal distance difference (1-2 bins off, 10-20 kb).
+nrow(filter(plot3d, sizediffs>109.5&dist_diff>=10000&dist_diff<=20000)) #And there's another 19k! With big bin size changes, and minimal distance difference (1-2 bins off, 10-20 kb).
+
+nrow(filter(plot3d, sizediffs<=13.5&dist_diff>20000)) #8k, a class of large changes--big distance difference, and minimal size difference.
+nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>20000)) #8k, a class of large changes--big distance difference, and relatively small size difference.
+nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>20000)) #8k, a class of large changes--big distance difference, and median size difference.
+nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>20000)) #8k, a class of large changes--big distance difference, and fairly large size difference.
+nrow(filter(plot3d, sizediffs>109.5&dist_diff>20000)) #8k, a class of the largest changes--big distance difference, and big size difference.
+
+#Now, create a data frame with these classes, their sizes, and the number of hits in each of the classes that is at FDR <= 0.05.
+true3d <- data.frame(dist_class=c(rep("none", 5), rep("short", 5), rep("long", 5)), bin_quant=rep(1:5, 3), set_size=c(nrow(filter(plot3d, sizediffs<=13.5&dist_diff<10000)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff<10000)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff<10000)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff<10000)), nrow(filter(plot3d, sizediffs>109.5&dist_diff<10000)), nrow(filter(plot3d, sizediffs<=13.5&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs>109.5&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs<=13.5&dist_diff>20000)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>20000)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>20000)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>20000)), nrow(filter(plot3d, sizediffs>109.5&dist_diff>20000))), num_sig=c(nrow(filter(plot3d, sizediffs<=13.5&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs>109.5&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=13.5&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs>109.5&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=13.5&dist_diff>20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs>109.5&dist_diff>20000&FDR<=0.05))))
+true3d$prop <- true3d$num_sig/true3d$set_size #Get the proportion of these different sets that are significant (at or below 5% FDR)
+#I will then take this data frame and export it to plot.ly's online interface, in order to make a 3D graph that will allow me to visualize FDR significance inflation in any of these sets (and subsequently filter them out).
+
+#Now, I once again show the volcano plot for 4 individuals. Observe the stark asymmetry with a pile-up of hits on the left side as compared to the right.
+volcplot.4 <- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species, chr=data.4$Hchr)
+ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences | 4 Individuals")
+ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
+
+#As expected, we see that hits which produce a strong negative beta in the linear model (suggesting a marked decrease in contact frequency in humans as compared to chimps) are primarily discovered as significant by homer in chimpanzees. The inverse also holds true for human discoveries. This is reassuring, but still, why the asymmetry? Here I break this plot down on a chromosome-by-chromosome basis to see if this is being driven by individual chromosomes ore is an overall issue with the technique or its processing:
+#First rearrange chrs to make a prettier plot that has chrs sequential:
+levels(volcplot.4$chr)
+volcplot.4$chr <- factor(volcplot.4$chr, levels(volcplot.4$chr)[c(1, 12, 16:22, 2:11, 13:15, 23:24)]) #Reorder factor levels!
+levels(volcplot.4$chr)
+ggplot(volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle("Volcano Plots by Chr") + facet_wrap(~as.factor(chr), nrow=5, ncol=5) + guides(color=FALSE)
+#This is extremely interesting. It appears that the asymmetry seen is being driven primarily by only some of the chromosomes, and particularly ones where large-scale rearrangements have transpired between humans and chimps (e.g. chrs 2, 16, 17). This will warrant further investigation in another element of the analysis; for now, I am satisfied that the asymmetry is not an issue with the entire dataset but is confined to individual chromosomes. I will need to go quantify some of the orthology calling on these chromosomes later to confirm high quality of the data.
+
+#Write out the modified dfs.
+
+```
+
+
+
+## Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```
