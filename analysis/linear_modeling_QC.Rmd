@@ -157,7 +157,7 @@ sizediffs <- rowMeans(select(data.4, H1diff, H2diff, C1diff, C2diff), na.rm=TRUE
 quantile(sizediffs, probs=seq(0, 1, 0.2))
 
 #Now what I would like to do is find classes of hits--combinations between size and distance differences--that comprise roughly 10% of the data, or ~30k hits here. I will look at these classes in a 3-dimensional plot that includes size and distance differences as two of the axes, and the FDR from linear modeling on the 3rd. What I am in search of are classes of hits that show inflated FDR.
-plot3d <- data.frame(bin_min=pmin(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), bin_max=pmax(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), bin_mean=sizediffs, dist_diff=data.4$dist_diff, FDR=data.4$sp_BH_pval)
+plot3d <- data.frame(bin_min=pmin(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), bin_max=pmax(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), sizediffs=sizediffs, dist_diff=data.4$dist_diff, FDR=data.4$sp_BH_pval)
 
 #Of course, I already inherently know I will have a difficult time finding sets large enough with the bigger differences in distance, as only 10k or so of the hits even have a distance difference greater than 50kb. About half the hits have no distance difference, and of the remaining half, about half have size differences of 1-2 bins (10-20 kb), and half have greater size differences.
 
@@ -185,7 +185,14 @@ true3d <- data.frame(dist_class=c(rep("none", 5), rep("short", 5), rep("long", 5
 true3d$prop <- true3d$num_sig/true3d$set_size #Get the proportion of these different sets that are significant (at or below 5% FDR)
 #I will then take this data frame and export it to plot.ly's online interface, in order to make a 3D graph that will allow me to visualize FDR significance inflation in any of these sets (and subsequently filter them out).
 
-#Now, I once again show the volcano plot for 4 individuals. Observe the stark asymmetry with a pile-up of hits on the left side as compared to the right.
+#Based on the 3D QQ quality control plot, some of these classes should be filtered out due to inflation of # hits significant @ 5% FDR. This relatively conservative filtering gets rid of ~100k hits, or about a third of them. There is a slightly less conservative filtering as well that does not exclude the class of hits with no distance difference but maximal bin size difference (minclass); that would only get rid of ~70k hits instead. For the time being, I go more conservative:
+minclass <- which(plot3d$sizediffs>109.5&plot3d$dist_diff<10000)
+medclass <- which(plot3d$sizediffs>42.18750&plot3d$dist_diff>=10000&plot3d$dist_diff<=20000)
+highclass <- which(plot3d$dist_diff>20000)
+bad_indices <- c(minclass, medclass, highclass)
+data.filtered <- data.4[-bad_indices,]
+
+#Now, I go to the asymmetry issue. Here I once again show the volcano plot for 4 individuals. Observe the stark asymmetry with a pile-up of hits on the left side as compared to the right.
 volcplot.4 <- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species, chr=data.4$Hchr)
 ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences | 4 Individuals")
 ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
@@ -198,8 +205,10 @@ levels(volcplot.4$chr)
 ggplot(volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle("Volcano Plots by Chr") + facet_wrap(~as.factor(chr), nrow=5, ncol=5) + guides(color=FALSE)
 #This is extremely interesting. It appears that the asymmetry seen is being driven primarily by only some of the chromosomes, and particularly ones where large-scale rearrangements have transpired between humans and chimps (e.g. chrs 2, 16, 17). This will warrant further investigation in another element of the analysis; for now, I am satisfied that the asymmetry is not an issue with the entire dataset but is confined to individual chromosomes. I will need to go quantify some of the orthology calling on these chromosomes later to confirm high quality of the data.
 
-#Write out the modified dfs.
-
+#Write out the data with the new columns added on!
+fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Oct17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
+fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Oct17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
+fwrite(data.filtered, "~/Desktop/Hi-C/data.4.filtered.txt", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
 ```
 
 
