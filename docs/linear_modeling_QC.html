@@ -315,7 +315,7 @@ shared across the workflowr files. -->
 <p><strong>Last updated:</strong> 2017-10-30</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 907bbb5</p>
+<p><strong>Code version:</strong> 764a69e</p>
 <!-- Add your analysis here -->
 <pre class="r"><code>#This file will examine first the inflation of p-values from the QQ plot at the end of linear_modeling.Rmd, and then the asymmetry seen in the volcano plots from linear modeling.
 
@@ -457,30 +457,32 @@ tests and examples will be skipped on R CMD check if binaries are missing</code>
 full.data &lt;- fread(&quot;~/Desktop/Hi-C/full.data.10.Oct17&quot;, header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)</code></pre>
 <pre><code>
 Read 0.0% of 3151443 rows
-Read 1.9% of 3151443 rows
-Read 3.8% of 3151443 rows
-Read 5.7% of 3151443 rows
-Read 7.6% of 3151443 rows
-Read 9.5% of 3151443 rows
-Read 11.4% of 3151443 rows
-Read 13.3% of 3151443 rows
-Read 15.2% of 3151443 rows
-Read 17.1% of 3151443 rows
+Read 2.2% of 3151443 rows
+Read 4.1% of 3151443 rows
+Read 6.0% of 3151443 rows
+Read 7.9% of 3151443 rows
+Read 9.8% of 3151443 rows
+Read 11.7% of 3151443 rows
+Read 13.6% of 3151443 rows
+Read 15.5% of 3151443 rows
+Read 17.5% of 3151443 rows
 Read 19.4% of 3151443 rows
-Read 21.3% of 3151443 rows
-Read 23.5% of 3151443 rows
+Read 20.9% of 3151443 rows
+Read 22.8% of 3151443 rows
+Read 25.1% of 3151443 rows
 Read 25.7% of 3151443 rows
 Read 27.9% of 3151443 rows
 Read 30.1% of 3151443 rows
-Read 32.4% of 3151443 rows
-Read 34.6% of 3151443 rows
-Read 36.8% of 3151443 rows
-Read 39.0% of 3151443 rows
-Read 41.3% of 3151443 rows
-Read 43.2% of 3151443 rows
-Read 45.1% of 3151443 rows
+Read 32.0% of 3151443 rows
+Read 34.0% of 3151443 rows
+Read 35.9% of 3151443 rows
+Read 37.8% of 3151443 rows
+Read 39.7% of 3151443 rows
+Read 41.6% of 3151443 rows
+Read 43.5% of 3151443 rows
+Read 45.4% of 3151443 rows
 Read 47.0% of 3151443 rows
-Read 48.9% of 3151443 rows
+Read 49.2% of 3151443 rows
 Read 50.8% of 3151443 rows
 Read 53.0% of 3151443 rows
 Read 55.2% of 3151443 rows
@@ -488,33 +490,29 @@ Read 57.4% of 3151443 rows
 Read 59.7% of 3151443 rows
 Read 61.9% of 3151443 rows
 Read 63.8% of 3151443 rows
-Read 65.7% of 3151443 rows
-Read 67.9% of 3151443 rows
-Read 69.8% of 3151443 rows
-Read 71.7% of 3151443 rows
+Read 66.0% of 3151443 rows
+Read 68.2% of 3151443 rows
+Read 70.4% of 3151443 rows
 Read 72.7% of 3151443 rows
 Read 74.9% of 3151443 rows
-Read 76.8% of 3151443 rows
-Read 78.7% of 3151443 rows
-Read 80.6% of 3151443 rows
-Read 82.5% of 3151443 rows
-Read 84.4% of 3151443 rows
-Read 86.3% of 3151443 rows
-Read 88.2% of 3151443 rows
-Read 90.1% of 3151443 rows
+Read 77.1% of 3151443 rows
+Read 79.3% of 3151443 rows
+Read 81.5% of 3151443 rows
+Read 83.5% of 3151443 rows
+Read 85.4% of 3151443 rows
+Read 87.6% of 3151443 rows
+Read 89.8% of 3151443 rows
 Read 92.0% of 3151443 rows
-Read 93.9% of 3151443 rows
-Read 95.8% of 3151443 rows
-Read 97.7% of 3151443 rows
-Read 99.6% of 3151443 rows
-Read 3151443 rows and 328 (of 328) columns from 5.053 GB file in 00:01:22</code></pre>
+Read 94.2% of 3151443 rows
+Read 96.5% of 3151443 rows
+Read 98.7% of 3151443 rows
+Read 3151443 rows and 328 (of 328) columns from 5.053 GB file in 00:01:19</code></pre>
 <pre class="r"><code>data.4 &lt;- fread(&quot;~/Desktop/Hi-C/data.4.10.Oct17&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)</code></pre>
 <pre><code>
-Read 17.1% of 292670 rows
-Read 37.6% of 292670 rows
-Read 58.1% of 292670 rows
-Read 78.6% of 292670 rows
-Read 99.1% of 292670 rows
+Read 20.5% of 292670 rows
+Read 41.0% of 292670 rows
+Read 64.9% of 292670 rows
+Read 88.8% of 292670 rows
 Read 292670 rows and 328 (of 328) columns from 0.605 GB file in 00:00:07</code></pre>
 <pre class="r"><code>#This is the QQ plot for species from the linear model for Hi-C values from linear_modeling.Rmd. We can see a significant inflation of p-values here rising above the expected normal distribution alarmingly quickly:
 newqqplot(-log10(data.4$sp_pval), c(0.5, 0.75), &quot;QQ Plot, Species P-vals, Data | 4&quot;)</code></pre>
@@ -651,7 +649,7 @@ quantile(sizediffs, probs=seq(0, 1, 0.2))</code></pre>
 <pre><code>        0%        20%        40%        60%        80%       100% 
    0.00000   13.50000   23.33333   42.18750  109.50000 1000.87500 </code></pre>
 <pre class="r"><code>#Now what I would like to do is find classes of hits--combinations between size and distance differences--that comprise roughly 10% of the data, or ~30k hits here. I will look at these classes in a 3-dimensional plot that includes size and distance differences as two of the axes, and the FDR from linear modeling on the 3rd. What I am in search of are classes of hits that show inflated FDR.
-plot3d &lt;- data.frame(bin_min=pmin(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), bin_max=pmax(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), bin_mean=sizediffs, dist_diff=data.4$dist_diff, FDR=data.4$sp_BH_pval)
+plot3d &lt;- data.frame(bin_min=pmin(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), bin_max=pmax(data.4$H1diff, data.4$H2diff, data.4$C1diff, data.4$C2diff, na.rm=TRUE), sizediffs=sizediffs, dist_diff=data.4$dist_diff, FDR=data.4$sp_BH_pval)
 
 #Of course, I already inherently know I will have a difficult time finding sets large enough with the bigger differences in distance, as only 10k or so of the hits even have a distance difference greater than 50kb. About half the hits have no distance difference, and of the remaining half, about half have size differences of 1-2 bins (10-20 kb), and half have greater size differences.
 
@@ -691,7 +689,14 @@ true3d &lt;- data.frame(dist_class=c(rep(&quot;none&quot;, 5), rep(&quot;short&q
 true3d$prop &lt;- true3d$num_sig/true3d$set_size #Get the proportion of these different sets that are significant (at or below 5% FDR)
 #I will then take this data frame and export it to plot.ly&#39;s online interface, in order to make a 3D graph that will allow me to visualize FDR significance inflation in any of these sets (and subsequently filter them out).
 
-#Now, I once again show the volcano plot for 4 individuals. Observe the stark asymmetry with a pile-up of hits on the left side as compared to the right.
+#Based on the 3D QQ quality control plot, some of these classes should be filtered out due to inflation of # hits significant @ 5% FDR. This relatively conservative filtering gets rid of ~100k hits, or about a third of them. There is a slightly less conservative filtering as well that does not exclude the class of hits with no distance difference but maximal bin size difference (minclass); that would only get rid of ~70k hits instead. For the time being, I go more conservative:
+minclass &lt;- which(plot3d$sizediffs&gt;109.5&amp;plot3d$dist_diff&lt;10000)
+medclass &lt;- which(plot3d$sizediffs&gt;42.18750&amp;plot3d$dist_diff&gt;=10000&amp;plot3d$dist_diff&lt;=20000)
+highclass &lt;- which(plot3d$dist_diff&gt;20000)
+bad_indices &lt;- c(minclass, medclass, highclass)
+data.filtered &lt;- data.4[-bad_indices,]
+
+#Now, I go to the asymmetry issue. Here I once again show the volcano plot for 4 individuals. Observe the stark asymmetry with a pile-up of hits on the left side as compared to the right.
 volcplot.4 &lt;- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species, chr=data.4$Hchr)
 ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences | 4 Individuals&quot;)</code></pre>
 <p><img src="figure/linear_modeling_QC.Rmd/unnamed-chunk-1-27.png" width="672" style="display: block; margin: auto;" /></p>
@@ -712,7 +717,19 @@ levels(volcplot.4$chr)</code></pre>
 <p><img src="figure/linear_modeling_QC.Rmd/unnamed-chunk-1-29.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#This is extremely interesting. It appears that the asymmetry seen is being driven primarily by only some of the chromosomes, and particularly ones where large-scale rearrangements have transpired between humans and chimps (e.g. chrs 2, 16, 17). This will warrant further investigation in another element of the analysis; for now, I am satisfied that the asymmetry is not an issue with the entire dataset but is confined to individual chromosomes. I will need to go quantify some of the orthology calling on these chromosomes later to confirm high quality of the data.
 
-#Write out the modified dfs.</code></pre>
+#Write out the data with the new columns added on!
+fwrite(full.data, &quot;~/Desktop/Hi-C/full.data.10.Oct17&quot;, quote = TRUE, sep = &quot;\t&quot;, row.names = FALSE, col.names = TRUE, na=&quot;NA&quot;)</code></pre>
+<pre><code>
+Written 16.9% of 3151443 rows in 2 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 9 secs.      
+Written 28.3% of 3151443 rows in 3 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 7 secs.      
+Written 40.2% of 3151443 rows in 4 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 5 secs.      
+Written 52.0% of 3151443 rows in 5 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 4 secs.      
+Written 64.2% of 3151443 rows in 6 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 3 secs.      
+Written 74.9% of 3151443 rows in 7 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 2 secs.      
+Written 87.1% of 3151443 rows in 8 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 1 secs.      
+                                                                                                                                     </code></pre>
+<pre class="r"><code>fwrite(data.4, &quot;~/Desktop/Hi-C/data.4.10.Oct17&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=TRUE, na=&quot;NA&quot;)
+fwrite(data.filtered, &quot;~/Desktop/Hi-C/data.4.filtered.txt&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=TRUE, na=&quot;NA&quot;)</code></pre>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
 <!-- Insert the session information into the document -->
