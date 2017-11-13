@@ -122,8 +122,8 @@ heatmaply(corheat4, main="Pairwise Pearson Correlation @ 10kb | 4", k_row=2, k_c
 #Indeed, we can again see that all the humans cluster together, as do all the chimps. This is very good, and given this new condition, we also see higher within-species correlations for the significant hits, in the 0.8-0.9 range (was much closer to 0.6 before).
 
 ###This initial QC suggest quality of the data is high, and has given us some information on how to filter the data before further intrepretation. When working locally, can be helpful to write out both the full dataset and the one conditioned upon 4 individuals, in order to do sanity checks on both later on. Note that a call of identical on something fread in after fwriting it out will still return FALSE with this as floating point can't represent decimals exactly (see https://stackoverflow.com/questions/9508518/why-are-these-numbers-not-equal or https://cran.r-project.org/doc/FAQ/R-FAQ.html#Why-doesn_0027t-R-think-these-numbers-are-equal_003f):
-fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Oct17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
-fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Oct17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
+fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Nov17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
+fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Nov17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
 ```
 
 ## Session information

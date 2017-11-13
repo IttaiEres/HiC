@@ -128,14 +128,14 @@ newqqplot(-log10(data.4$btc_pval), c(0.5, 0.75), "QQ Plot, Batch P-vals, Data | 
 #The batch and sex QQ plots look fairly decent, but the species QQplot has the distribution rising off the axis extremely quickly, before even reaching 50% of the data. I will examine this in a separate markdown document for quality control on the linear modeling. For now, I show volcano plots of the data before looking to rectify this issue:
 volcplot.full <- data.frame(pval=-log10(full.data$sp_pval), beta=full.data$sp_beta, species=full.data$disc_species)
 volcplot.4 <- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species)
-ggplot(data=volcplot.full, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery")
-ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
+ggplot(data=volcplot.full, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("P-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery")
+ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
 ggplot(data=volcplot.full, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences")
-ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences | 4 Individuals")
+ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 p-values") + ggtitle("Contact Frequency Differences | 4 Individuals")
 
 #Write out the data with the new columns added on!
-fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Oct17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
-fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Oct17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
+fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Nov17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
+fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Nov17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
 ```
 
 
