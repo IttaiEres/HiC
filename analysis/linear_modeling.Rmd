@@ -48,8 +48,8 @@ library(bedr)
 enableJIT(3)
 
 ###Read in data, normalized in initial_QC document, both with all hits and conditioned upon a hit being discovered in 4 individuals.
-full.data <- fread("~/Desktop/Hi-C/full.data.10.Oct17", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)
-data.4 <- fread("~/Desktop/Hi-C/data.4.10.Oct17", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)
+full.data <- fread("~/Desktop/Hi-C/full.data.10.Nov17", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)
+data.4 <- fread("~/Desktop/Hi-C/data.4.10.Nov17", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)
 
 ###Reassign metadata here, just for quick reference.
 meta.data <- data.frame("SP"=c("H", "H", "C", "C", "H", "H", "C", "C"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2))

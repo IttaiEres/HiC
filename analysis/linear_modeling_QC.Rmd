@@ -57,8 +57,8 @@ library(bedr)
 enableJIT(3)
 
 #Now, as always, read in data files modified by initial_QC.Rmd and linear_modeling.Rmd
-full.data <- fread("~/Desktop/Hi-C/full.data.10.Oct17", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)
-data.4 <- fread("~/Desktop/Hi-C/data.4.10.Oct17", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)
+full.data <- fread("~/Desktop/Hi-C/full.data.10.Nov17", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)
+data.4 <- fread("~/Desktop/Hi-C/data.4.10.Nov17", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)
 
 #This is the QQ plot for species from the linear model for Hi-C values from linear_modeling.Rmd. We can see a significant inflation of p-values here rising above the expected normal distribution alarmingly quickly:
 newqqplot(-log10(data.4$sp_pval), c(0.5, 0.75), "QQ Plot, Species P-vals, Data | 4")
@@ -183,7 +183,9 @@ nrow(filter(plot3d, sizediffs>109.5&dist_diff>20000)) #11k, a class of the large
 #Now, create a data frame with these classes, their sizes, and the number of hits in each of the classes that is at FDR <= 0.05.
 true3d <- data.frame(dist_class=c(rep("none", 5), rep("short", 5), rep("long", 5)), bin_quant=rep(1:5, 3), set_size=c(nrow(filter(plot3d, sizediffs<=13.5&dist_diff<10000)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff<10000)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff<10000)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff<10000)), nrow(filter(plot3d, sizediffs>109.5&dist_diff<10000)), nrow(filter(plot3d, sizediffs<=13.5&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs>109.5&dist_diff>=10000&dist_diff<=20000)), nrow(filter(plot3d, sizediffs<=13.5&dist_diff>20000)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>20000)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>20000)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>20000)), nrow(filter(plot3d, sizediffs>109.5&dist_diff>20000))), num_sig=c(nrow(filter(plot3d, sizediffs<=13.5&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs>109.5&dist_diff<10000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=13.5&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs>109.5&dist_diff>=10000&dist_diff<=20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=13.5&dist_diff>20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=23.33&sizediffs>13.5&dist_diff>20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=42.18750&sizediffs>23.33&dist_diff>20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs<=109.5&sizediffs>42.18750&dist_diff>20000&FDR<=0.05)), nrow(filter(plot3d, sizediffs>109.5&dist_diff>20000&FDR<=0.05))))
 true3d$prop <- true3d$num_sig/true3d$set_size #Get the proportion of these different sets that are significant (at or below 5% FDR)
-#I will then take this data frame and export it to plot.ly's online interface, in order to make a 3D graph that will allow me to visualize FDR significance inflation in any of these sets (and subsequently filter them out).
+
+#I will then take this data frame and export it to plot.ly's online interface, in order to make a 3D plot that will allow me to visualize FDR significance inflation in any of these sets (and subsequently filter them out). The 3D plot looks like this:
+htmltools::includeHTML("/Users/ittaieres/Hi-C/analysis/QQQC.html")
 
 #Based on the 3D QQ quality control plot, some of these classes should be filtered out due to inflation of # hits significant @ 5% FDR. This relatively conservative filtering gets rid of ~78k hits, or about a fifth of them. There is a slightly less conservative filtering as well that does not exclude the class of hits with no distance difference but maximal bin size difference (minclass); that would only get rid of ~50k hits instead. For the time being, I go more conservative:
 medclass <- which(plot3d$sizediffs>109.5&plot3d$dist_diff>=10000&plot3d$dist_diff<=20000)
@@ -218,8 +220,8 @@ ggplot(volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.00
 
 
 #Write out the data with the new columns added on!
-fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Oct17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
-fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Oct17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
+fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Nov17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
+fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Nov17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
 fwrite(data.filtered, "~/Desktop/Hi-C/data.4.filtered.txt", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
 ```
 
