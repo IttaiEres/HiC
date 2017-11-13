@@ -313,10 +313,10 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2017-10-30</p>
+<p><strong>Last updated:</strong> 2017-11-13</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 46e8970</p>
+<p><strong>Code version:</strong> e5cf0b1</p>
 <!-- Add your analysis here -->
 <pre class="r"><code>#Load in necessary packages
 library(limma)</code></pre>
@@ -445,54 +445,58 @@ tests and examples will be skipped on R CMD check if binaries are missing</code>
 <pre class="r"><code>enableJIT(3)</code></pre>
 <pre><code>[1] 3</code></pre>
 <pre class="r"><code>###Read in data, normalized in initial_QC document, both with all hits and conditioned upon a hit being discovered in 4 individuals.
-full.data &lt;- fread(&quot;~/Desktop/Hi-C/full.data.10.Oct17&quot;, header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)</code></pre>
+full.data &lt;- fread(&quot;~/Desktop/Hi-C/full.data.10.Nov17&quot;, header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)</code></pre>
 <pre><code>
-Read 0.0% of 3151443 rows
-Read 2.5% of 3151443 rows
-Read 5.1% of 3151443 rows
-Read 7.9% of 3151443 rows
-Read 10.5% of 3151443 rows
-Read 13.3% of 3151443 rows
-Read 16.2% of 3151443 rows
-Read 19.0% of 3151443 rows
-Read 21.6% of 3151443 rows
-Read 24.4% of 3151443 rows
-Read 25.7% of 3151443 rows
-Read 28.6% of 3151443 rows
-Read 31.1% of 3151443 rows
-Read 34.0% of 3151443 rows
-Read 36.8% of 3151443 rows
-Read 39.7% of 3151443 rows
-Read 42.2% of 3151443 rows
-Read 45.1% of 3151443 rows
-Read 47.0% of 3151443 rows
-Read 49.8% of 3151443 rows
-Read 51.7% of 3151443 rows
-Read 54.6% of 3151443 rows
-Read 57.4% of 3151443 rows
-Read 60.3% of 3151443 rows
-Read 63.1% of 3151443 rows
-Read 66.0% of 3151443 rows
-Read 68.9% of 3151443 rows
-Read 72.0% of 3151443 rows
-Read 72.7% of 3151443 rows
-Read 75.5% of 3151443 rows
-Read 78.4% of 3151443 rows
-Read 81.5% of 3151443 rows
-Read 84.4% of 3151443 rows
-Read 87.3% of 3151443 rows
-Read 90.1% of 3151443 rows
-Read 93.0% of 3151443 rows
-Read 95.8% of 3151443 rows
-Read 98.7% of 3151443 rows
-Read 3151443 rows and 318 (of 318) columns from 4.540 GB file in 00:00:58</code></pre>
-<pre class="r"><code>data.4 &lt;- fread(&quot;~/Desktop/Hi-C/data.4.10.Oct17&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)</code></pre>
+Read 0.0% of 2932510 rows
+Read 2.7% of 2932510 rows
+Read 5.5% of 2932510 rows
+Read 8.2% of 2932510 rows
+Read 10.6% of 2932510 rows
+Read 13.3% of 2932510 rows
+Read 16.0% of 2932510 rows
+Read 18.8% of 2932510 rows
+Read 21.5% of 2932510 rows
+Read 23.9% of 2932510 rows
+Read 26.6% of 2932510 rows
+Read 27.6% of 2932510 rows
+Read 30.0% of 2932510 rows
+Read 32.4% of 2932510 rows
+Read 34.8% of 2932510 rows
+Read 37.2% of 2932510 rows
+Read 39.9% of 2932510 rows
+Read 42.6% of 2932510 rows
+Read 45.4% of 2932510 rows
+Read 47.7% of 2932510 rows
+Read 50.1% of 2932510 rows
+Read 50.5% of 2932510 rows
+Read 53.2% of 2932510 rows
+Read 55.2% of 2932510 rows
+Read 58.0% of 2932510 rows
+Read 60.7% of 2932510 rows
+Read 63.4% of 2932510 rows
+Read 66.2% of 2932510 rows
+Read 69.2% of 2932510 rows
+Read 72.0% of 2932510 rows
+Read 74.7% of 2932510 rows
+Read 77.4% of 2932510 rows
+Read 78.1% of 2932510 rows
+Read 80.8% of 2932510 rows
+Read 83.5% of 2932510 rows
+Read 85.9% of 2932510 rows
+Read 88.3% of 2932510 rows
+Read 91.0% of 2932510 rows
+Read 93.8% of 2932510 rows
+Read 96.5% of 2932510 rows
+Read 98.9% of 2932510 rows
+Read 2932510 rows and 318 (of 318) columns from 4.300 GB file in 00:01:02</code></pre>
+<pre class="r"><code>data.4 &lt;- fread(&quot;~/Desktop/Hi-C/data.4.10.Nov17&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)</code></pre>
 <pre><code>
-Read 20.5% of 292670 rows
-Read 44.4% of 292670 rows
-Read 68.3% of 292670 rows
-Read 92.3% of 292670 rows
-Read 292670 rows and 318 (of 318) columns from 0.557 GB file in 00:00:06</code></pre>
+Read 14.4% of 347206 rows
+Read 31.7% of 347206 rows
+Read 49.0% of 347206 rows
+Read 69.1% of 347206 rows
+Read 89.3% of 347206 rows
+Read 347206 rows and 318 (of 318) columns from 0.666 GB file in 00:00:07</code></pre>
 <pre class="r"><code>###Reassign metadata here, just for quick reference.
 meta.data &lt;- data.frame(&quot;SP&quot;=c(&quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;, &quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;), &quot;SX&quot;=c(&quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;), &quot;Batch&quot;=c(1, 1, 1, 1, 2, 2, 2, 2))
 
@@ -590,26 +594,30 @@ newqqplot(-log10(full.data$sp_pval), c(0.5, 0.75), &quot;QQ Plot, Species P-vals
 <pre class="r"><code>#The batch and sex QQ plots look fairly decent, but the species QQplot has the distribution rising off the axis extremely quickly, before even reaching 50% of the data. I will examine this in a separate markdown document for quality control on the linear modeling. For now, I show volcano plots of the data before looking to rectify this issue:
 volcplot.full &lt;- data.frame(pval=-log10(full.data$sp_pval), beta=full.data$sp_beta, species=full.data$disc_species)
 volcplot.4 &lt;- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species)
-ggplot(data=volcplot.full, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery&quot;)</code></pre>
+ggplot(data=volcplot.full, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;P-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-21.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery | 4&quot;)</code></pre>
+<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery | 4&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-22.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=volcplot.full, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-23.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences | 4 Individuals&quot;)</code></pre>
+<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 p-values&quot;) + ggtitle(&quot;Contact Frequency Differences | 4 Individuals&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-24.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#Write out the data with the new columns added on!
-fwrite(full.data, &quot;~/Desktop/Hi-C/full.data.10.Oct17&quot;, quote = TRUE, sep = &quot;\t&quot;, row.names = FALSE, col.names = TRUE, na=&quot;NA&quot;)</code></pre>
+fwrite(full.data, &quot;~/Desktop/Hi-C/full.data.10.Nov17&quot;, quote = TRUE, sep = &quot;\t&quot;, row.names = FALSE, col.names = TRUE, na=&quot;NA&quot;)</code></pre>
 <pre><code>
-Written 20.8% of 3151443 rows in 2 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 7 secs.      
-Written 32.6% of 3151443 rows in 3 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 6 secs.      
-Written 44.8% of 3151443 rows in 4 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 4 secs.      
-Written 58.2% of 3151443 rows in 5 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 3 secs.      
-Written 71.2% of 3151443 rows in 6 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 2 secs.      
-Written 79.9% of 3151443 rows in 7 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 1 secs.      
-Written 90.2% of 3151443 rows in 8 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=45%. Finished in 0 secs.      
+Written 12.5% of 2932510 rows in 2 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 13 secs.      
+Written 22.4% of 2932510 rows in 3 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 10 secs.      
+Written 29.3% of 2932510 rows in 4 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 9 secs.      
+Written 37.1% of 2932510 rows in 5 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 8 secs.      
+Written 44.9% of 2932510 rows in 6 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 7 secs.      
+Written 51.0% of 2932510 rows in 7 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 6 secs.      
+Written 59.6% of 2932510 rows in 8 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 5 secs.      
+Written 68.2% of 2932510 rows in 9 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 4 secs.      
+Written 74.0% of 2932510 rows in 10 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 3 secs.      
+Written 82.6% of 2932510 rows in 11 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 2 secs.      
+Written 92.0% of 2932510 rows in 12 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 1 secs.      
                                                                                                                                      </code></pre>
-<pre class="r"><code>fwrite(data.4, &quot;~/Desktop/Hi-C/data.4.10.Oct17&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=TRUE, na=&quot;NA&quot;)</code></pre>
+<pre class="r"><code>fwrite(data.4, &quot;~/Desktop/Hi-C/data.4.10.Nov17&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=TRUE, na=&quot;NA&quot;)</code></pre>
 <!-- Insert the session information into the document -->
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 3.4.0 (2017-04-21)
