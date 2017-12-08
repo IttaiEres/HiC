@@ -25,7 +25,8 @@ knitr::read_chunk("chunks.R")
 ```
 
 <!-- Add your analysis here -->
-```{r Initial Hi-C Data Read-in and QC}
+
+```{r library loading, echo=FALSE, include=FALSE}
 #Load in necessary packages
 library(limma)
 library(plyr)
@@ -45,9 +46,11 @@ library(tidyverse)
 library(compiler)
 library(bedr)
 enableJIT(3)
+```
 
+```{r Initial Hi-C Data Read-in and QC}
 ###Read in data, normalize it with cyclic loess (pairwise), clean it from any rows that have missing values.
-full.data <- fread("~/Desktop/final.10kb.homer.df", header=TRUE, stringsAsFactors = FALSE, data.table=FALSE)
+full.data <- fread("~/Desktop/final.10kb.homer.df", header=TRUE, stringsAsFactors = FALSE, data.table=FALSE, showProgress = FALSE)
 full.contacts <- full.data[complete.cases(full.data[,304:311]), 304:311]
 full.contacts <- as.data.frame(normalizeCyclicLoess(full.contacts, span=1/4, iterations=3, method="pairs"))
 full.data <- full.data[complete.cases(full.data[,304:311]),]
@@ -111,19 +114,19 @@ varsdata4 <- apply(data.4[,304:311], 1, var)
 
 ###Now to do PCA on the data conditioned upon discovery in 4 individuals--would expect many of the same patterns here, perhaps with even stronger separation due to only grabbing hits that are shared by 4 individuals:
 pca4 <- prcomp(t(data.4[,304:311]), scale=TRUE, center=TRUE)
-ggplot(data=as.data.frame(pca4$x), aes(x=PC1, y=PC2, shape=as.factor(meta.data$SP), color=as.factor(meta.data$Batch), size=2)) + geom_point() +labs(title="PCA on normalized Hi-C Contact Frequency | 4") + guides(color=guide_legend(order=1), size=FALSE, shape=guide_legend(order=2)) + xlab(paste("PC1 (", 100*summary(pca4)$importance[2,1], "% of variance)")) + ylab((paste("PC2 (", 100*summary(pca4)$importance[2,2], "% of variance)"))) #Metadata hasn't changed so use the same metadata from above. PCA shows a similar separation along species lines for PC1, with this time it representing 33.121% of the variance (up from 21.6% earlier). This is rather unsurprising, since we have subset down to hits that are more shared than the total set we had before.
+ggplot(data=as.data.frame(pca4$x), aes(x=PC1, y=PC2, shape=as.factor(meta.data$SP), color=as.factor(meta.data$Batch), size=2)) + geom_point() +labs(title="PCA on normalized Hi-C Contact Frequency | 4") + guides(color=guide_legend(order=1, title="Batch"), size=FALSE, shape=guide_legend(order=2, title="Species")) + xlab(paste("PC1 (", 100*summary(pca4)$importance[2,1], "% of variance)")) + ylab((paste("PC2 (", 100*summary(pca4)$importance[2,2], "% of variance)"))) #Metadata hasn't changed so use the same metadata from above. PCA shows a similar separation along species lines for PC1, with this time it representing 33.121% of the variance (up from 21.6% earlier). This is rather unsurprising, since we have subset down to hits that are more shared than the total set we had before.
 barplot(summary(pca4)$importance[2,], xlab="PCs", ylab="Proportion of Variance Explained", main="PCA on normalized Hi-C contact frequency | 4") #Scree plot showing all the PCs and the proportion of the variance they explain. This is similar to above, with no PCs beyond a 7th one, and the first PC taking the vast majority of the variance while the others hover near 12-15%. No variables in experimentation, library prep, sequencing batch, or anything else seem to correlate with these PCs.
 
 ###Heatmap clustering of these data after conditioning upon discovery in 4 individuals. Would expect to see the same clustering, with perhaps higher correlation values due to conditioning upon discovery in 4 individuals.
 corheat4 <- cor(data.4[,304:311], use="complete.obs", method="pearson") #Corheat for the full data set, and heatmap
 colnames(corheat4) <- c("A_HF", "B_HM", "C_CM", "D_CF", "E_HM", "F_HF", "G_CM", "H_CF")
 rownames(corheat4) <- colnames(corheat4)
-heatmaply(corheat4, main="Pairwise Pearson Correlation @ 10kb | 4", k_row=2, k_col=2, symm=TRUE, margins=c(50, 50, 30, 30))
+heatmaply(corheat4, main="Pairwise Pearson Correlation Clustering @ 10kb | 4", k_row=2, k_col=2, symm=TRUE, margins=c(50, 50, 30, 30))
 #Indeed, we can again see that all the humans cluster together, as do all the chimps. This is very good, and given this new condition, we also see higher within-species correlations for the significant hits, in the 0.8-0.9 range (was much closer to 0.6 before).
 
 ###This initial QC suggest quality of the data is high, and has given us some information on how to filter the data before further intrepretation. When working locally, can be helpful to write out both the full dataset and the one conditioned upon 4 individuals, in order to do sanity checks on both later on. Note that a call of identical on something fread in after fwriting it out will still return FALSE with this as floating point can't represent decimals exactly (see https://stackoverflow.com/questions/9508518/why-are-these-numbers-not-equal or https://cran.r-project.org/doc/FAQ/R-FAQ.html#Why-doesn_0027t-R-think-these-numbers-are-equal_003f):
-fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Nov17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
-fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Nov17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
+fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Nov17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA", showProgress = FALSE)
+fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Nov17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA", showProgress = FALSE)
 ```
 
 ## Session information

@@ -26,7 +26,7 @@ knitr::read_chunk("chunks.R")
 
 <!-- Add your analysis here -->
 
-```{r}
+```{r library loading, echo=FALSE, include=FALSE}
 #Load in necessary packages
 library(limma)
 library(plyr)
@@ -46,10 +46,12 @@ library(tidyverse)
 library(compiler)
 library(bedr)
 enableJIT(3)
+```
 
+```{r Linear Modeling}
 ###Read in data, normalized in initial_QC document, both with all hits and conditioned upon a hit being discovered in 4 individuals.
-full.data <- fread("~/Desktop/Hi-C/full.data.10.Nov17", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)
-data.4 <- fread("~/Desktop/Hi-C/data.4.10.Nov17", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)
+full.data <- fread("~/Desktop/Hi-C/full.data.10.Nov17", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
+data.4 <- fread("~/Desktop/Hi-C/data.4.10.Nov17", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
 
 ###Reassign metadata here, just for quick reference.
 meta.data <- data.frame("SP"=c("H", "H", "C", "C", "H", "H", "C", "C"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2))
@@ -134,8 +136,8 @@ ggplot(data=volcplot.full, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold
 ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 p-values") + ggtitle("Contact Frequency Differences | 4 Individuals")
 
 #Write out the data with the new columns added on!
-fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Nov17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA")
-fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Nov17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
+fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Nov17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA", showProgress = FALSE)
+fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Nov17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA", showProgress = FALSE)
 ```
 
 
