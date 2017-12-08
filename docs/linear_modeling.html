@@ -313,191 +313,16 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2017-11-13</p>
+<p><strong>Last updated:</strong> 2017-12-08</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> e5cf0b1</p>
+<p><strong>Code version:</strong> 5774ca0</p>
 <!-- Add your analysis here -->
-<pre class="r"><code>#Load in necessary packages
-library(limma)</code></pre>
-<pre><code>Warning: package &#39;limma&#39; was built under R version 3.4.1</code></pre>
-<pre class="r"><code>library(plyr)
-library(tidyr)
-library(data.table)
-library(reshape2)</code></pre>
-<pre><code>
-Attaching package: &#39;reshape2&#39;</code></pre>
-<pre><code>The following objects are masked from &#39;package:data.table&#39;:
-
-    dcast, melt</code></pre>
-<pre><code>The following object is masked from &#39;package:tidyr&#39;:
-
-    smiths</code></pre>
-<pre class="r"><code>library(ggplot2)
-library(plotly)</code></pre>
-<pre><code>
-Attaching package: &#39;plotly&#39;</code></pre>
-<pre><code>The following object is masked from &#39;package:ggplot2&#39;:
-
-    last_plot</code></pre>
-<pre><code>The following objects are masked from &#39;package:plyr&#39;:
-
-    arrange, mutate, rename, summarise</code></pre>
-<pre><code>The following object is masked from &#39;package:stats&#39;:
-
-    filter</code></pre>
-<pre><code>The following object is masked from &#39;package:graphics&#39;:
-
-    layout</code></pre>
-<pre class="r"><code>library(dplyr)</code></pre>
-<pre><code>Warning: package &#39;dplyr&#39; was built under R version 3.4.1</code></pre>
-<pre><code>
-Attaching package: &#39;dplyr&#39;</code></pre>
-<pre><code>The following objects are masked from &#39;package:data.table&#39;:
-
-    between, first, last</code></pre>
-<pre><code>The following objects are masked from &#39;package:plyr&#39;:
-
-    arrange, count, desc, failwith, id, mutate, rename, summarise,
-    summarize</code></pre>
-<pre><code>The following objects are masked from &#39;package:stats&#39;:
-
-    filter, lag</code></pre>
-<pre><code>The following objects are masked from &#39;package:base&#39;:
-
-    intersect, setdiff, setequal, union</code></pre>
-<pre class="r"><code>library(Hmisc)</code></pre>
-<pre><code>Loading required package: lattice</code></pre>
-<pre><code>Loading required package: survival</code></pre>
-<pre><code>Loading required package: Formula</code></pre>
-<pre><code>
-Attaching package: &#39;Hmisc&#39;</code></pre>
-<pre><code>The following objects are masked from &#39;package:dplyr&#39;:
-
-    combine, src, summarize</code></pre>
-<pre><code>The following object is masked from &#39;package:plotly&#39;:
-
-    subplot</code></pre>
-<pre><code>The following objects are masked from &#39;package:plyr&#39;:
-
-    is.discrete, summarize</code></pre>
-<pre><code>The following objects are masked from &#39;package:base&#39;:
-
-    format.pval, round.POSIXt, trunc.POSIXt, units</code></pre>
-<pre class="r"><code>library(gplots)</code></pre>
-<pre><code>
-Attaching package: &#39;gplots&#39;</code></pre>
-<pre><code>The following object is masked from &#39;package:stats&#39;:
-
-    lowess</code></pre>
-<pre class="r"><code>library(stringr)
-library(heatmaply)</code></pre>
-<pre><code>Loading required package: viridis</code></pre>
-<pre><code>Loading required package: viridisLite</code></pre>
-<pre><code>
----------------------
-Welcome to heatmaply version 0.10.1
-Type ?heatmaply for the main documentation.
-The github page is: https://github.com/talgalili/heatmaply/
-
-Suggestions and bug-reports can be submitted at: https://github.com/talgalili/heatmaply/issues
-Or contact: &lt;tal.galili@gmail.com&gt;
-
-    To suppress this message use:  suppressPackageStartupMessages(library(heatmaply))
----------------------</code></pre>
-<pre class="r"><code>library(RColorBrewer)
-library(edgeR)
-library(tidyverse)</code></pre>
-<pre><code>Loading tidyverse: tibble
-Loading tidyverse: readr
-Loading tidyverse: purrr</code></pre>
-<pre><code>Conflicts with tidy packages ----------------------------------------------</code></pre>
-<pre><code>arrange():   dplyr, plotly, plyr
-between():   dplyr, data.table
-combine():   dplyr, Hmisc
-compact():   purrr, plyr
-count():     dplyr, plyr
-failwith():  dplyr, plyr
-filter():    dplyr, plotly, stats
-first():     dplyr, data.table
-id():        dplyr, plyr
-lag():       dplyr, stats
-last():      dplyr, data.table
-mutate():    dplyr, plotly, plyr
-rename():    dplyr, plotly, plyr
-src():       dplyr, Hmisc
-summarise(): dplyr, plotly, plyr
-summarize(): dplyr, Hmisc, plyr
-transpose(): purrr, data.table</code></pre>
-<pre class="r"><code>library(compiler)
-library(bedr)</code></pre>
-<pre><code>
-
-######################
-#### bedr v1.0.3 ####
-######################
-
-checking binary availability...
-  * Checking path for bedtools... FAIL
-  * Checking path for bedops... FAIL
-  * Checking path for tabix... FAIL
-tests and examples will be skipped on R CMD check if binaries are missing</code></pre>
-<pre class="r"><code>enableJIT(3)</code></pre>
-<pre><code>[1] 3</code></pre>
 <pre class="r"><code>###Read in data, normalized in initial_QC document, both with all hits and conditioned upon a hit being discovered in 4 individuals.
-full.data &lt;- fread(&quot;~/Desktop/Hi-C/full.data.10.Nov17&quot;, header = TRUE, data.table=FALSE, stringsAsFactors = FALSE)</code></pre>
-<pre><code>
-Read 0.0% of 2932510 rows
-Read 2.7% of 2932510 rows
-Read 5.5% of 2932510 rows
-Read 8.2% of 2932510 rows
-Read 10.6% of 2932510 rows
-Read 13.3% of 2932510 rows
-Read 16.0% of 2932510 rows
-Read 18.8% of 2932510 rows
-Read 21.5% of 2932510 rows
-Read 23.9% of 2932510 rows
-Read 26.6% of 2932510 rows
-Read 27.6% of 2932510 rows
-Read 30.0% of 2932510 rows
-Read 32.4% of 2932510 rows
-Read 34.8% of 2932510 rows
-Read 37.2% of 2932510 rows
-Read 39.9% of 2932510 rows
-Read 42.6% of 2932510 rows
-Read 45.4% of 2932510 rows
-Read 47.7% of 2932510 rows
-Read 50.1% of 2932510 rows
-Read 50.5% of 2932510 rows
-Read 53.2% of 2932510 rows
-Read 55.2% of 2932510 rows
-Read 58.0% of 2932510 rows
-Read 60.7% of 2932510 rows
-Read 63.4% of 2932510 rows
-Read 66.2% of 2932510 rows
-Read 69.2% of 2932510 rows
-Read 72.0% of 2932510 rows
-Read 74.7% of 2932510 rows
-Read 77.4% of 2932510 rows
-Read 78.1% of 2932510 rows
-Read 80.8% of 2932510 rows
-Read 83.5% of 2932510 rows
-Read 85.9% of 2932510 rows
-Read 88.3% of 2932510 rows
-Read 91.0% of 2932510 rows
-Read 93.8% of 2932510 rows
-Read 96.5% of 2932510 rows
-Read 98.9% of 2932510 rows
-Read 2932510 rows and 318 (of 318) columns from 4.300 GB file in 00:01:02</code></pre>
-<pre class="r"><code>data.4 &lt;- fread(&quot;~/Desktop/Hi-C/data.4.10.Nov17&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE)</code></pre>
-<pre><code>
-Read 14.4% of 347206 rows
-Read 31.7% of 347206 rows
-Read 49.0% of 347206 rows
-Read 69.1% of 347206 rows
-Read 89.3% of 347206 rows
-Read 347206 rows and 318 (of 318) columns from 0.666 GB file in 00:00:07</code></pre>
-<pre class="r"><code>###Reassign metadata here, just for quick reference.
+full.data &lt;- fread(&quot;~/Desktop/Hi-C/full.data.10.Nov17&quot;, header = TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
+data.4 &lt;- fread(&quot;~/Desktop/Hi-C/data.4.10.Nov17&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
+
+###Reassign metadata here, just for quick reference.
 meta.data &lt;- data.frame(&quot;SP&quot;=c(&quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;, &quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;), &quot;SX&quot;=c(&quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;), &quot;Batch&quot;=c(1, 1, 1, 1, 2, 2, 2, 2))
 
 ###Now to move on to linear modeling, doing it in both the full data set and the | 4 individuals condition. I utilize limma to make this quick, parllelizable, and simple. First make the model, then do the actual fitting, and finally do multiple testing adjustment with topTable.
@@ -534,40 +359,40 @@ data.4$btc_beta &lt;- model.4$coefficients[,4]
 
 ###Before moving to any actual assessment of the linear modeling, do a QC check by producing MA plots for both the full set and | 4 individuals. The MA plot here is the mean of Hi-C contact frequencies (avg_IF) on the x-axis, and the logFC (species beta, in this case) on the y-axis. What we are generally looking for is a fairly uniform cloud around 0 stretching across the x-axis.
 ggplot(data=full.data[,c(&#39;avg_IF&#39;,&#39;sp_beta&#39;)], aes(x=avg_IF, y=sp_beta)) + geom_point() + xlab(&quot;Means of Hi-C Contact Frequencies&quot;) + ylab(&quot;Species Beta (log ratio H/C)&quot;) + ggtitle(&quot;MA Plot, All Data&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=data.4[,c(&#39;avg_IF&#39;, &#39;sp_beta&#39;)], aes(x=avg_IF, y=sp_beta)) + geom_point() + xlab(&quot;Means of Hi-C Contact Frequencies&quot;) + ylab(&quot;Species Beta (log ratio H/C)&quot;) + ggtitle(&quot;MA Plot | 4 Individuals&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-2.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#Both of these plots certainly have some outliers, and both have a linear trend I have previously examined that is symmetric across betas--I believe these lines to primarily be created by an orthology-calling issue, as many of the hits along them have all contact frequencies in one species extremely close to 0 (and not near-zero in the other species). Aside from this, there is also a large cloud in the negative beta side that is somewhat disturbing; this is something I still need to check. At the very least, the linear trends seen are symmetric across betas, so this is hopefully an issue that is affecting the two species SOMEWHAT equally.
 
 ###Check some of the more basic linear modeling issues: distributions of betas, p-vals, QQplot, volcano plot, etc.
 ##Check p-vals and betas for all covariates in the full model, on all the data.
 ggplot(data=full.data[,319:328], aes(x=sp_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Species&quot;) + xlab(&quot;P-value&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-3.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-3.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=sx_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Sex&quot;) + xlab(&quot;P-value&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-4.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-4.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=btc_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Batch&quot;) + xlab(&quot;P-value&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-5.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-5.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=sp_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Species&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
 <pre><code>Warning: Removed 4 rows containing non-finite values (stat_bin).</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-6.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-6.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=sx_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Sex&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-7.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-7.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=btc_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Batch&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-8.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-8.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>##Check p-vals and betas for all covariates in the full model, on data conditioned upon hit discovery in 4 individuals.
 ggplot(data=data.4[,319:328], aes(x=sp_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Species | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-9.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-9.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=sx_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Sex | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-10.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-10.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=btc_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Batch | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-11.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-11.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=sp_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Species | 4&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
 <pre><code>Warning: Removed 4 rows containing non-finite values (stat_bin).</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-12.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-12.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=sx_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Sex | 4&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-13.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-13.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=btc_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Batch | 4&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-14.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-14.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#These all look pretty good, with p-val distributions for sex and batch being fairly uniform, and betas all around being fairly normally distributed. We see distinct enrichment for significant p-values for the species term, which is what we were hoping for! Also of note is the fact that the beta distribution for species looks wider than those for batch and sex, reassuring us that species is a driving factor in differential Hi-C contacts.
 
 ###Now, to double-check on the p-values with some QQplots. First, I define a function for creating a qqplot easily and coloring elements of the distribution in order to understand where most of the density on the plot is:
@@ -580,44 +405,31 @@ newqqplot=function(pvals, quant, title){
 
 ##Start QQplotting some of these actual values.
 newqqplot(-log10(full.data$sp_pval), c(0.5, 0.75), &quot;QQ Plot, Species P-vals, Full Data&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-15.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-15.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>newqqplot(-log10(full.data$sx_pval), c(0.5, 0.75), &quot;QQ Plot, Sex P-vals, Full Data&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-16.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-16.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>newqqplot(-log10(full.data$btc_pval), c(0.5, 0.75), &quot;QQ Plot, Batch P-vals, Full Data&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-17.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-17.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>newqqplot(-log10(data.4$sp_pval), c(0.5, 0.75), &quot;QQ Plot, Species P-vals, Data | 4&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-18.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-18.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>newqqplot(-log10(data.4$sx_pval), c(0.5, 0.75), &quot;QQ Plot, Sex P-vals, Data | 4&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-19.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-19.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>newqqplot(-log10(data.4$btc_pval), c(0.5, 0.75), &quot;QQ Plot, Batch P-vals, Data | 4&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-20.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-20.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#The batch and sex QQ plots look fairly decent, but the species QQplot has the distribution rising off the axis extremely quickly, before even reaching 50% of the data. I will examine this in a separate markdown document for quality control on the linear modeling. For now, I show volcano plots of the data before looking to rectify this issue:
 volcplot.full &lt;- data.frame(pval=-log10(full.data$sp_pval), beta=full.data$sp_beta, species=full.data$disc_species)
 volcplot.4 &lt;- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species)
 ggplot(data=volcplot.full, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;P-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-21.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-21.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery | 4&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-22.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-22.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=volcplot.full, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-23.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-23.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 p-values&quot;) + ggtitle(&quot;Contact Frequency Differences | 4 Individuals&quot;)</code></pre>
-<p><img src="figure/linear_modeling.Rmd/unnamed-chunk-1-24.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-24.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#Write out the data with the new columns added on!
-fwrite(full.data, &quot;~/Desktop/Hi-C/full.data.10.Nov17&quot;, quote = TRUE, sep = &quot;\t&quot;, row.names = FALSE, col.names = TRUE, na=&quot;NA&quot;)</code></pre>
-<pre><code>
-Written 12.5% of 2932510 rows in 2 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 13 secs.      
-Written 22.4% of 2932510 rows in 3 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 10 secs.      
-Written 29.3% of 2932510 rows in 4 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 9 secs.      
-Written 37.1% of 2932510 rows in 5 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 8 secs.      
-Written 44.9% of 2932510 rows in 6 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 7 secs.      
-Written 51.0% of 2932510 rows in 7 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 6 secs.      
-Written 59.6% of 2932510 rows in 8 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 5 secs.      
-Written 68.2% of 2932510 rows in 9 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 4 secs.      
-Written 74.0% of 2932510 rows in 10 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 3 secs.      
-Written 82.6% of 2932510 rows in 11 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 2 secs.      
-Written 92.0% of 2932510 rows in 12 secs using 8 threads. anyBufferGrown=no; maxBuffUsed=47%. Finished in 1 secs.      
-                                                                                                                                     </code></pre>
-<pre class="r"><code>fwrite(data.4, &quot;~/Desktop/Hi-C/data.4.10.Nov17&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=TRUE, na=&quot;NA&quot;)</code></pre>
+fwrite(full.data, &quot;~/Desktop/Hi-C/full.data.10.Nov17&quot;, quote = TRUE, sep = &quot;\t&quot;, row.names = FALSE, col.names = TRUE, na=&quot;NA&quot;, showProgress = FALSE)
+fwrite(data.4, &quot;~/Desktop/Hi-C/data.4.10.Nov17&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=TRUE, na=&quot;NA&quot;, showProgress = FALSE)</code></pre>
 <!-- Insert the session information into the document -->
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 3.4.0 (2017-04-21)
