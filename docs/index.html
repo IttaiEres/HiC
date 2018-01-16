@@ -20,8 +20,8 @@
 <script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
 <script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 
 <style type="text/css">code{white-space: pre;}</style>
@@ -31,10 +31,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -207,7 +209,9 @@ $(document).ready(function () {
 </div>
 
 
-<p>This website details computational analyses done on my thesis project, which utilizes Hi-C to find 3-dimensional regulatory differences between humans and chimpanzees. Click on any of the links below to jump to that section of the analysis:</p>
+<p>This website details computational analyses done on my thesis project, which utilizes Hi-C to find 3-dimensional regulatory differences between humans and chimpanzees. Click on any of the links below to jump to that section of the analysis. Note that I repeated the same types of analyses using different normalization and significance-calling schmes; these are the larger headers:</p>
+<div id="analyses-utilizing-homer" class="section level4">
+<h4>Analyses Utilizing Homer</h4>
 <ul>
 <li><a href="initial_QC.html">Reading in of the data, normalization, and initial quality control metrics</a></li>
 <li><a href="linear_modeling.html">Linear modeling of the data to find quantitative contact differences between humans and chimpanzees</a></li>
@@ -215,6 +219,10 @@ $(document).ready(function () {
 <li><a href="enrichment.html">Enrichment analyses on the linear-modeling significant Hi-C hits</a></li>
 <li><a href="gene_expression.html">Orthogonal analysis with gene expression data collected from the same cell lines</a></li>
 </ul>
+</div>
+<div id="analyses-utilizing-juicer" class="section level4">
+<h4>Analyses Utilizing Juicer</h4>
+</div>
 
 <hr>
 <p>
