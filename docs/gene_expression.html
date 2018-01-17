@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Ittai Eres" />
+
+<meta name="date" content="2017-11-01" />
+
+<title>Gene Expression</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Hi-C</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/jdblischak/workflowr">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Gene Expression</h1>
+<h4 class="author"><em>Ittai Eres</em></h4>
+<h4 class="date"><em>2017-11-01</em></h4>
+
+</div>
+
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+<!-- Update knitr chunk options -->
+<!-- Insert the date the file was last updated -->
+<p><strong>Last updated:</strong> 2018-01-17</p>
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+<p><strong>Code version:</strong> 8d1bb46</p>
+<!-- Add your analysis here -->
+<div id="overlap-between-hi-c-data-and-orthogonal-gene-expression-data" class="section level3">
+<h3>Overlap Between Hi-C Data and Orthogonal Gene Expression Data</h3>
+<p>In this section I find the overlap between the final filtered set of Hi-C significant hits and genes picked up on by an orthogonal RNA-seq experiment in the same set of cell lines. I utilize an in-house curated set of orthologous genes between humans and chimpanzees. Given that the resolution of the data is 10kb, I choose a simple and conservative approach and use a 1-nucleotide interval at the start of each gene as a proxy for the promoter. I then take a conservative pass and only use genes that had direct overlap with a bin from the Hi-C significant hits data, with more motivation explained below.</p>
+<pre class="r"><code>#Now, read in filtered data from linear_modeling_QC.Rmd.
+data.filtered &lt;- fread(&quot;~/Desktop/Hi-C/data.4.filtered.txt&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress=FALSE)
+meta.data &lt;- data.frame(&quot;SP&quot;=c(&quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;, &quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;), &quot;SX&quot;=c(&quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;), &quot;Batch&quot;=c(1, 1, 1, 1, 2, 2, 2, 2))
+
+#####GENE Hi-C Hit overlap: First, I obtain and rearrange the necessary files to get genes from both species and their overlaps with Hi-C bins.
+#Read in other necessary files. The table of DE genes from limma analysis, RPKM values for these genes across the individuals, and human and chimp orthologous genes from the meta ortho exon trios file. Then rearrange the columns of humgenes and chimpgenes to use group_by on them.
+detable &lt;- fread(&quot;~/Desktop/gene_expression/Outputs/DE_table_no_RIN.txt&quot;, stringsAsFactors = FALSE, header=TRUE, data.table=FALSE)
+RPKM &lt;- fread(&quot;~/Desktop/gene_expression/Outputs/RPKMS_table.txt&quot;, stringsAsFactors = FALSE, header=TRUE, data.table=FALSE)
+humgenes &lt;- fread(&quot;~/Desktop/2017_July_ortho (1)/Human_orthoexon_extended_info.txt&quot;, stringsAsFactors = FALSE, header=TRUE, data.table=FALSE)
+chimpgenes &lt;- fread(&quot;~/Desktop/2017_July_ortho (1)/Chimp_orthoexon_extended_info.txt&quot;, stringsAsFactors = FALSE, header=TRUE, data.table=FALSE)
+humgenes &lt;- as.data.frame(humgenes[,c(1,5:8)])
+chimpgenes &lt;- as.data.frame(chimpgenes[,c(1,5:8)])
+colnames(humgenes) &lt;- c(&quot;genes&quot;, &quot;Hchr&quot;, &quot;Hstart&quot;, &quot;Hend&quot;, &quot;Hstrand&quot;)
+colnames(chimpgenes) &lt;- c(&quot;genes&quot;, &quot;Cchr&quot;, &quot;Cstart&quot;, &quot;Cend&quot;, &quot;Cstrand&quot;)
+humgenes$Hchr &lt;- paste(&quot;chr&quot;, humgenes$Hchr, sep=&quot;&quot;) #All properly formatted now!
+
+colnames(RPKM) &lt;- c(&quot;genes&quot;, &quot;C-3649&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;, &quot;D-40300&quot;, &quot;F-28834&quot;, &quot;B-28126&quot;, &quot;E-28815&quot;, &quot;A-21792&quot;)
+
+#Bedtools groupby appears to have not worked properly to create files of single TSSs for genes from the meta ortho exons file, but this totally does! I&#39;ve also utilized dplyr&#39;s group_by on the original file as well to ensure the same results. Now just making gene BED files that are 1-nt overlap at the very beginning of the first exon. Since I maintain strand information and will utilize it in bedtools closest-to, I am not concerned about whether the nt overlap goes the right direction or not.
+group_by(humgenes, genes) %&gt;% summarise(Hchr=unique(Hchr), Hstart=min(Hstart), Hstrand=unique(Hstrand)) -&gt; humgenes
+group_by(chimpgenes, genes) %&gt;% summarise(Cchr=unique(Cchr), Cstart=min(Cstart), Cstrand=unique(Cstrand)) -&gt; chimpgenes
+
+#Now add in an extra column placeholder so strand is in the right column for bedtools, and rearrange columns as well for bedtools&#39; ease.
+humgenes$placeholder &lt;- &quot;.&quot;
+chimpgenes$placeholder &lt;- &quot;.&quot;
+humgenes$Hend &lt;- humgenes$Hstart+1
+chimpgenes$Cend &lt;- chimpgenes$Cstart+1
+humgenes &lt;- humgenes[,c(2:3, 6, 1, 5, 4)]
+chimpgenes &lt;- chimpgenes[,c(2:3, 6, 1, 5, 4)]
+
+#Turn off scientific notation for writing the file out for bedtools to be able to use correctly.
+options(scipen=999)
+#Now, prep bed files from the filtered data for each bin, in order to run bedtools-closest on them with the human and chimp gene data. This is for getting each bin&#39;s proximity to TSS by overlapping with the dfs just made (humgenes and chimpgenes). I don&#39;t care about getting rid of duplicates yet with these because I will eventually use them to place the values back into the df in full, for each bin in every interaction.
+hbin1 &lt;- data.frame(chr=data.filtered$Hchr, start=as.numeric(gsub(&quot;chr.*-&quot;, &quot;&quot;, data.filtered$H1)), end=as.numeric(gsub(&quot;chr.*-&quot;, &quot;&quot;, data.filtered$H1))+10000)
+hbin2 &lt;- data.frame(chr=data.filtered$Hchr, start=as.numeric(gsub(&quot;chr.*-&quot;, &quot;&quot;, data.filtered$H2)), end=as.numeric(gsub(&quot;chr.*-&quot;, &quot;&quot;, data.filtered$H2))+10000)
+cbin1 &lt;- data.frame(chr=data.filtered$Cchr, start=as.numeric(gsub(&quot;chr.*-&quot;, &quot;&quot;, data.filtered$C1)), end=as.numeric(gsub(&quot;chr.*-&quot;, &quot;&quot;, data.filtered$C1))+10000)
+cbin2 &lt;- data.frame(chr=data.filtered$Cchr, start=as.numeric(gsub(&quot;chr.*-&quot;, &quot;&quot;, data.filtered$C2)), end=as.numeric(gsub(&quot;chr.*-&quot;, &quot;&quot;, data.filtered$C2))+10000)
+
+#It&#39;s worth doing this for taking a gene-centric approach. Since I&#39;m just trying to classify if DE genes are overlapping a bin that&#39;s DHi-C or not RN, here I get rid of duplicates, just to make the bedtools sorting faster and easier to do.
+hbins &lt;- rbind(hbin1[!duplicated(hbin1),], hbin2[!duplicated(hbin2),])
+hbins &lt;- hbins[!duplicated(hbins),]
+cbins &lt;- rbind(cbin1[!duplicated(cbin1),], cbin2[!duplicated(cbin2),])
+cbins &lt;- cbins[!duplicated(cbins),]
+
+#Now, write all of these files out for analysis with bedtools.
+write.table(hbin1, &quot;~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/hbin1.bed&quot;, quote = FALSE, sep=&quot;\t&quot;, row.names = FALSE, col.names=FALSE)
+write.table(hbin2, &quot;~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/hbin2.bed&quot;, quote = FALSE, sep=&quot;\t&quot;, row.names = FALSE, col.names=FALSE)
+write.table(cbin1, &quot;~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/cbin1.bed&quot;, quote = FALSE, sep=&quot;\t&quot;, row.names = FALSE, col.names=FALSE)
+write.table(cbin2, &quot;~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/cbin2.bed&quot;, quote = FALSE, sep=&quot;\t&quot;, row.names = FALSE, col.names=FALSE)
+write.table(humgenes, &quot;~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/humgenes.bed&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=FALSE)
+write.table(chimpgenes, &quot;~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/chimpgenes.bed&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=FALSE)
+write.table(hbins, &quot;~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/hbins.bed&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=FALSE)
+write.table(cbins, &quot;~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/cbins.bed&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=FALSE)
+options(scipen=0)
+
+#Read in new, simpler bedtools closest files for genes. This is after running two commands, after sorting the files w/ sort -k1,1 -k2,2n in.bed &gt; out.bed:
+#bedtools closest -D a -a cgenes.sorted.bed -b cbins.sorted.bed &gt; cgene.hic.overlap
+#bedtools closest -D a -a hgenes.sorted.bed -b hbins.sorted.bed &gt; hgene.hic.overlap
+hgene.hic &lt;- fread(&quot;~/Desktop/gene_expression/10kb_filt_overlaps/hgene.hic.overlap&quot;, header=FALSE, stringsAsFactors = FALSE, data.table=FALSE)
+cgene.hic &lt;- fread(&quot;~/Desktop/gene_expression/10kb_filt_overlaps/cgene.hic.overlap&quot;, header=FALSE, stringsAsFactors = FALSE, data.table=FALSE)
+
+#Start with a conservative pass--only take those genes that had an actual overlap with a bin, not ones that were merely close to one. Allowing some leeway to include genes that are within 1kb, 2kb, 3kb etc. of a Hi-C bin adds an average of ~800 genes per 1kb. We can also examine the distribution manually to motivate this decision:
+quantile(abs(hgene.hic$V10), probs=seq(0, 1, 0.025))</code></pre>
+<pre><code>       0%      2.5%        5%      7.5%       10%     12.5%       15% 
+      0.0       0.0       0.0       0.0       0.0       0.0       0.0 
+    17.5%       20%     22.5%       25%     27.5%       30%     32.5% 
+      0.0       0.0       0.0       0.0       0.0       0.0       0.0 
+      35%     37.5%       40%     42.5%       45%     47.5%       50% 
+      0.0       0.0       0.0       0.0       0.0       0.0       0.0 
+    52.5%       55%     57.5%       60%     62.5%       65%     67.5% 
+      0.0       0.0       0.0     435.4    1741.0    2968.2    4324.0 
+      70%     72.5%       75%     77.5%       80%     82.5%       85% 
+   6226.2    8868.0   12336.0   16610.0   22034.4   29271.5   38300.2 
+    87.5%       90%     92.5%       95%     97.5%      100% 
+  50248.0   67698.4   92599.2  135125.0  243068.9 7581822.0 </code></pre>
+<pre class="r"><code>quantile(abs(cgene.hic$V10), probs=seq(0, 1, 0.025))</code></pre>
+<pre><code>        0%       2.5%         5%       7.5%        10%      12.5% 
+       0.0        0.0        0.0        0.0        0.0        0.0 
+       15%      17.5%        20%      22.5%        25%      27.5% 
+       0.0        0.0        0.0        0.0        0.0        0.0 
+       30%      32.5%        35%      37.5%        40%      42.5% 
+       0.0        0.0        0.0        0.0        0.0        0.0 
+       45%      47.5%        50%      52.5%        55%      57.5% 
+       0.0        0.0        0.0        0.0        0.0        0.0 
+       60%      62.5%        65%      67.5%        70%      72.5% 
+     237.4     1507.0     2800.0     4237.4     6125.6     8750.4 
+       75%      77.5%        80%      82.5%        85%      87.5% 
+   12181.0    16648.0    22317.4    29420.0    38490.0    50656.0 
+       90%      92.5%        95%      97.5%       100% 
+   67470.4    92415.3   136417.4   243285.0 21022081.0 </code></pre>
+<p>And we can see that the majority of the genes (57.5%) have direct overlap with a bin. I’ll thus start with one very conservative set with only genes that have direct overlap with a bin. Later I may return to this and add and another slightly more lenient bin capturing ~10% more of the genes by allowing +/- 5kb of wiggle room.</p>
+</div>
+<div id="linear-modeling-annotation" class="section level3">
+<h3>Linear Modeling Annotation</h3>
+<p>In this next section I simply add information obtained from linear modeling on the Hi-C interaction frequencies to the appropriate genes having overlap with Hi-C bins. Because one Hi-C bin frequently shows up many times in the data, this means I must choose some kind of summary for Hi-C contact frequencies and linear modeling annotations for each gene. I toy with a variety of these summaries here, including choosing the minimum FDR contact, the maximum beta contact, the upstream contact, or summarizing all a bin’s contacts with the weighted Z-combine method or median FDR values.</p>
+<pre class="r"><code>hgene.hic.overlap &lt;- filter(hgene.hic, V10==0) #Still leaves a solid ~26k genes.
+cgene.hic.overlap &lt;- filter(cgene.hic, V10==0) #Still leaves a solid ~26k genes.
+
+#Rearrange columns and create another column of the bin ID.
+hgene.hic.overlap &lt;- hgene.hic.overlap[,c(4, 7:9, 6)]
+hgene.hic.overlap$HID &lt;- paste(hgene.hic.overlap$V7, hgene.hic.overlap$V8, sep=&quot;-&quot;)
+cgene.hic.overlap &lt;- cgene.hic.overlap[,c(4, 7:9, 6)]
+cgene.hic.overlap$CID &lt;- paste(cgene.hic.overlap$V7, cgene.hic.overlap$V8, sep=&quot;-&quot;)
+
+#Gets me an hfinal table with a lot of the information concatenated together--now need the same thing for chimps, only to get the n contacts (since this could differ!)
+hbindf &lt;- select(data.filtered, &quot;H1&quot;, &quot;H2&quot;, &quot;ALLvar&quot;, &quot;SE&quot;, &quot;sp_beta&quot;, &quot;sp_pval&quot;, &quot;sp_BH_pval&quot;, &quot;Hdist&quot;)
+names(hbindf) &lt;- c(&quot;HID&quot;, &quot;HID2&quot;, &quot;ALLvar&quot;, &quot;SE&quot;, &quot;sp_beta&quot;, &quot;sp_pval&quot;, &quot;sp_BH_pval&quot;, &quot;distance&quot;) #I have confirmed that all the HID2s are higher numbered coordinates than the HID1s, the only instance in which this isn&#39;t the case is when the two bins are identical (this should have been filtered out long before now).
+
+hbindf &lt;- hbindf[(which(hbindf$dist!=0)),] #Removes pairs where the same bin represents both mates. These instances occur exclusively when liftOver of the genomic coordinates from one species to another, and the subsequent rounding to the nearest 10kb, results in a contact between adjacent bins in one species being mapped as a contact between the same bin in the other species. Because there are less than 50 instances of this total in the dataset I simply remove it here without further worry.
+
+#Remembering that all the first mates in the pair are lower coordinates than the second mates:
+#This works for getting the FDR of closest downstream hits for the first column. Technically this would also make these the closest upstream hits for any bins that are UNIQUE and NOT REPEATED to the second column. For unique bins in this column, they have no upstream hits, and this gets their downstream hits. I can do the same thing but on the second set of IDs to get the potential upstream hits for any bins, then do a full_join on the two to get everything! Many of these metrics need to be done on a duplicated df to ensure I have all copies of a bin in one column, but the upstream and downstream analyses need to be run separately.
+group_by(hbindf, HID) %&gt;% summarise(DS_bin=HID2[which.min(distance)], DS_FDR=sp_BH_pval[which.min(distance)], DS_dist=distance[which.min(distance)]) -&gt; hbin1.downstream
+
+group_by(hbindf, HID2) %&gt;% summarise(US_bin=HID[which.min(distance)], US_FDR=sp_BH_pval[which.min(distance)], US_dist=distance[which.min(distance)]) -&gt; hbin2.upstream
+colnames(hbin2.upstream) &lt;- c(&quot;HID&quot;, &quot;US_bin&quot;, &quot;US_FDR&quot;, &quot;US_dist&quot;)
+
+Hstreams &lt;- full_join(hbin1.downstream, hbin2.upstream, by=&quot;HID&quot;)
+
+#Now, need to create a df with all the hits duplicated (but columns reversed) to account for duplicated bins in each column. This is better for any analysis that shares information across the interactions (minimums, sums, means, medians, etc.)
+hbindf.flip &lt;- hbindf[,c(2, 1, 3:7)]
+colnames(hbindf.flip)[1:2] &lt;- c(&quot;HID&quot;, &quot;HID2&quot;)
+hbindf_x2 &lt;- rbind(hbindf[,1:7], hbindf.flip) #It&#39;s worth noting that a version of this with duplicates removed would be very useful for enrichment analyses...
+
+#Now, use group_by from dplyr to combine information for a given bin across all its Hi-C contacts. Here I&#39;ll be pulling out contact, p-value, and bin with minimum FDR, its beta; the median FDR; the maximum beta and its FDR and bin; and a weighted combination method for p-values for species from linear modeling. This is based off of (http://onlinelibrary.wiley.com/doi/10.1111/j.1420-9101.2005.00917.x/full) under the assumption $s2.post is the actual error variance. (forthcoming)
+group_by(hbindf_x2, HID) %&gt;% summarise(min_FDR_bin=HID2[which.min(sp_BH_pval)], min_FDR=min(sp_BH_pval), min_FDR_pval=sp_pval[which.min(sp_BH_pval)], min_FDR_B=sp_beta[which.min(sp_BH_pval)], median_FDR=median(sp_BH_pval),  weighted_Z.ALLvar=pnorm((sum((1/ALLvar)*((qnorm(1-sp_pval))))/sqrt(sum((1/ALLvar)^2))), lower.tail=FALSE), weighted_Z.s2post=pnorm(sum((1/(SE^2))*qnorm(1-sp_pval))/sqrt(sum(1/SE^2)), lower.tail=FALSE), fisher=-2*sum(log(sp_pval)), numcontacts=n(), max_B_bin=HID2[which.max(abs(sp_beta))], max_B_FDR=sp_BH_pval[which.max(abs(sp_beta))], max_B=sp_beta[which.max(abs(sp_beta))]) -&gt; hbin.info
+
+#Now, full_join the hbin.info and Hstreams dfs, incorporating all the information about the hbins in my data:
+full_join(hbin.info, Hstreams, by=&quot;HID&quot;) -&gt; hbin.full.info
+
+#Now I combine the gene overlap tables and the full information tables for the human genes and bins!
+left_join(hgene.hic.overlap, hbin.full.info, by=&quot;HID&quot;) -&gt; humgenes.hic.full
+colnames(humgenes.hic.full)[1:5] &lt;- c(&quot;genes&quot;, &quot;Hchr&quot;, &quot;Hstart&quot;, &quot;Hend&quot;, &quot;Hstrand&quot;) #Fix column names for what was just created
+
+###Now, do the whole thing over again for chimps, and then combine with the human gene overlap before joining on detable!
+#Gets me a cfinal table with a lot of the information concatenated together.
+cbindf &lt;- select(data.filtered, &quot;C1&quot;, &quot;C2&quot;, &quot;ALLvar&quot;, &quot;SE&quot;, &quot;sp_beta&quot;, &quot;sp_pval&quot;, &quot;sp_BH_pval&quot;, &quot;Cdist&quot;) #Pulling out cols C1, C2, ALLvar, SE, sp_beta, sp_pval, sp_BH_pval, and Cdist
+names(cbindf) &lt;- c(&quot;CID&quot;, &quot;CID2&quot;, &quot;ALLvar&quot;, &quot;SE&quot;, &quot;sp_beta&quot;, &quot;sp_pval&quot;, &quot;sp_BH_pval&quot;, &quot;distance&quot;) #I have confirmed that all the CID2s are higher numbered coordinates than the CID1s, the only instance in which this isn&#39;t the case is when the two bins are identical (this should have been filtered out long before now).
+
+cbindf &lt;- cbindf[(which(cbindf$dist!=0)),] #Removes rows from the cbindf that REALLY shouldn&#39;t be there to begin with. There are ~620 hits like this.
+
+#Remembering that all the first mates in the pair are lower coordinates than the second mates:
+#This works for getting the FDR of closest downstream hits for the first column. Technically this would also make these the closest upstream hits for any bins that are UNIQUE and NOT REPEATED to the second column. For unique bins in this column, they have no upstream hits, and this gets their downstream hits. I can do the same thing but on the second set of IDs to get the potential upstream hits for any bins, then do a full_join on the two to get everything! Many of these metrics need to be done on a duplicated df to ensure I have all copies of a bin in one column, but the upstream and downstream analyses need to be run separately.
+group_by(cbindf, CID) %&gt;% summarise(DS_bin=CID2[which.min(distance)], DS_FDR=sp_BH_pval[which.min(distance)], DS_dist=distance[which.min(distance)]) -&gt; cbin1.downstream
+
+group_by(cbindf, CID2) %&gt;% summarise(US_bin=CID[which.min(distance)], US_FDR=sp_BH_pval[which.min(distance)], US_dist=distance[which.min(distance)]) -&gt; cbin2.upstream
+colnames(cbin2.upstream) &lt;- c(&quot;CID&quot;, &quot;US_bin&quot;, &quot;US_FDR&quot;, &quot;US_dist&quot;)
+
+Cstreams &lt;- full_join(cbin1.downstream, cbin2.upstream, by=&quot;CID&quot;)
+
+#Now, need to create a df with all the hits duplicated (but columns reversed) to account for duplicated bins in each column. This is better for any analysis that shares information across the interactions (minimums, sums, means, medians, etc.)
+cbindf.flip &lt;- cbindf[,c(2, 1, 3:7)]
+colnames(cbindf.flip)[1:2] &lt;- c(&quot;CID&quot;, &quot;CID2&quot;)
+cbindf_x2 &lt;- rbind(cbindf[,1:7], cbindf.flip)
+
+#Group by again for chimp hits as was done for humans above.
+group_by(cbindf_x2, CID) %&gt;% summarise(min_FDR_bin=CID2[which.min(sp_BH_pval)], min_FDR=min(sp_BH_pval), min_FDR_B=sp_beta[which.min(sp_BH_pval)], median_FDR=median(sp_BH_pval), weighted_Z.ALLvar=pnorm((sum((1/ALLvar)*((qnorm(1-sp_pval))))/sqrt(sum((1/ALLvar)^2))), lower.tail=FALSE), weighted_Z.s2post=pnorm(sum((1/(SE^2))*qnorm(1-sp_pval))/sqrt(sum(1/SE^2)), lower.tail=FALSE), fisher=-2*sum(log(sp_pval)), numcontacts=n(), max_B_bin=CID2[which.max(abs(sp_beta))], max_B_FDR=sp_BH_pval[which.max(abs(sp_beta))], max_B=sp_beta[which.max(abs(sp_beta))]) -&gt; cbin.info
+
+#Now, full_join the cbin.info and Cstreams dfs, incorporating all the information about the cbins in my data:
+full_join(cbin.info, Cstreams, by=&quot;CID&quot;) -&gt; cbin.full.info
+
+#Now I combine the gene overlap tables and the full information tables for the human genes and bins!
+left_join(cgene.hic.overlap, cbin.full.info, by=&quot;CID&quot;) -&gt; chimpgenes.hic.full
+colnames(chimpgenes.hic.full)[1:5] &lt;- c(&quot;genes&quot;, &quot;Hchr&quot;, &quot;Hstart&quot;, &quot;Hend&quot;, &quot;Hstrand&quot;) #Fix column names for what was just created
+
+#Now, combine chimpgenes.hic.full and humgenes.hic.full before a final left_join on detable:
+full_join(humgenes.hic.full, chimpgenes.hic.full, by=&quot;genes&quot;, suffix=c(&quot;.H&quot;, &quot;.C&quot;)) -&gt; genes.hic.info
+left_join(detable, genes.hic.info, by=&quot;genes&quot;) -&gt; gene.hic.overlap.info
+
+#Clean this dataframe up, removing rows where there is absolutely no Hi-C information for the gene.
+filt.indices &lt;- rowSums(is.na(gene.hic.overlap.info)) #45 NA values are found when there is absolutely no Hi-C information.
+filt.indices &lt;- which(filt.indices==45)
+gene.hic.filt &lt;- gene.hic.overlap.info[-filt.indices,] #Still leaves a solid 8,554 genes. Note that I will have to choose human or chimp values here for many of these columns, as not all of the values are the same (and many are missing in one species relative to the other). In some cases, may be able to just take minimum or maximum value from either in order to get at what I want.</code></pre>
+</div>
+<div id="contact-frequency-extraction" class="section level3">
+<h3>Contact Frequency Extraction</h3>
+<p>In this section, I proceed to create a function in order to extract the Hi-C interaction frequency values for the different types of summaries I’ve made gene overlaps with above.</p>
+<pre class="r"><code>#Get a df with the H and C coordinates of the hits, and the IF values from homer. This subset df makes things easier to extract.
+contacts &lt;- data.frame(h1=data.filtered$H1, h2=data.filtered$H2, c1=data.filtered$C1, c2=data.filtered$C2, A_21792_HIC=data.filtered$`A-21792_norm`, B_28126_HIC=data.filtered$`B-28126_norm`, C_3649_HIC=data.filtered$`C-3649_norm`, D_40300_HIC=data.filtered$`D-40300_norm`, E_28815_HIC=data.filtered$`E-28815_norm`, F_28834_HIC=data.filtered$`F-28834_norm`, G_3624_HIC=data.filtered$`G-3624_norm`, H_3651_HIC=data.filtered$`H-3651_norm`, stringsAsFactors = FALSE)
+
+#Now ensure first member of a pair is always lower than second:
+newH1 &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, contacts$h1))
+newH2 &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, contacts$h2))
+lower.HID &lt;- ifelse(newH1&lt;newH2, contacts$h1, contacts$h2)
+higher.HID2 &lt;- ifelse(newH1&lt;newH2, contacts$h2, contacts$h1)
+contacts$hpair &lt;- paste(lower.HID, higher.HID2, sep=&quot;_&quot;)
+
+newC1 &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, contacts$c1))
+newC2 &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, contacts$c2))
+lower.CID &lt;- ifelse(newC1&lt;newC2, contacts$c1, contacts$c2)
+higher.CID2 &lt;- ifelse(newC1&lt;newC2, contacts$c2, contacts$c1)
+contacts$cpair &lt;- paste(lower.CID, higher.CID2, sep=&quot;_&quot;)
+
+#A function that takes a dataframe (like gene.hic.filt) and two columns from the dataframe to create a pair vector for the given interaction. First ensures the first bin in a pair is always lowest to make this easier. Then extracts the IF values for that vector from the contacts df created above. This provides me with the appropriate Hi-C data values for the different bin classes we&#39;re examining here, so that I can later test them with linear modeling to quantify their effect on expression.
+IF.extractor &lt;- function(dataframe, col1, col2, contacts, species, strand=FALSE){
+  new1 &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, dataframe[,col1]))
+  if(strand==FALSE){#In the case where I&#39;m not worried about strand, I just work with the second column selected.
+    new2 &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, dataframe[,col2]))
+    lower1 &lt;- ifelse(new1&lt;new2, dataframe[,col1], dataframe[,col2])
+    higher2 &lt;- ifelse(new1&lt;new2, dataframe[,col2], dataframe[,col1]) #Fix all the columns first
+    if(species==&quot;H&quot;){ #Then depending on species create the pair column and merge to contact info.
+      dataframe[,&quot;hpair&quot;] &lt;- paste(lower1, higher2, sep=&quot;_&quot;)
+      finaldf &lt;- left_join(dataframe, contacts[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;, &quot;hpair&quot;)], by=&quot;hpair&quot;)
+    }
+    else if(species==&quot;C&quot;){
+      dataframe[,&quot;cpair&quot;] &lt;- paste(lower1, higher2, sep=&quot;_&quot;)
+      finaldf &lt;- left_join(dataframe, contacts[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;, &quot;cpair&quot;)], by=&quot;cpair&quot;)
+    }
+  }
+  else if(strand==TRUE){#If dealing with upstream and downstream hits, need to do things separately for genes on the + and - strand.
+    if(species==&quot;H&quot;){
+      US &lt;- ifelse(dataframe[,&quot;Hstrand.H&quot;]==&quot;+&quot;, dataframe[,&quot;US_bin.H&quot;], dataframe[,&quot;DS_bin.H&quot;]) #Obtain upstream bins depending on strand.
+      new2 &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, US)) #Now rearrange the pairs to ensure regardless of stream we can find the pair (first mate lower coordinates than 2nd).
+      lower1 &lt;- ifelse(new1&lt;new2, dataframe[,col1], US)
+      higher2 &lt;- ifelse(new1&lt;new2, US, dataframe[,col1])
+      dataframe[,&quot;hpair&quot;] &lt;- paste(lower1, higher2, sep=&quot;_&quot;)
+      dataframe[,&quot;USFDR&quot;] &lt;- ifelse(dataframe[,&quot;Hstrand.H&quot;]==&quot;+&quot;, dataframe[,&quot;US_FDR.H&quot;], dataframe[,&quot;DS_FDR.H&quot;])
+      finaldf &lt;- left_join(dataframe, contacts[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;, &quot;hpair&quot;)], by=&quot;hpair&quot;)
+    }
+    else if(species==&quot;C&quot;){
+      US &lt;- ifelse(dataframe[,&quot;Hstrand.C&quot;]==&quot;+&quot;, dataframe[,&quot;US_bin.C&quot;], dataframe[,&quot;DS_bin.C&quot;]) #Obtain upstream bins depending on strand.
+      new2 &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, US)) #Now rearrange the pairs to ensure regardless of stream we can find the pair (first mate lower coordinates than 2nd).
+      lower1 &lt;- ifelse(new1&lt;new2, dataframe[,col1], US)
+      higher2 &lt;- ifelse(new1&lt;new2, US, dataframe[,col1])
+      dataframe[,&quot;cpair&quot;] &lt;- paste(lower1, higher2, sep=&quot;_&quot;)
+      dataframe[,&quot;USFDR&quot;] &lt;- ifelse(dataframe[,&quot;Hstrand.C&quot;]==&quot;+&quot;, dataframe[,&quot;US_FDR.C&quot;], dataframe[,&quot;DS_FDR.C&quot;])
+      finaldf &lt;- left_join(dataframe, contacts[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;, &quot;cpair&quot;)], by=&quot;cpair&quot;)
+    }
+  }
+  #before finally returning, remove rows where we don&#39;t have full Hi-C data.
+  finaldf &lt;- finaldf[complete.cases(finaldf[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)]),]
+  return(finaldf)
+}
+
+#Now I can use the IF.extractor function to make a number of different dataframes for actually testing different IF values with the RPKM expression values.
+h_minFDR &lt;- IF.extractor(gene.hic.filt, &quot;HID&quot;, &quot;min_FDR_bin.H&quot;, contacts, &quot;H&quot;)
+c_minFDR &lt;- IF.extractor(gene.hic.filt, &quot;CID&quot;, &quot;min_FDR_bin.C&quot;, contacts, &quot;C&quot;)
+h_maxB &lt;- IF.extractor(gene.hic.filt, &quot;HID&quot;, &quot;max_B_bin.H&quot;, contacts, &quot;H&quot;)
+c_maxB &lt;- IF.extractor(gene.hic.filt, &quot;CID&quot;, &quot;max_B_bin.C&quot;, contacts, &quot;C&quot;)
+h_US &lt;- IF.extractor(gene.hic.filt, &quot;HID&quot;, &quot;US_bin.H&quot;, contacts, &quot;H&quot;, TRUE)
+c_US &lt;- IF.extractor(gene.hic.filt, &quot;CID&quot;, &quot;US_bin.C&quot;, contacts, &quot;C&quot;, TRUE)
+
+#Write these out so they can be permuted upon on midway2.
+fwrite(h_minFDR, &quot;~/Desktop/HiC_covs/h_minFDR&quot;, quote = FALSE, sep = &quot;\t&quot;, na = &quot;NA&quot;, col.names = TRUE)
+fwrite(c_minFDR, &quot;~/Desktop/HiC_covs/c_minFDR&quot;, quote = FALSE, sep = &quot;\t&quot;, na = &quot;NA&quot;, col.names = TRUE)
+fwrite(h_maxB, &quot;~/Desktop/HiC_covs/h_maxB&quot;, quote = FALSE, sep = &quot;\t&quot;, na = &quot;NA&quot;, col.names = TRUE)
+fwrite(c_maxB, &quot;~/Desktop/HiC_covs/c_maxB&quot;, quote = FALSE, sep = &quot;\t&quot;, na = &quot;NA&quot;, col.names = TRUE)
+fwrite(h_US, &quot;~/Desktop/HiC_covs/h_US&quot;, quote = FALSE, sep = &quot;\t&quot;, na = &quot;NA&quot;, col.names = TRUE)
+fwrite(c_US, &quot;~/Desktop/HiC_covs/c_US&quot;, quote = FALSE, sep = &quot;\t&quot;, na = &quot;NA&quot;, col.names = TRUE)</code></pre>
+<p>Later I will come back to these data frames and join each again on the RPKM table by genes, thereafter carrying out linear modeling before and after correcting expression values for the Hi-C data, giving a sense of how much contacts affect expression. First though, I’ll look more simply for enrichment of DHi-C in DE genes using a variety of different metrics to call DHi-C.</p>
+</div>
+<div id="differential-expression-differential-hi-c-enrichment-analyses" class="section level3">
+<h3>Differential Expression-Differential Hi-C Enrichment Analyses</h3>
+<p>I now look to see if genes that are differentially expressed are also differential in Hi-C contacts (DHi-C). That is to say, are differentially expressed genes enriched in their overlapping bins for Hi-C contacts that are also differential between the species? To do this I utilize p-values from my prior linear modeling as well as previous RNA-seq analysis. I construct a function to calculate proportions of DE and DHi-C genes, as well as a function to plot this out in a variety of different ways.</p>
+<pre class="r"><code>####Enrichment analyses!
+#A function for calculating proportion of DE genes that are DHi-C under a variety of different paradigms. Accounts for when no genes are DHi-C and when all genes are DHi-C. Returns the proportion of DE genes that are also DHi-C, as well as the expected proportion based on conditional probability alone.
+prop.calculator &lt;- function(de.vec, hic.vec, i, k){
+  my.result &lt;- data.frame(prop=NA, exp.prop=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
+  de.vec &lt;- ifelse(de.vec&lt;=i, 1, 0)
+  hic.vec &lt;- ifelse(hic.vec&lt;=k, 1, 0)
+  if(sum(hic.vec, na.rm=TRUE)==0){#The case where no genes show up as DHi-C.
+    my.result[1,] &lt;- c(0, 0, 0, sum(de.vec==0, na.rm=TRUE), sum(de.vec==1, na.rm=TRUE), 0, 0) #Since no genes are DHi-C, the proportion is 0 and our expectation is 0, set p-val=0 since it&#39;s irrelevant.
+  }
+  else if(sum(hic.vec)==length(hic.vec)){ #The case where every gene shows up as DHi-C
+    my.result[1,] &lt;- c(1, 1, 0, 0, 0, sum(hic.vec==1&amp;de.vec==0, na.rm = TRUE), sum(de.vec==1&amp;hic.vec==1, na.rm=TRUE)) #If every gene is DHi-C, the observed proportion of DE genes DHi-C is 1, and the expected proportion of DE genes also DHi-C would also be 1 (all DE genes are DHi-C, since all genes are). Again set p-val to 0 since irrelevant comparison.
+  }
+  else{#The typical case, where we get an actual table
+    mytable &lt;- table(as.data.frame(cbind(de.vec, hic.vec)))
+    my.result[1,1] &lt;- mytable[2,2]/sum(mytable[2,]) #The observed proportion of DE genes that are also DHi-C. # that are both/total # DE
+    my.result[1,2] &lt;- (((sum(mytable[2,])/sum(mytable))*((sum(mytable[,2])/sum(mytable))))*sum(mytable))/sum(mytable[2,]) #The expected proportion: (p(DE) * p(DHiC)) * total # genes / # DE genes
+    my.result[1,3] &lt;- chisq.test(mytable)$p.value
+    my.result[1,4] &lt;- mytable[1,1]
+    my.result[1,5] &lt;- mytable[2,1]
+    my.result[1,6] &lt;- mytable[1,2]
+    my.result[1,7] &lt;- mytable[2,2]
+  }
+  return(my.result)
+}
+
+#This is a function that computes observed and expected proportions of DE and DHiC enrichments,  and spits out a variety of different visualizations for them. As input it takes a dataframe, the names of its DHiC and DE p-value columns, and a name to represent the type of Hi-C contact summary for the gene that ends up on the x-axis of all the plots.
+enrichment.plotter &lt;- function(df, HiC_col, DE_col, xlab, i=c(0.01, 0.05, 0.1), k=seq(0.01, 1, 0.01)){
+  enrich.table &lt;- data.frame(DEFDR = c(rep(i[1], 100), rep(i[2], 100), rep(i[3], 100)), DHICFDR=rep(k, 3), prop.obs=NA, prop.exp=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
+  for(de.FDR in i){
+    for(hic.FDR in k){
+      enrich.table[which(enrich.table$DEFDR==de.FDR&amp;enrich.table$DHICFDR==hic.FDR), 3:9] &lt;- prop.calculator(df[,HiC_col], df[,DE_col], de.FDR, hic.FDR)
+    }
+  }
+  des.enriched &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=prop.obs*100, group=as.factor(DEFDR), color=as.factor(DEFDR))) +geom_line()+ geom_line(aes(y=prop.exp*100), linetype=&quot;dashed&quot;, size=0.5) + ggtitle(&quot;Enrichment of DHiC in DE Genes&quot;) + xlab(xlab) + ylab(&quot;Proportion of DE genes that are DHiC&quot;) + guides(color=guide_legend(title=&quot;FDR for DE Genes&quot;))
+  dhics.enriched &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=Dboth/(Dboth+DHiC), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_line() + geom_line(aes(y=(((((DE+Dboth)/(Dneither+DE+DHiC+Dboth))*((DHiC+Dboth)/(Dneither+DE+DHiC+Dboth)))*(Dneither+DE+DHiC+Dboth))/(DHiC+Dboth))), linetype=&quot;dashed&quot;) + ylab(&quot;Proportion of DHi-C genes that are DE&quot;) +xlab(xlab) + ggtitle(&quot;Enrichment of DE in DHiC Genes&quot;)
+  joint.enriched &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=Dboth/(Dneither+DE+DHiC+Dboth), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_line() + ylab(&quot;Proportion of ALL Genes both DE &amp; DHi-C&quot;) + xlab(xlab) + geom_line(aes(y=((DE+Dboth)/(Dneither+DE+DHiC+Dboth))*((DHiC+Dboth)/(Dneither+DE+DHiC+Dboth))), linetype=&quot;dashed&quot;) + ggtitle(&quot;Enrichment of Joint DE &amp; DHi-C in All Genes&quot;)
+  chisq.p &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=-log10(chisq.p), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_point() + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + ggtitle(&quot;Chi-squared Test P-values for Enrichment of DHiC in DE Genes&quot;) + xlab(xlab) + ylab(&quot;-log10(chi-squared p-values)&quot;)
+  print(des.enriched)
+  print(dhics.enriched)
+  print(joint.enriched)
+  print(chisq.p)
+}
+
+#For most of these, using the gene.hic.filt df is sufficient as their Hi-C FDR numbers are the same. For the upstream genes it&#39;s a little more complicated because gene.hic.filt doesn&#39;t incorporate strand information on the genes, so use the specific US dfs for that, with the USFDR column.
+enrichment.plotter(gene.hic.filt, &quot;min_FDR.H&quot;, &quot;adj.P.Val&quot;, &quot;Minimum FDR of Hi-C Contacts Overlapping Gene, Human&quot;)</code></pre>
+<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-2.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-3.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;min_FDR.C&quot;, &quot;adj.P.Val&quot;, &quot;Minimum FDR of Hi-C Contacts Overlapping Gene, Chimp&quot;)</code></pre>
+<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-5.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-6.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-7.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(h_US, &quot;USFDR&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Closest Upstream Hi-C Contact Overlapping Gene, Human&quot;)</code></pre>
+<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-9.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-10.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-11.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-12.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(c_US, &quot;USFDR&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Closest Upstream Hi-C Contact Overlapping Gene, Chimp&quot;)</code></pre>
+<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-13.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-14.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-15.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-16.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;max_B_FDR.H&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Hi-C Contact Overlapping Gene w/ Strongest Effect Size, Human&quot;)</code></pre>
+<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-17.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-18.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-19.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-20.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;max_B_FDR.C&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Hi-C Contact Overlapping Gene w/ Strongest Effect Size, Chimp&quot;)</code></pre>
+<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-21.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-22.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-23.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-24.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;median_FDR.H&quot;, &quot;adj.P.Val&quot;, &quot;Median FDR of Hi-C Contacts Overlapping Gene, Human&quot;)</code></pre>
+<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-25.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-26.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-27.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-28.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;median_FDR.C&quot;, &quot;adj.P.Val&quot;, &quot;Median FDR of Hi-C Contacts Overlapping Gene, Chimp&quot;)</code></pre>
+<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
+
+Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-29.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-30.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-31.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-32.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;weighted_Z.s2post.H&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Human&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-33.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-34.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-35.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-36.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;weighted_Z.s2post.C&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Chimp&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-37.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-38.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-39.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-40.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;weighted_Z.ALLvar.H&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Human&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-41.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-42.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-43.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-44.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;weighted_Z.ALLvar.C&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Chimp&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-45.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-46.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-47.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-48.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="how-well-does-hi-c-data-explain-expression-data" class="section level3">
+<h3>How well does Hi-C data explain expression data?</h3>
+<p>In this next section I “regress out” the effect of Hi-C contacts from their overlapping genes’ RPKM expression values, comparing a linear model run on the base values to one run on the residuals of regressing out Hi-C data. Comparing the p-values before and after this regression can give some sense of whether the differential expression is being driven by differential Hi-C contacts.</p>
+<pre class="r"><code>####Linear modeling differences.
+left_join(gene.hic.filt, RPKM, by=&quot;genes&quot;) -&gt; final.table #Left join on penultimate table; only care about those genes which we have Hi-C data for.
+rownames(final.table) &lt;- final.table$genes
+#left_join(h_minFDR, RPKM, by=&quot;genes&quot;) -&gt; minFDRtable
+
+###A function that runs a linear model, both with and without Hi-C corrected expression values, and returns a dataframe with the p-values from both models for visualization. Also returns spearman and pearson correlations.
+lmgraph &lt;- function(exprs, cov_matrix, meta_df){
+  hic_present &lt;- sapply(1:nrow(cov_matrix), function(i) !any(is.na(cov_matrix[i,]))) #First, remove any rows w/ missing Hi-C data.
+  exprs &lt;- data.matrix(exprs[hic_present,]) #Filter expression with this
+  cov_matrix &lt;- data.matrix(cov_matrix[hic_present,]) #Filter Hi-C data with this
+  
+  #Now, prepare to run the actual models. First run a model w/ ONLY Hi-C as a covariate to evaluate the effect of Hi-C on expression:
+  design &lt;- model.matrix(~1+meta_df$SP+meta_df$SX) #This will be for later. Not useful here.
+  resid_hic &lt;- array(0, dim=c(nrow(exprs), ncol(cov_matrix))) #Initialize a dataframe for storing the residuals.
+  for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
+   resid_hic[i,] &lt;- lm(exprs[i,]~cov_matrix[i,])$resid 
+  }
+  lmFit(exprs, design=design) %&gt;% eBayes(.) %&gt;% topTable(., coef=2, adjust=&quot;BH&quot;, number=Inf, sort.by=&quot;none&quot;) -&gt; fit_before
+  lmFit(resid_hic, design=design) %&gt;% eBayes(.) %&gt;% topTable(., coef=2, adjust=&quot;BH&quot;, number=Inf, sort.by=&quot;none&quot;) -&gt; fit_after
+  myresult &lt;- as.data.frame(cbind(fit_before$adj.P.Val, fit_after$adj.P.Val))
+  colnames(myresult) &lt;- c(&quot;before&quot;, &quot;after&quot;)
+  corrs_spearman &lt;- sapply(1:nrow(exprs), function(index) {
+  cor(exprs[index,], cov_matrix[index,], method = &quot;spearman&quot;) 
+})
+corrs_pearson &lt;- sapply(1:nrow(exprs), function(index) {
+  cor(exprs[index,], cov_matrix[index,], method = &quot;pearson&quot;) 
+})
+  myresult$corr.spear &lt;- corrs_spearman
+  myresult$corr.pear &lt;- corrs_pearson
+  return(myresult)
+}
+
+#Join all of the previously-made Hi-C interaction frequency tables to the RPKM table by genes, to obtain RPKM values.
+hmin &lt;- left_join(h_minFDR, RPKM, by=&quot;genes&quot;)
+cmin &lt;- left_join(c_minFDR, RPKM, by=&quot;genes&quot;)
+hmaxB &lt;- left_join(h_maxB, RPKM, by=&quot;genes&quot;)
+cmaxB &lt;- left_join(c_maxB, RPKM, by=&quot;genes&quot;)
+hUS &lt;- left_join(h_US, RPKM, by=&quot;genes&quot;)
+cUS &lt;- left_join(c_US, RPKM, by=&quot;genes&quot;)
+
+
+h_minFDR_pvals &lt;- lmgraph(hmin[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)], hmin[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)], meta.data)
+c_minFDR_pvals &lt;- lmgraph(cmin[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)], cmin[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)], meta.data)
+h_maxB_pvals &lt;- lmgraph(hmaxB[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)], hmaxB[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)], meta.data)
+c_maxB_pvals &lt;- lmgraph(cmaxB[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)], cmaxB[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)], meta.data)
+h_US_pvals &lt;- lmgraph(hUS[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)], hUS[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)], meta.data)
+c_US_pvals &lt;- lmgraph(cUS[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)], cUS[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)], meta.data)
+
+#Was expecting correlations here to have more of a distinct pattern off the diagonal, can try subsetting to looking at just species-specific or just conserved Hi-C contacts to see if there&#39;s a pattern there.
+ggplot(data=h_minFDR_pvals, aes(x=-log10(before), y=-log10(after), color=corr.pear)) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + geom_vline(xintercept=-log10(0.05), color=&quot;red&quot;) + geom_abline(slope=1, intercept=0, color=&quot;green&quot;, linetype=&quot;dashed&quot;) + ggtitle(&quot;Evidence for DE before vs. after regressing out Hi-C min. FDR (H)&quot;) + xlab(&quot;-log10(p-value of DE before Hi-C regression)&quot;) + ylab(&quot;-log10(p-value of DE after Hi-C regression&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Linear%20modeling%20magic-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=h_maxB_pvals, aes(x=-log10(before), y=-log10(after), color=corr.spear)) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + geom_vline(xintercept=-log10(0.05), color=&quot;red&quot;) + geom_abline(slope=1, intercept=0, color=&quot;green&quot;, linetype=&quot;dashed&quot;) + ggtitle(&quot;Evidence for DE before vs. after regressing out Hi-C max beta (H)&quot;) + xlab(&quot;-log10(p-value of DE before Hi-C regression)&quot;) + ylab(&quot;-log10(p-value of DE after Hi-C regression&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Linear%20modeling%20magic-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=h_US_pvals, aes(x=-log10(before), y=-log10(after), color=corr.pear)) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + geom_vline(xintercept=-log10(0.05), color=&quot;red&quot;) + geom_abline(slope=1, intercept=0, color=&quot;green&quot;, linetype=&quot;dashed&quot;) + ggtitle(&quot;Evidence for DE before vs. after regressing out Hi-C US bin FDR (H)&quot;) + xlab(&quot;-log10(p-value of DE before Hi-C regression)&quot;) + ylab(&quot;-log10(p-value of DE after Hi-C regression&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Linear%20modeling%20magic-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#I now proceed to visualize the difference in p-values for expression before and after &quot;correcting&quot; for the Hi-C data. I am hoping to see many hits in the bottom right quadrant of the following plots, indicating genes that showed up as DE before Hi-C correction, but not after.
+ggplot(data=h_minFDR_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + geom_vline(xintercept=-log10(0.05), color=&quot;red&quot;) + geom_abline(slope=1, intercept=0, color=&quot;green&quot;, linetype=&quot;dashed&quot;) + ggtitle(&quot;Evidence for DE before vs. after regressing out Hi-C min. FDR (H)&quot;) + xlab(&quot;-log10(p-value of DE before Hi-C regression)&quot;) + ylab(&quot;-log10(p-value of DE after Hi-C regression&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Linear%20modeling%20magic-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=h_maxB_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + geom_vline(xintercept=-log10(0.05), color=&quot;red&quot;) + geom_abline(slope=1, intercept=0, color=&quot;green&quot;, linetype=&quot;dashed&quot;) + ggtitle(&quot;Evidence for DE before vs. after regressing out Hi-C max beta (H)&quot;) + xlab(&quot;-log10(p-value of DE before Hi-C regression)&quot;) + ylab(&quot;-log10(p-value of DE after Hi-C regression&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Linear%20modeling%20magic-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=h_US_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + geom_vline(xintercept=-log10(0.05), color=&quot;red&quot;) + geom_abline(slope=1, intercept=0, color=&quot;green&quot;, linetype=&quot;dashed&quot;) + ggtitle(&quot;Evidence for DE before vs. after regressing out Hi-C US bin FDR (H)&quot;) + xlab(&quot;-log10(p-value of DE before Hi-C regression)&quot;) + ylab(&quot;-log10(p-value of DE after Hi-C regression&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Linear%20modeling%20magic-6.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<!-- Insert the session information into the document -->
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.4.0 (2017-04-21)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: OS X El Capitan 10.11.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] compiler  stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+ [1] bindrcpp_0.2        bedr_1.0.4          forcats_0.2.0      
+ [4] purrr_0.2.4         readr_1.1.1         tibble_1.3.4       
+ [7] tidyverse_1.2.1     edgeR_3.20.1        RColorBrewer_1.1-2 
+[10] heatmaply_0.13.0    viridis_0.4.0       viridisLite_0.2.0  
+[13] stringr_1.2.0       gplots_3.0.1        Hmisc_4.0-3        
+[16] Formula_1.2-2       survival_2.41-3     lattice_0.20-35    
+[19] dplyr_0.7.4         plotly_4.7.1        ggplot2_2.2.1      
+[22] reshape2_1.4.2      data.table_1.10.4-3 tidyr_0.7.2        
+[25] plyr_1.8.4          limma_3.34.3       
+
+loaded via a namespace (and not attached):
+ [1] colorspace_1.3-2     class_7.3-14         modeltools_0.2-21   
+ [4] mclust_5.4           rprojroot_1.2        htmlTable_1.11.0    
+ [7] futile.logger_1.4.3  base64enc_0.1-3      rstudioapi_0.7      
+[10] flexmix_2.3-14       mvtnorm_1.0-6        lubridate_1.7.1     
+[13] xml2_1.1.1           codetools_0.2-15     splines_3.4.0       
+[16] R.methodsS3_1.7.1    mnormt_1.5-5         robustbase_0.92-8   
+[19] knitr_1.17           jsonlite_1.5         broom_0.4.3         
+[22] cluster_2.0.6        kernlab_0.9-25       R.oo_1.21.0         
+[25] httr_1.3.1           backports_1.1.1      assertthat_0.2.0    
+[28] Matrix_1.2-12        lazyeval_0.2.1       cli_1.0.0           
+[31] acepack_1.4.1        htmltools_0.3.6      tools_3.4.0         
+[34] gtable_0.2.0         glue_1.2.0           Rcpp_0.12.14        
+[37] cellranger_1.1.0     trimcluster_0.1-2    gdata_2.18.0        
+[40] nlme_3.1-131         iterators_1.0.8      fpc_2.1-10          
+[43] psych_1.7.8          testthat_1.0.2       rvest_0.3.2         
+[46] gtools_3.5.0         dendextend_1.6.0     DEoptimR_1.0-8      
+[49] MASS_7.3-47          scales_0.5.0         TSP_1.1-5           
+[52] hms_0.4.0            parallel_3.4.0       lambda.r_1.2        
+[55] yaml_2.1.15          gridExtra_2.3        rpart_4.1-11        
+[58] latticeExtra_0.6-28  stringi_1.1.6        gclus_1.3.1         
+[61] foreach_1.4.3        checkmate_1.8.5      seriation_1.2-2     
+[64] caTools_1.17.1       rlang_0.1.4          pkgconfig_2.0.1     
+[67] prabclus_2.2-6       bitops_1.0-6         evaluate_0.10.1     
+[70] bindr_0.1            labeling_0.3         htmlwidgets_0.9     
+[73] magrittr_1.5         R6_2.2.2             haven_1.1.0         
+[76] whisker_0.3-2        foreign_0.8-69       nnet_7.3-12         
+[79] modelr_0.1.1         crayon_1.3.4         futile.options_1.0.0
+[82] KernSmooth_2.23-15   rmarkdown_1.8        locfit_1.5-9.1      
+[85] grid_3.4.0           readxl_1.0.0         git2r_0.19.0        
+[88] digest_0.6.12        diptest_0.75-7       webshot_0.5.0       
+[91] VennDiagram_1.6.18   R.utils_2.6.0        stats4_3.4.0        
+[94] munsell_0.4.3        registry_0.5        </code></pre>
+</div>
+
+<hr>
+<p>
+    This <a href="http://rmarkdown.rstudio.com">R Markdown</a> site was created with <a href="https://github.com/jdblischak/workflowr">workflowr</a>
+</p>
+<hr>
+
+<!-- To enable disqus, uncomment the section below and provide your disqus_shortname -->
+
+<!-- disqus
+  <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'rmarkdown'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+-->
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
