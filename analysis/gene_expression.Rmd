@@ -1,0 +1,654 @@
+---
+title: "Gene Expression"
+author: "Ittai Eres"
+date: 2017-11-01
+output: html_document
+---
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+<!-- Add your analysis here -->
+```{r library loading, include=FALSE, echo=FALSE}
+#First, get necessary packages.
+library(limma)
+library(plyr)
+library(tidyr)
+library(data.table)
+library(reshape2)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(Hmisc)
+library(gplots)
+library(stringr)
+library(heatmaply)
+library(RColorBrewer)
+library(edgeR)
+library(tidyverse)
+library(compiler)
+library(bedr)
+enableJIT(3)
+```
+###Overlap Between Hi-C Data and Orthogonal Gene Expression Data
+In this section I find the overlap between the final filtered set of Hi-C significant hits and genes picked up on by an orthogonal RNA-seq experiment in the same set of cell lines. I utilize an in-house curated set of orthologous genes between humans and chimpanzees. Given that the resolution of the data is 10kb, I choose a simple and conservative approach and use a 1-nucleotide interval at the start of each gene as a proxy for the promoter. I then take a conservative pass and only use genes that had direct overlap with a bin from the Hi-C significant hits data, with more motivation explained below.
+```{r Overlap between Hi-C data and orthogonal gene expression data}
+#Now, read in filtered data from linear_modeling_QC.Rmd.
+data.filtered <- fread("~/Desktop/Hi-C/data.4.filtered.txt", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress=FALSE)
+meta.data <- data.frame("SP"=c("H", "H", "C", "C", "H", "H", "C", "C"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2))
+
+#####GENE Hi-C Hit overlap: First, I obtain and rearrange the necessary files to get genes from both species and their overlaps with Hi-C bins.
+#Read in other necessary files. The table of DE genes from limma analysis, RPKM values for these genes across the individuals, and human and chimp orthologous genes from the meta ortho exon trios file. Then rearrange the columns of humgenes and chimpgenes to use group_by on them.
+detable <- fread("~/Desktop/gene_expression/Outputs/DE_table_no_RIN.txt", stringsAsFactors = FALSE, header=TRUE, data.table=FALSE)
+RPKM <- fread("~/Desktop/gene_expression/Outputs/RPKMS_table.txt", stringsAsFactors = FALSE, header=TRUE, data.table=FALSE)
+humgenes <- fread("~/Desktop/2017_July_ortho (1)/Human_orthoexon_extended_info.txt", stringsAsFactors = FALSE, header=TRUE, data.table=FALSE)
+chimpgenes <- fread("~/Desktop/2017_July_ortho (1)/Chimp_orthoexon_extended_info.txt", stringsAsFactors = FALSE, header=TRUE, data.table=FALSE)
+humgenes <- as.data.frame(humgenes[,c(1,5:8)])
+chimpgenes <- as.data.frame(chimpgenes[,c(1,5:8)])
+colnames(humgenes) <- c("genes", "Hchr", "Hstart", "Hend", "Hstrand")
+colnames(chimpgenes) <- c("genes", "Cchr", "Cstart", "Cend", "Cstrand")
+humgenes$Hchr <- paste("chr", humgenes$Hchr, sep="") #All properly formatted now!
+
+colnames(RPKM) <- c("genes", "C-3649", "G-3624", "H-3651", "D-40300", "F-28834", "B-28126", "E-28815", "A-21792")
+
+#Bedtools groupby appears to have not worked properly to create files of single TSSs for genes from the meta ortho exons file, but this totally does! I've also utilized dplyr's group_by on the original file as well to ensure the same results. Now just making gene BED files that are 1-nt overlap at the very beginning of the first exon. Since I maintain strand information and will utilize it in bedtools closest-to, I am not concerned about whether the nt overlap goes the right direction or not.
+group_by(humgenes, genes) %>% summarise(Hchr=unique(Hchr), Hstart=min(Hstart), Hstrand=unique(Hstrand)) -> humgenes
+group_by(chimpgenes, genes) %>% summarise(Cchr=unique(Cchr), Cstart=min(Cstart), Cstrand=unique(Cstrand)) -> chimpgenes
+
+#Now add in an extra column placeholder so strand is in the right column for bedtools, and rearrange columns as well for bedtools' ease.
+humgenes$placeholder <- "."
+chimpgenes$placeholder <- "."
+humgenes$Hend <- humgenes$Hstart+1
+chimpgenes$Cend <- chimpgenes$Cstart+1
+humgenes <- humgenes[,c(2:3, 6, 1, 5, 4)]
+chimpgenes <- chimpgenes[,c(2:3, 6, 1, 5, 4)]
+
+#Turn off scientific notation for writing the file out for bedtools to be able to use correctly.
+options(scipen=999)
+#Now, prep bed files from the filtered data for each bin, in order to run bedtools-closest on them with the human and chimp gene data. This is for getting each bin's proximity to TSS by overlapping with the dfs just made (humgenes and chimpgenes). I don't care about getting rid of duplicates yet with these because I will eventually use them to place the values back into the df in full, for each bin in every interaction.
+hbin1 <- data.frame(chr=data.filtered$Hchr, start=as.numeric(gsub("chr.*-", "", data.filtered$H1)), end=as.numeric(gsub("chr.*-", "", data.filtered$H1))+10000)
+hbin2 <- data.frame(chr=data.filtered$Hchr, start=as.numeric(gsub("chr.*-", "", data.filtered$H2)), end=as.numeric(gsub("chr.*-", "", data.filtered$H2))+10000)
+cbin1 <- data.frame(chr=data.filtered$Cchr, start=as.numeric(gsub("chr.*-", "", data.filtered$C1)), end=as.numeric(gsub("chr.*-", "", data.filtered$C1))+10000)
+cbin2 <- data.frame(chr=data.filtered$Cchr, start=as.numeric(gsub("chr.*-", "", data.filtered$C2)), end=as.numeric(gsub("chr.*-", "", data.filtered$C2))+10000)
+
+#It's worth doing this for taking a gene-centric approach. Since I'm just trying to classify if DE genes are overlapping a bin that's DHi-C or not RN, here I get rid of duplicates, just to make the bedtools sorting faster and easier to do.
+hbins <- rbind(hbin1[!duplicated(hbin1),], hbin2[!duplicated(hbin2),])
+hbins <- hbins[!duplicated(hbins),]
+cbins <- rbind(cbin1[!duplicated(cbin1),], cbin2[!duplicated(cbin2),])
+cbins <- cbins[!duplicated(cbins),]
+
+#Now, write all of these files out for analysis with bedtools.
+write.table(hbin1, "~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/hbin1.bed", quote = FALSE, sep="\t", row.names = FALSE, col.names=FALSE)
+write.table(hbin2, "~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/hbin2.bed", quote = FALSE, sep="\t", row.names = FALSE, col.names=FALSE)
+write.table(cbin1, "~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/cbin1.bed", quote = FALSE, sep="\t", row.names = FALSE, col.names=FALSE)
+write.table(cbin2, "~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/cbin2.bed", quote = FALSE, sep="\t", row.names = FALSE, col.names=FALSE)
+write.table(humgenes, "~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/humgenes.bed", quote=FALSE, sep="\t", row.names=FALSE, col.names=FALSE)
+write.table(chimpgenes, "~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/chimpgenes.bed", quote=FALSE, sep="\t", row.names=FALSE, col.names=FALSE)
+write.table(hbins, "~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/hbins.bed", quote=FALSE, sep="\t", row.names=FALSE, col.names=FALSE)
+write.table(cbins, "~/Desktop/gene_expression/10kb_filt_overlaps/unsorted/cbins.bed", quote=FALSE, sep="\t", row.names=FALSE, col.names=FALSE)
+options(scipen=0)
+
+#Read in new, simpler bedtools closest files for genes. This is after running two commands, after sorting the files w/ sort -k1,1 -k2,2n in.bed > out.bed:
+#bedtools closest -D a -a cgenes.sorted.bed -b cbins.sorted.bed > cgene.hic.overlap
+#bedtools closest -D a -a hgenes.sorted.bed -b hbins.sorted.bed > hgene.hic.overlap
+hgene.hic <- fread("~/Desktop/gene_expression/10kb_filt_overlaps/hgene.hic.overlap", header=FALSE, stringsAsFactors = FALSE, data.table=FALSE)
+cgene.hic <- fread("~/Desktop/gene_expression/10kb_filt_overlaps/cgene.hic.overlap", header=FALSE, stringsAsFactors = FALSE, data.table=FALSE)
+
+#Start with a conservative pass--only take those genes that had an actual overlap with a bin, not ones that were merely close to one. Allowing some leeway to include genes that are within 1kb, 2kb, 3kb etc. of a Hi-C bin adds an average of ~800 genes per 1kb. We can also examine the distribution manually to motivate this decision:
+quantile(abs(hgene.hic$V10), probs=seq(0, 1, 0.025))
+quantile(abs(cgene.hic$V10), probs=seq(0, 1, 0.025))
+```
+And we can see that the majority of the genes (57.5%) have direct overlap with a bin. I'll thus start with one very conservative set with only genes that have direct overlap with a bin. Later I may return to this and add and another slightly more lenient bin capturing ~10% more of the genes by allowing +/- 5kb of wiggle room.
+
+###Linear Modeling Annotation
+In this next section I simply add information obtained from linear modeling on the Hi-C interaction frequencies to the appropriate genes having overlap with Hi-C bins. Because one Hi-C bin frequently shows up many times in the data, this means I must choose some kind of summary for Hi-C contact frequencies and linear modeling annotations for each gene. I toy with a variety of these summaries here, including choosing the minimum FDR contact, the maximum beta contact, the upstream contact, or summarizing all a bin's contacts with the weighted Z-combine method or median FDR values.
+```{r Linear Modeling Annotation}
+hgene.hic.overlap <- filter(hgene.hic, V10==0) #Still leaves a solid ~26k genes.
+cgene.hic.overlap <- filter(cgene.hic, V10==0) #Still leaves a solid ~26k genes.
+
+#Rearrange columns and create another column of the bin ID.
+hgene.hic.overlap <- hgene.hic.overlap[,c(4, 7:9, 6)]
+hgene.hic.overlap$HID <- paste(hgene.hic.overlap$V7, hgene.hic.overlap$V8, sep="-")
+cgene.hic.overlap <- cgene.hic.overlap[,c(4, 7:9, 6)]
+cgene.hic.overlap$CID <- paste(cgene.hic.overlap$V7, cgene.hic.overlap$V8, sep="-")
+
+#Gets me an hfinal table with a lot of the information concatenated together--now need the same thing for chimps, only to get the n contacts (since this could differ!)
+hbindf <- select(data.filtered, "H1", "H2", "ALLvar", "SE", "sp_beta", "sp_pval", "sp_BH_pval", "Hdist")
+names(hbindf) <- c("HID", "HID2", "ALLvar", "SE", "sp_beta", "sp_pval", "sp_BH_pval", "distance") #I have confirmed that all the HID2s are higher numbered coordinates than the HID1s, the only instance in which this isn't the case is when the two bins are identical (this should have been filtered out long before now).
+
+hbindf <- hbindf[(which(hbindf$dist!=0)),] #Removes pairs where the same bin represents both mates. These instances occur exclusively when liftOver of the genomic coordinates from one species to another, and the subsequent rounding to the nearest 10kb, results in a contact between adjacent bins in one species being mapped as a contact between the same bin in the other species. Because there are less than 50 instances of this total in the dataset I simply remove it here without further worry.
+
+#Remembering that all the first mates in the pair are lower coordinates than the second mates:
+#This works for getting the FDR of closest downstream hits for the first column. Technically this would also make these the closest upstream hits for any bins that are UNIQUE and NOT REPEATED to the second column. For unique bins in this column, they have no upstream hits, and this gets their downstream hits. I can do the same thing but on the second set of IDs to get the potential upstream hits for any bins, then do a full_join on the two to get everything! Many of these metrics need to be done on a duplicated df to ensure I have all copies of a bin in one column, but the upstream and downstream analyses need to be run separately.
+group_by(hbindf, HID) %>% summarise(DS_bin=HID2[which.min(distance)], DS_FDR=sp_BH_pval[which.min(distance)], DS_dist=distance[which.min(distance)]) -> hbin1.downstream
+
+group_by(hbindf, HID2) %>% summarise(US_bin=HID[which.min(distance)], US_FDR=sp_BH_pval[which.min(distance)], US_dist=distance[which.min(distance)]) -> hbin2.upstream
+colnames(hbin2.upstream) <- c("HID", "US_bin", "US_FDR", "US_dist")
+
+Hstreams <- full_join(hbin1.downstream, hbin2.upstream, by="HID")
+
+#Now, need to create a df with all the hits duplicated (but columns reversed) to account for duplicated bins in each column. This is better for any analysis that shares information across the interactions (minimums, sums, means, medians, etc.)
+hbindf.flip <- hbindf[,c(2, 1, 3:7)]
+colnames(hbindf.flip)[1:2] <- c("HID", "HID2")
+hbindf_x2 <- rbind(hbindf[,1:7], hbindf.flip) #It's worth noting that a version of this with duplicates removed would be very useful for enrichment analyses...
+
+#Now, use group_by from dplyr to combine information for a given bin across all its Hi-C contacts. Here I'll be pulling out contact, p-value, and bin with minimum FDR, its beta; the median FDR; the maximum beta and its FDR and bin; and a weighted combination method for p-values for species from linear modeling. This is based off of (http://onlinelibrary.wiley.com/doi/10.1111/j.1420-9101.2005.00917.x/full) under the assumption $s2.post is the actual error variance. (forthcoming)
+group_by(hbindf_x2, HID) %>% summarise(min_FDR_bin=HID2[which.min(sp_BH_pval)], min_FDR=min(sp_BH_pval), min_FDR_pval=sp_pval[which.min(sp_BH_pval)], min_FDR_B=sp_beta[which.min(sp_BH_pval)], median_FDR=median(sp_BH_pval),  weighted_Z.ALLvar=pnorm((sum((1/ALLvar)*((qnorm(1-sp_pval))))/sqrt(sum((1/ALLvar)^2))), lower.tail=FALSE), weighted_Z.s2post=pnorm(sum((1/(SE^2))*qnorm(1-sp_pval))/sqrt(sum(1/SE^2)), lower.tail=FALSE), fisher=-2*sum(log(sp_pval)), numcontacts=n(), max_B_bin=HID2[which.max(abs(sp_beta))], max_B_FDR=sp_BH_pval[which.max(abs(sp_beta))], max_B=sp_beta[which.max(abs(sp_beta))]) -> hbin.info
+
+#Now, full_join the hbin.info and Hstreams dfs, incorporating all the information about the hbins in my data:
+full_join(hbin.info, Hstreams, by="HID") -> hbin.full.info
+
+#Now I combine the gene overlap tables and the full information tables for the human genes and bins!
+left_join(hgene.hic.overlap, hbin.full.info, by="HID") -> humgenes.hic.full
+colnames(humgenes.hic.full)[1:5] <- c("genes", "Hchr", "Hstart", "Hend", "Hstrand") #Fix column names for what was just created
+
+###Now, do the whole thing over again for chimps, and then combine with the human gene overlap before joining on detable!
+#Gets me a cfinal table with a lot of the information concatenated together.
+cbindf <- select(data.filtered, "C1", "C2", "ALLvar", "SE", "sp_beta", "sp_pval", "sp_BH_pval", "Cdist") #Pulling out cols C1, C2, ALLvar, SE, sp_beta, sp_pval, sp_BH_pval, and Cdist
+names(cbindf) <- c("CID", "CID2", "ALLvar", "SE", "sp_beta", "sp_pval", "sp_BH_pval", "distance") #I have confirmed that all the CID2s are higher numbered coordinates than the CID1s, the only instance in which this isn't the case is when the two bins are identical (this should have been filtered out long before now).
+
+cbindf <- cbindf[(which(cbindf$dist!=0)),] #Removes rows from the cbindf that REALLY shouldn't be there to begin with. There are ~620 hits like this.
+
+#Remembering that all the first mates in the pair are lower coordinates than the second mates:
+#This works for getting the FDR of closest downstream hits for the first column. Technically this would also make these the closest upstream hits for any bins that are UNIQUE and NOT REPEATED to the second column. For unique bins in this column, they have no upstream hits, and this gets their downstream hits. I can do the same thing but on the second set of IDs to get the potential upstream hits for any bins, then do a full_join on the two to get everything! Many of these metrics need to be done on a duplicated df to ensure I have all copies of a bin in one column, but the upstream and downstream analyses need to be run separately.
+group_by(cbindf, CID) %>% summarise(DS_bin=CID2[which.min(distance)], DS_FDR=sp_BH_pval[which.min(distance)], DS_dist=distance[which.min(distance)]) -> cbin1.downstream
+
+group_by(cbindf, CID2) %>% summarise(US_bin=CID[which.min(distance)], US_FDR=sp_BH_pval[which.min(distance)], US_dist=distance[which.min(distance)]) -> cbin2.upstream
+colnames(cbin2.upstream) <- c("CID", "US_bin", "US_FDR", "US_dist")
+
+Cstreams <- full_join(cbin1.downstream, cbin2.upstream, by="CID")
+
+#Now, need to create a df with all the hits duplicated (but columns reversed) to account for duplicated bins in each column. This is better for any analysis that shares information across the interactions (minimums, sums, means, medians, etc.)
+cbindf.flip <- cbindf[,c(2, 1, 3:7)]
+colnames(cbindf.flip)[1:2] <- c("CID", "CID2")
+cbindf_x2 <- rbind(cbindf[,1:7], cbindf.flip)
+
+#Group by again for chimp hits as was done for humans above.
+group_by(cbindf_x2, CID) %>% summarise(min_FDR_bin=CID2[which.min(sp_BH_pval)], min_FDR=min(sp_BH_pval), min_FDR_B=sp_beta[which.min(sp_BH_pval)], median_FDR=median(sp_BH_pval), weighted_Z.ALLvar=pnorm((sum((1/ALLvar)*((qnorm(1-sp_pval))))/sqrt(sum((1/ALLvar)^2))), lower.tail=FALSE), weighted_Z.s2post=pnorm(sum((1/(SE^2))*qnorm(1-sp_pval))/sqrt(sum(1/SE^2)), lower.tail=FALSE), fisher=-2*sum(log(sp_pval)), numcontacts=n(), max_B_bin=CID2[which.max(abs(sp_beta))], max_B_FDR=sp_BH_pval[which.max(abs(sp_beta))], max_B=sp_beta[which.max(abs(sp_beta))]) -> cbin.info
+
+#Now, full_join the cbin.info and Cstreams dfs, incorporating all the information about the cbins in my data:
+full_join(cbin.info, Cstreams, by="CID") -> cbin.full.info
+
+#Now I combine the gene overlap tables and the full information tables for the human genes and bins!
+left_join(cgene.hic.overlap, cbin.full.info, by="CID") -> chimpgenes.hic.full
+colnames(chimpgenes.hic.full)[1:5] <- c("genes", "Hchr", "Hstart", "Hend", "Hstrand") #Fix column names for what was just created
+
+#Now, combine chimpgenes.hic.full and humgenes.hic.full before a final left_join on detable:
+full_join(humgenes.hic.full, chimpgenes.hic.full, by="genes", suffix=c(".H", ".C")) -> genes.hic.info
+left_join(detable, genes.hic.info, by="genes") -> gene.hic.overlap.info
+
+#Clean this dataframe up, removing rows where there is absolutely no Hi-C information for the gene.
+filt.indices <- rowSums(is.na(gene.hic.overlap.info)) #45 NA values are found when there is absolutely no Hi-C information.
+filt.indices <- which(filt.indices==45)
+gene.hic.filt <- gene.hic.overlap.info[-filt.indices,] #Still leaves a solid 8,554 genes. Note that I will have to choose human or chimp values here for many of these columns, as not all of the values are the same (and many are missing in one species relative to the other). In some cases, may be able to just take minimum or maximum value from either in order to get at what I want.
+```
+
+###Contact Frequency Extraction
+In this section, I proceed to create a function in order to extract the Hi-C interaction frequency values for the different types of summaries I've made gene overlaps with above.
+```{r Contact frequency extraction}
+#Get a df with the H and C coordinates of the hits, and the IF values from homer. This subset df makes things easier to extract.
+contacts <- data.frame(h1=data.filtered$H1, h2=data.filtered$H2, c1=data.filtered$C1, c2=data.filtered$C2, A_21792_HIC=data.filtered$`A-21792_norm`, B_28126_HIC=data.filtered$`B-28126_norm`, C_3649_HIC=data.filtered$`C-3649_norm`, D_40300_HIC=data.filtered$`D-40300_norm`, E_28815_HIC=data.filtered$`E-28815_norm`, F_28834_HIC=data.filtered$`F-28834_norm`, G_3624_HIC=data.filtered$`G-3624_norm`, H_3651_HIC=data.filtered$`H-3651_norm`, stringsAsFactors = FALSE)
+
+#Now ensure first member of a pair is always lower than second:
+newH1 <- as.numeric(gsub(".*-", "", contacts$h1))
+newH2 <- as.numeric(gsub(".*-", "", contacts$h2))
+lower.HID <- ifelse(newH1<newH2, contacts$h1, contacts$h2)
+higher.HID2 <- ifelse(newH1<newH2, contacts$h2, contacts$h1)
+contacts$hpair <- paste(lower.HID, higher.HID2, sep="_")
+
+newC1 <- as.numeric(gsub(".*-", "", contacts$c1))
+newC2 <- as.numeric(gsub(".*-", "", contacts$c2))
+lower.CID <- ifelse(newC1<newC2, contacts$c1, contacts$c2)
+higher.CID2 <- ifelse(newC1<newC2, contacts$c2, contacts$c1)
+contacts$cpair <- paste(lower.CID, higher.CID2, sep="_")
+
+#A function that takes a dataframe (like gene.hic.filt) and two columns from the dataframe to create a pair vector for the given interaction. First ensures the first bin in a pair is always lowest to make this easier. Then extracts the IF values for that vector from the contacts df created above. This provides me with the appropriate Hi-C data values for the different bin classes we're examining here, so that I can later test them with linear modeling to quantify their effect on expression.
+IF.extractor <- function(dataframe, col1, col2, contacts, species, strand=FALSE){
+  new1 <- as.numeric(gsub(".*-", "", dataframe[,col1]))
+  if(strand==FALSE){#In the case where I'm not worried about strand, I just work with the second column selected.
+    new2 <- as.numeric(gsub(".*-", "", dataframe[,col2]))
+    lower1 <- ifelse(new1<new2, dataframe[,col1], dataframe[,col2])
+    higher2 <- ifelse(new1<new2, dataframe[,col2], dataframe[,col1]) #Fix all the columns first
+    if(species=="H"){ #Then depending on species create the pair column and merge to contact info.
+      dataframe[,"hpair"] <- paste(lower1, higher2, sep="_")
+      finaldf <- left_join(dataframe, contacts[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC", "hpair")], by="hpair")
+    }
+    else if(species=="C"){
+      dataframe[,"cpair"] <- paste(lower1, higher2, sep="_")
+      finaldf <- left_join(dataframe, contacts[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC", "cpair")], by="cpair")
+    }
+  }
+  else if(strand==TRUE){#If dealing with upstream and downstream hits, need to do things separately for genes on the + and - strand.
+    if(species=="H"){
+      US <- ifelse(dataframe[,"Hstrand.H"]=="+", dataframe[,"US_bin.H"], dataframe[,"DS_bin.H"]) #Obtain upstream bins depending on strand.
+      new2 <- as.numeric(gsub(".*-", "", US)) #Now rearrange the pairs to ensure regardless of stream we can find the pair (first mate lower coordinates than 2nd).
+      lower1 <- ifelse(new1<new2, dataframe[,col1], US)
+      higher2 <- ifelse(new1<new2, US, dataframe[,col1])
+      dataframe[,"hpair"] <- paste(lower1, higher2, sep="_")
+      dataframe[,"USFDR"] <- ifelse(dataframe[,"Hstrand.H"]=="+", dataframe[,"US_FDR.H"], dataframe[,"DS_FDR.H"])
+      finaldf <- left_join(dataframe, contacts[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC", "hpair")], by="hpair")
+    }
+    else if(species=="C"){
+      US <- ifelse(dataframe[,"Hstrand.C"]=="+", dataframe[,"US_bin.C"], dataframe[,"DS_bin.C"]) #Obtain upstream bins depending on strand.
+      new2 <- as.numeric(gsub(".*-", "", US)) #Now rearrange the pairs to ensure regardless of stream we can find the pair (first mate lower coordinates than 2nd).
+      lower1 <- ifelse(new1<new2, dataframe[,col1], US)
+      higher2 <- ifelse(new1<new2, US, dataframe[,col1])
+      dataframe[,"cpair"] <- paste(lower1, higher2, sep="_")
+      dataframe[,"USFDR"] <- ifelse(dataframe[,"Hstrand.C"]=="+", dataframe[,"US_FDR.C"], dataframe[,"DS_FDR.C"])
+      finaldf <- left_join(dataframe, contacts[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC", "cpair")], by="cpair")
+    }
+  }
+  #before finally returning, remove rows where we don't have full Hi-C data.
+  finaldf <- finaldf[complete.cases(finaldf[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")]),]
+  return(finaldf)
+}
+
+#Now I can use the IF.extractor function to make a number of different dataframes for actually testing different IF values with the RPKM expression values.
+h_minFDR <- IF.extractor(gene.hic.filt, "HID", "min_FDR_bin.H", contacts, "H")
+c_minFDR <- IF.extractor(gene.hic.filt, "CID", "min_FDR_bin.C", contacts, "C")
+h_maxB <- IF.extractor(gene.hic.filt, "HID", "max_B_bin.H", contacts, "H")
+c_maxB <- IF.extractor(gene.hic.filt, "CID", "max_B_bin.C", contacts, "C")
+h_US <- IF.extractor(gene.hic.filt, "HID", "US_bin.H", contacts, "H", TRUE)
+c_US <- IF.extractor(gene.hic.filt, "CID", "US_bin.C", contacts, "C", TRUE)
+
+#Write these out so they can be permuted upon on midway2.
+fwrite(h_minFDR, "~/Desktop/HiC_covs/h_minFDR", quote = FALSE, sep = "\t", na = "NA", col.names = TRUE)
+fwrite(c_minFDR, "~/Desktop/HiC_covs/c_minFDR", quote = FALSE, sep = "\t", na = "NA", col.names = TRUE)
+fwrite(h_maxB, "~/Desktop/HiC_covs/h_maxB", quote = FALSE, sep = "\t", na = "NA", col.names = TRUE)
+fwrite(c_maxB, "~/Desktop/HiC_covs/c_maxB", quote = FALSE, sep = "\t", na = "NA", col.names = TRUE)
+fwrite(h_US, "~/Desktop/HiC_covs/h_US", quote = FALSE, sep = "\t", na = "NA", col.names = TRUE)
+fwrite(c_US, "~/Desktop/HiC_covs/c_US", quote = FALSE, sep = "\t", na = "NA", col.names = TRUE)
+```
+Later I will come back to these data frames and join each again on the RPKM table by genes, thereafter carrying out linear modeling before and after correcting expression values for the Hi-C data, giving a sense of how much contacts affect expression. First though, I'll look more simply for enrichment of DHi-C in DE genes using a variety of different metrics to call DHi-C.
+
+###Differential Expression-Differential Hi-C Enrichment Analyses
+I now look to see if genes that are differentially expressed are also differential in Hi-C contacts (DHi-C). That is to say, are differentially expressed genes enriched in their overlapping bins for Hi-C contacts that are also differential between the species? To do this I utilize p-values from my prior linear modeling as well as previous RNA-seq analysis. I construct a function to calculate proportions of DE and DHi-C genes, as well as a function to plot this out in a variety of different ways.
+```{r Differential Expression-Differential Hi-C Enrichment Analyses}
+####Enrichment analyses!
+#A function for calculating proportion of DE genes that are DHi-C under a variety of different paradigms. Accounts for when no genes are DHi-C and when all genes are DHi-C. Returns the proportion of DE genes that are also DHi-C, as well as the expected proportion based on conditional probability alone.
+prop.calculator <- function(de.vec, hic.vec, i, k){
+  my.result <- data.frame(prop=NA, exp.prop=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
+  de.vec <- ifelse(de.vec<=i, 1, 0)
+  hic.vec <- ifelse(hic.vec<=k, 1, 0)
+  if(sum(hic.vec, na.rm=TRUE)==0){#The case where no genes show up as DHi-C.
+    my.result[1,] <- c(0, 0, 0, sum(de.vec==0, na.rm=TRUE), sum(de.vec==1, na.rm=TRUE), 0, 0) #Since no genes are DHi-C, the proportion is 0 and our expectation is 0, set p-val=0 since it's irrelevant.
+  }
+  else if(sum(hic.vec)==length(hic.vec)){ #The case where every gene shows up as DHi-C
+    my.result[1,] <- c(1, 1, 0, 0, 0, sum(hic.vec==1&de.vec==0, na.rm = TRUE), sum(de.vec==1&hic.vec==1, na.rm=TRUE)) #If every gene is DHi-C, the observed proportion of DE genes DHi-C is 1, and the expected proportion of DE genes also DHi-C would also be 1 (all DE genes are DHi-C, since all genes are). Again set p-val to 0 since irrelevant comparison.
+  }
+  else{#The typical case, where we get an actual table
+    mytable <- table(as.data.frame(cbind(de.vec, hic.vec)))
+    my.result[1,1] <- mytable[2,2]/sum(mytable[2,]) #The observed proportion of DE genes that are also DHi-C. # that are both/total # DE
+    my.result[1,2] <- (((sum(mytable[2,])/sum(mytable))*((sum(mytable[,2])/sum(mytable))))*sum(mytable))/sum(mytable[2,]) #The expected proportion: (p(DE) * p(DHiC)) * total # genes / # DE genes
+    my.result[1,3] <- chisq.test(mytable)$p.value
+    my.result[1,4] <- mytable[1,1]
+    my.result[1,5] <- mytable[2,1]
+    my.result[1,6] <- mytable[1,2]
+    my.result[1,7] <- mytable[2,2]
+  }
+  return(my.result)
+}
+
+#This is a function that computes observed and expected proportions of DE and DHiC enrichments,  and spits out a variety of different visualizations for them. As input it takes a dataframe, the names of its DHiC and DE p-value columns, and a name to represent the type of Hi-C contact summary for the gene that ends up on the x-axis of all the plots.
+enrichment.plotter <- function(df, HiC_col, DE_col, xlab, i=c(0.01, 0.05, 0.1), k=seq(0.01, 1, 0.01)){
+  enrich.table <- data.frame(DEFDR = c(rep(i[1], 100), rep(i[2], 100), rep(i[3], 100)), DHICFDR=rep(k, 3), prop.obs=NA, prop.exp=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
+  for(de.FDR in i){
+    for(hic.FDR in k){
+      enrich.table[which(enrich.table$DEFDR==de.FDR&enrich.table$DHICFDR==hic.FDR), 3:9] <- prop.calculator(df[,HiC_col], df[,DE_col], de.FDR, hic.FDR)
+    }
+  }
+  des.enriched <- ggplot(data=enrich.table, aes(x=DHICFDR, y=prop.obs*100, group=as.factor(DEFDR), color=as.factor(DEFDR))) +geom_line()+ geom_line(aes(y=prop.exp*100), linetype="dashed", size=0.5) + ggtitle("Enrichment of DHiC in DE Genes") + xlab(xlab) + ylab("Proportion of DE genes that are DHiC") + guides(color=guide_legend(title="FDR for DE Genes"))
+  dhics.enriched <- ggplot(data=enrich.table, aes(x=DHICFDR, y=Dboth/(Dboth+DHiC), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_line() + geom_line(aes(y=(((((DE+Dboth)/(Dneither+DE+DHiC+Dboth))*((DHiC+Dboth)/(Dneither+DE+DHiC+Dboth)))*(Dneither+DE+DHiC+Dboth))/(DHiC+Dboth))), linetype="dashed") + ylab("Proportion of DHi-C genes that are DE") +xlab(xlab) + ggtitle("Enrichment of DE in DHiC Genes")
+  joint.enriched <- ggplot(data=enrich.table, aes(x=DHICFDR, y=Dboth/(Dneither+DE+DHiC+Dboth), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_line() + ylab("Proportion of ALL Genes both DE & DHi-C") + xlab(xlab) + geom_line(aes(y=((DE+Dboth)/(Dneither+DE+DHiC+Dboth))*((DHiC+Dboth)/(Dneither+DE+DHiC+Dboth))), linetype="dashed") + ggtitle("Enrichment of Joint DE & DHi-C in All Genes")
+  chisq.p <- ggplot(data=enrich.table, aes(x=DHICFDR, y=-log10(chisq.p), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_point() + geom_hline(yintercept=-log10(0.05), color="red") + ggtitle("Chi-squared Test P-values for Enrichment of DHiC in DE Genes") + xlab(xlab) + ylab("-log10(chi-squared p-values)")
+  print(des.enriched)
+  print(dhics.enriched)
+  print(joint.enriched)
+  print(chisq.p)
+}
+
+#For most of these, using the gene.hic.filt df is sufficient as their Hi-C FDR numbers are the same. For the upstream genes it's a little more complicated because gene.hic.filt doesn't incorporate strand information on the genes, so use the specific US dfs for that, with the USFDR column.
+enrichment.plotter(gene.hic.filt, "min_FDR.H", "adj.P.Val", "Minimum FDR of Hi-C Contacts Overlapping Gene, Human")
+enrichment.plotter(gene.hic.filt, "min_FDR.C", "adj.P.Val", "Minimum FDR of Hi-C Contacts Overlapping Gene, Chimp")
+enrichment.plotter(h_US, "USFDR", "adj.P.Val", "FDR for Closest Upstream Hi-C Contact Overlapping Gene, Human")
+enrichment.plotter(c_US, "USFDR", "adj.P.Val", "FDR for Closest Upstream Hi-C Contact Overlapping Gene, Chimp")
+enrichment.plotter(gene.hic.filt, "max_B_FDR.H", "adj.P.Val", "FDR for Hi-C Contact Overlapping Gene w/ Strongest Effect Size, Human")
+enrichment.plotter(gene.hic.filt, "max_B_FDR.C", "adj.P.Val", "FDR for Hi-C Contact Overlapping Gene w/ Strongest Effect Size, Chimp")
+enrichment.plotter(gene.hic.filt, "median_FDR.H", "adj.P.Val", "Median FDR of Hi-C Contacts Overlapping Gene, Human")
+enrichment.plotter(gene.hic.filt, "median_FDR.C", "adj.P.Val", "Median FDR of Hi-C Contacts Overlapping Gene, Chimp")
+enrichment.plotter(gene.hic.filt, "weighted_Z.s2post.H", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Human")
+enrichment.plotter(gene.hic.filt, "weighted_Z.s2post.C", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Chimp")
+enrichment.plotter(gene.hic.filt, "weighted_Z.ALLvar.H", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Human")
+enrichment.plotter(gene.hic.filt, "weighted_Z.ALLvar.C", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Chimp")
+```
+
+###How well does Hi-C data explain expression data?
+In this next section I "regress out" the effect of Hi-C contacts from their overlapping genes' RPKM expression values, comparing a linear model run on the base values to one run on the residuals of regressing out Hi-C data. Comparing the p-values before and after this regression can give some sense of whether the differential expression is being driven by differential Hi-C contacts.
+```{r Linear modeling magic}
+####Linear modeling differences.
+left_join(gene.hic.filt, RPKM, by="genes") -> final.table #Left join on penultimate table; only care about those genes which we have Hi-C data for.
+rownames(final.table) <- final.table$genes
+#left_join(h_minFDR, RPKM, by="genes") -> minFDRtable
+
+###A function that runs a linear model, both with and without Hi-C corrected expression values, and returns a dataframe with the p-values from both models for visualization. Also returns spearman and pearson correlations.
+lmgraph <- function(exprs, cov_matrix, meta_df){
+  hic_present <- sapply(1:nrow(cov_matrix), function(i) !any(is.na(cov_matrix[i,]))) #First, remove any rows w/ missing Hi-C data.
+  exprs <- data.matrix(exprs[hic_present,]) #Filter expression with this
+  cov_matrix <- data.matrix(cov_matrix[hic_present,]) #Filter Hi-C data with this
+  
+  #Now, prepare to run the actual models. First run a model w/ ONLY Hi-C as a covariate to evaluate the effect of Hi-C on expression:
+  design <- model.matrix(~1+meta_df$SP+meta_df$SX) #This will be for later. Not useful here.
+  resid_hic <- array(0, dim=c(nrow(exprs), ncol(cov_matrix))) #Initialize a dataframe for storing the residuals.
+  for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
+   resid_hic[i,] <- lm(exprs[i,]~cov_matrix[i,])$resid 
+  }
+  lmFit(exprs, design=design) %>% eBayes(.) %>% topTable(., coef=2, adjust="BH", number=Inf, sort.by="none") -> fit_before
+  lmFit(resid_hic, design=design) %>% eBayes(.) %>% topTable(., coef=2, adjust="BH", number=Inf, sort.by="none") -> fit_after
+  myresult <- as.data.frame(cbind(fit_before$adj.P.Val, fit_after$adj.P.Val))
+  colnames(myresult) <- c("before", "after")
+  corrs_spearman <- sapply(1:nrow(exprs), function(index) {
+  cor(exprs[index,], cov_matrix[index,], method = "spearman") 
+})
+corrs_pearson <- sapply(1:nrow(exprs), function(index) {
+  cor(exprs[index,], cov_matrix[index,], method = "pearson") 
+})
+  myresult$corr.spear <- corrs_spearman
+  myresult$corr.pear <- corrs_pearson
+  return(myresult)
+}
+
+#Join all of the previously-made Hi-C interaction frequency tables to the RPKM table by genes, to obtain RPKM values.
+hmin <- left_join(h_minFDR, RPKM, by="genes")
+cmin <- left_join(c_minFDR, RPKM, by="genes")
+hmaxB <- left_join(h_maxB, RPKM, by="genes")
+cmaxB <- left_join(c_maxB, RPKM, by="genes")
+hUS <- left_join(h_US, RPKM, by="genes")
+cUS <- left_join(c_US, RPKM, by="genes")
+
+
+h_minFDR_pvals <- lmgraph(hmin[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], hmin[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], meta.data)
+c_minFDR_pvals <- lmgraph(cmin[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], cmin[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], meta.data)
+h_maxB_pvals <- lmgraph(hmaxB[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], hmaxB[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], meta.data)
+c_maxB_pvals <- lmgraph(cmaxB[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], cmaxB[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], meta.data)
+h_US_pvals <- lmgraph(hUS[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], hUS[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], meta.data)
+c_US_pvals <- lmgraph(cUS[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], cUS[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], meta.data)
+
+#Was expecting correlations here to have more of a distinct pattern off the diagonal, can try subsetting to looking at just species-specific or just conserved Hi-C contacts to see if there's a pattern there.
+ggplot(data=h_minFDR_pvals, aes(x=-log10(before), y=-log10(after), color=corr.pear)) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color="red") + geom_vline(xintercept=-log10(0.05), color="red") + geom_abline(slope=1, intercept=0, color="green", linetype="dashed") + ggtitle("Evidence for DE before vs. after regressing out Hi-C min. FDR (H)") + xlab("-log10(p-value of DE before Hi-C regression)") + ylab("-log10(p-value of DE after Hi-C regression")
+ggplot(data=h_maxB_pvals, aes(x=-log10(before), y=-log10(after), color=corr.spear)) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color="red") + geom_vline(xintercept=-log10(0.05), color="red") + geom_abline(slope=1, intercept=0, color="green", linetype="dashed") + ggtitle("Evidence for DE before vs. after regressing out Hi-C max beta (H)") + xlab("-log10(p-value of DE before Hi-C regression)") + ylab("-log10(p-value of DE after Hi-C regression")
+ggplot(data=h_US_pvals, aes(x=-log10(before), y=-log10(after), color=corr.pear)) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color="red") + geom_vline(xintercept=-log10(0.05), color="red") + geom_abline(slope=1, intercept=0, color="green", linetype="dashed") + ggtitle("Evidence for DE before vs. after regressing out Hi-C US bin FDR (H)") + xlab("-log10(p-value of DE before Hi-C regression)") + ylab("-log10(p-value of DE after Hi-C regression")
+
+#I now proceed to visualize the difference in p-values for expression before and after "correcting" for the Hi-C data. I am hoping to see many hits in the bottom right quadrant of the following plots, indicating genes that showed up as DE before Hi-C correction, but not after.
+ggplot(data=h_minFDR_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color="red") + geom_vline(xintercept=-log10(0.05), color="red") + geom_abline(slope=1, intercept=0, color="green", linetype="dashed") + ggtitle("Evidence for DE before vs. after regressing out Hi-C min. FDR (H)") + xlab("-log10(p-value of DE before Hi-C regression)") + ylab("-log10(p-value of DE after Hi-C regression")
+ggplot(data=h_maxB_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color="red") + geom_vline(xintercept=-log10(0.05), color="red") + geom_abline(slope=1, intercept=0, color="green", linetype="dashed") + ggtitle("Evidence for DE before vs. after regressing out Hi-C max beta (H)") + xlab("-log10(p-value of DE before Hi-C regression)") + ylab("-log10(p-value of DE after Hi-C regression")
+ggplot(data=h_US_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color="red") + geom_vline(xintercept=-log10(0.05), color="red") + geom_abline(slope=1, intercept=0, color="green", linetype="dashed") + ggtitle("Evidence for DE before vs. after regressing out Hi-C US bin FDR (H)") + xlab("-log10(p-value of DE before Hi-C regression)") + ylab("-log10(p-value of DE after Hi-C regression")
+```
+
+```{r include=FALSE, echo=FALSE, eval=FALSE}
+###A function that runs a linear model, both with and without Hi-C corrected expression values, and returns a dataframe of hit classes (DE or not before and after correction). This is very similar to the function just run, but instead of obtaining p-values before and after correction at the end, it returns counts of genes in the 4 different classes possible here (DE in neither, DE in both, DE before but not after, and DE after but not before):
+lmcorrect <- function(exprs, cov_matrix, meta_df){
+  result <- data.frame(DEneither=NA, DEbefore=NA, DEafter=NA, DEboth=NA)
+  hic_present <- sapply(1:nrow(cov_matrix), function(i) !any(is.na(cov_matrix[i,]))) #First, remove any rows w/ missing Hi-C data.
+  exprs <- data.matrix(exprs[hic_present,]) #Filter expression with this
+  cov_matrix <- data.matrix(cov_matrix[hic_present,]) #Filter Hi-C data with this
+  
+  #Now, prepare to run the actual models. First run a model w/ Hi-C as a covariate to evaluate
+  design <- model.matrix(~1+meta_df$SP+meta_df$SX)
+  resid_hic <- array(0, dim=c(nrow(exprs), ncol(cov_matrix))) #Initialize a dataframe for storing the residuals.
+  for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
+   resid_hic[i,] <- lm(exprs[i,]~cov_matrix[i,])$resid 
+  }
+  lmFit(exprs, design=design) %>% eBayes(.) %>% topTable(., coef=2, adjust="BH", number=Inf, sort.by="none") -> fit_before
+  lmFit(resid_hic, design=design) %>% eBayes(.) %>% topTable(., coef=2, adjust="BH", number=Inf, sort.by="none") -> fit_after
+  
+  result[1,] <- c(sum(fit_before$adj.P.Val>0.05&fit_after$adj.P.Val>0.05), sum(fit_before$adj.P.Val<=0.05&fit_after$adj.P.Val>0.05), sum(fit_before$adj.P.Val>0.05&fit_after$adj.P.Val<=0.05), sum(fit_before$adj.P.Val<=0.05&fit_after$adj.P.Val<=0.05))
+  return(result)
+}
+
+#This is merely a function for running permutations of the function above with the Hi-C values shuffled. I perform this on the RCC Midway2 cluster, since it would take an absurd amount of time otherwise. The idea here is to get a sense of how significant the explanatory power Hi-C has for expression here is, by comparing it to what it would be under a "null" model where the Hi-C values are assigned at random.
+permuter <- function(exprs, cov_matrix, meta_df){
+  results <- data.frame(DEneither=rep(NA, 1000), DEbefore=rep(NA, 1000), DEafter=rep(NA, 1000), DEboth=rep(NA, 1000))
+  for(model in 1:1000){
+    hicperm <- cov_matrix[,sample(ncol(cov_matrix))]
+    results[model,] <- lmcorrect(exprs, hicperm, meta_df)
+  }
+}
+
+
+##Visualization of the permutations!
+minFDRexp <- fread("~/Desktop/HiC_covs/results/permout_h_minFDR", header = TRUE, stringsAsFactors = FALSE)
+minFDRe <- minFDRexp/sum(minFDRexp[1,])
+minFDRo <- lmcorrect(hmin[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], hmin[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], meta.data)
+minFDRo <- data.frame(DEneither=sum(h_minFDR_pvals$before>0.05&h_minFDR_pvals$after>0.05), DEbefore=sum(h_minFDR_pvals$before<=0.05&h_minFDR_pvals$after>0.05), DEafter=sum(h_minFDR_pvals$before>0.05&h_minFDR_pvals$after<=0.05), DEboth=sum(h_minFDR_pvals$before<=0.05&h_minFDR_pvals$after<=0.05))
+minFDRo <- minFDRo/sum(minFDRo[1,])
+
+ggplot(data=minFDRe, aes(x="", y=DEbefore*100)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=minFDRo$DEbefore*100, color="Observed"), size=3) + ggtitle("Percent of genes with reduced evidence for DE after Hi-C correction") + ylab("% genes DE before, but not after, Hi-C correction") + xlab("1000 Permutations of Hi-C data") + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))#+ guides(color=guide_legend(title="Data", override.aes = list(shape=5))) #Finally have it a way where it just shows points in legend for both; better than showing boxplots for both.
+
+ggplot(data=minFDRe, aes(x="", y=DEafter*100)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=minFDRo$DEafter*100, color="Observed"), size=3) + ggtitle("Percent of genes with increased evidence for DE after Hi-C correction") + ylab("% genes DE after, but not before, Hi-C correction") + xlab("1000 Permutations of Hi-C data") + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
+
+ggplot(data=minFDRe, aes(x="", y=DEneither*100)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=minFDRo$DEneither*100, color="Observed"), size=3) + ggtitle("Percent of genes with no evidence for DE regardless") + ylab("% genes not DE in either") + xlab("1000 Permutations of Hi-C data") + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
+
+ggplot(data=minFDRe, aes(x="", y=DEboth*100)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=minFDRo$DEboth*100, color="Observed"), size=3) + ggtitle("Percent of genes with evidence for DE regardless") + ylab("% genes DE in both") + xlab("1000 Permutations of Hi-C data") + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
+
+#######Effect size differences/sign changes
+design <- model.matrix(~1+meta.data$SP+meta.data$SX)
+exprs <- hmin[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")]
+hic <- hmin[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")]
+present <- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
+exprs <- data.matrix(exprs[present,])
+hic <- data.matrix(hic[present,])
+resid_hic <- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
+for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
+     resid_hic[i,] <- lm(exprs[i,]~hic[i,])$resid 
+}
+lmFit(exprs, design=design) %>% eBayes(.) -> fit_b
+lmFit(resid_hic, design=design) %>% eBayes(.) -> fit_a
+
+#Get effect sizes.
+beta_b <- fit_b$coefficients[,2]
+beta_a <- fit_a$coefficients[,2]
+se_beta_b <- se_beta_hic <- se_beta_a <- cov_beta_ba <- vector("numeric", nrow(hic))
+
+#Get variances of beta_before's species effect:
+se_beta_b <- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
+
+#Get variances of se_beta_hic, Hi-C effect:
+for (g in 1:length(se_beta_hic)) {
+  design_2 <- model.matrix(~ as.numeric(hic[g,]))  
+  sigma_g <- fit_b$sigma[g]
+  se_beta_hic[g] <- sigma_g*sqrt((solve(t(design_2)%*%design_2))[2,2])
+}
+
+#Get variances of beta_after's species effect:
+A <- solve(t(design)%*%design)%*%t(design)
+contr.vector <- array(c(0,1), dim=c(2,1))
+# compute beta_after by hand
+for (g in 1:length(se_beta_a)) {
+  M_g <- t(hic[g,])
+  design_2g <- model.matrix(~ as.numeric(M_g))  
+  A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
+  sigma_g <- fit_b$sigma[g]
+  var_beta2g <- (se_beta_hic^2)[g]
+  var_part1 <- (se_beta_b[g])^2
+  var_part2 <- ( A[2,]%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A[2,]) )[2,2]
+  var_part3 <- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A[2,]) )[2,2]
+  se_beta_a[g] <- sqrt(var_part1 + var_part2 + var_part3)
+  }
+```
+
+```{r, include=FALSE, echo=FALSE, eval=FALSE}
+#Just a bunch of old garbage, I think....
+
+#Want to permute Hi-C labels 1000 times (will permute sampling of Hi-C data columns and keep metadata the same):
+for(model in 1:1000){
+  hicperm <- cov_matrix_filtered[,sample(ncol(cov_matrix_filtered))] #Permute the Hi-C data
+  fit_expr_corr <- lmFit_varying(exprs_filtered, design=design, cov_matrix=hicperm) 
+  #eBayes(fit_expr_corr) %>% topTable(., coef=2, sort.by="none", number=Inf) -> fit_expr_corr #Obtain corrected expression values based on this permutation.
+  hic_coef <- fit_expr_corr$coefficients[,3]
+  hic_effect <- do.call(rbind, lapply(1:nrow(exprs_filtered), function(index){
+    hic_coef[index] %*% hicperm[index,]
+  }))
+  exprs_corrected <- exprs_filtered-hic_effect #Obtain Hi-C corrected expression values for this particular permutation
+  
+  #Now, look at p-values on a simple model with merely species before and after Hi-C correction.
+  lmFit(exprs_filtered, design=design) %>% eBayes(.) -> before_HIC
+  lmFit(exprs_corrected, design=design) %>% eBayes(.) -> after_HIC
+  
+  #Look at what percentage of genes show decreased evidence for DE after correcting out Hi-C from expression values.
+  percentage[model] <- sum(before_HIC$p.value[,2]<=0.05&after_HIC$p.value[,2]>0.05)/length(after_HIC$p.value[,2])
+}
+
+exprs <- minFDRtable[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")]
+cov_matrix <- minFDRtable[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")]
+hic_present <- sapply(1:nrow(cov_matrix), function(i) !any(is.na(cov_matrix[i,])))
+exprs <- data.matrix(exprs[hic_present, ])
+cov_matrix <- data.matrix(cov_matrix[hic_present,])
+design <- model.matrix(~1+meta.data$SP+meta.data$SX)
+lmFit_varying(exprs, design, cov_matrix=cov_matrix) %>% eBayes(.) -> fit
+hic_coef <- fit$coefficients[,4]
+hic_effect <- do.call(rbind, lapply(1:nrow(exprs), function(index){
+  hic_coef[index] %*% cov_matrix[index,]
+}))
+exprs_corrected <- exprs-hic_effect
+
+lmFit(exprs, design=design) %>% eBayes(.) -> fit1
+lmFit(exprs_corrected, design=design) %>% eBayes(.) -> fit2
+
+par(mfrow=c(1,1))
+smoothScatter(x = fit1$p.value[,2], y = fit2$p.value[,2],
+              xlab = "before regressing HiC",
+              ylab = "after regression out HiC",
+              main = "P-value of species",
+              nbin = 200)
+abline(0,1, col = "red")
+
+
+###Now, on to linear modeling!
+design <- model.matrix(~meta.data$SP)
+fit <- lmFit_varying(exprs_filtered, design=design, cov_matrix=cov_matrix_filtered)
+fit_eb <- eBayes(fit)
+both <- topTable(fit_eb, coef=2, sort.by="none", number = Inf)
+
+hic_coef <- fit$coefficients[,3]
+hic_effect <-  do.call(rbind, lapply(1:nrow(exprs_filtered), function(index) {
+  hic_coef[index] %*% cov_matrix_filtered[index,]
+}))
+exprs_corrected <- exprs_filtered - hic_effect
+
+#Use a basic fit with just species initially.
+fit1 <- lmFit(exprs_filtered, design=design)
+fit1_eb <- eBayes(fit1)
+
+# feed the corrected expression table to the linear model again
+fit2 <- lmFit(exprs_corrected, design = design)
+fit2_eb <- eBayes(fit2)
+
+#To get a better sense of this, change fill type to pch 16 and cx 0.6 or 0.7 to visualize it easier, and put this all on -log10 scale in the same way it is in Athma's paper
+#Use Matthew Stephens' method, just use betas and standard error for limma, install ashr package
+  #From that output
+#Start the permutations with a small number, maybe 100, just create 100 different labels for the samples, use replace=FALSE to not repeat any of the same permutations. Probably don't need to do more than 1k permutations, at higher and higher numbers it probably won't change all that much.
+
+par(mfrow=c(1,1))
+smoothScatter(x = fit1_eb$p.value[,2], y = fit2_eb$p.value[,2],
+              xlab = "before regressing HiC",
+              ylab = "after regression out HiC",
+              main = "P-value of species",
+              nbin = 200)
+abline(0,1, col = "red")
+plot(fit1$p.value[,2], fit2$p.value[,2])
+pdf <- data.frame(before=fit1$p.value[,2], after=fit2$p.value[,2])
+ggplot(data=pdf, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color="red") + geom_vline(xintercept=-log10(0.05), color="red") + geom_abline(slope=1, intercept=0, color="green", linetype="dashed") + ggtitle("Evidence for DE before vs. after regressing out Hi-C") + xlab("-log10(p-value of DE)") + ylab("-log10(p-value of DE after Hi-C regression")
+
+sum(fit1_eb$p.value[,2]<fit2_eb$p.value[,2])
+sum(fit1_eb$p.value[,2]>fit2_eb$p.value[,2])
+sum(fit1_eb$p.value[,2]<=0.05&fit2_eb$p.value[,2]>0.05) #Genes that show DE before correcting out Hi-C values, and not after.
+sum(fit2_eb$p.value[,2]<=0.05&fit1_eb$p.value[,2]>0.05) #Genes that show DE after correcting out Hi-C values, and not before. Many more...
+
+
+#Use a basic fit with just species initially.
+fit1 <- lmFit(exprs_filtered, design=design)
+fit1_eb <- eBayes(fit1)
+
+# feed the corrected expression table to the linear model again
+fit2 <- lmFit(exprs_corrected, design = design)
+fit2_eb <- eBayes(fit2)
+
+final.table <- final.table[,c(1, 9, 7, 2, 5, 8, 6, 3, 4, 28, 31:38)] #Was named "for_joyce" before
+fwrite(for_joyce, "~/Desktop/DE_DHIC_overlap", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA")
+
+
+
+plot(hfinal$AveExpr, hfinal$diff_n_contacts)
+plot(hfinal$logFC, hfinal$hic_maxB, main="DE Gene Log FC vs. Maximum Hi-C Contact Beta")
+plot(hfinal$logFC, hfinal$hic_meanB, main="DE Gene Log FC vs. Mean Hi-C Contact Beta")
+plot(hfinal$logFC, hfinal$hic_sumB, main="DE Gene Log FC vs. Summed Hi-C Contact Betas")
+plot(hfinal$logFC, hfinal$hic_min_p_B, main="DE Gene Log FC vs. Min Hi-C p-val's Contact Beta")
+
+plot(hfinal$AveExpr, hfinal$hic_maxB, main="DE Gene Average Expression vs. Maximum Hi-C Contact Beta")
+plot(hfinal$AveExpr, hfinal$hic_meanB, main="DE Gene Average Expression vs. Mean Hi-C Contact Beta")
+plot(hfinal$AveExpr, hfinal$hic_sumB, main="DE Gene Average Expression vs. Summed Hi-C Contact Betas")
+plot(hfinal$AveExpr, hfinal$hic_min_p_B, main="DE Gene Average Expression vs. Min Hi-C p-val's Contact Beta")
+
+plot(hfinal$B, hfinal$hic_maxB, main="DE Gene Beta vs. Maximum Hi-C Contact Beta")
+plot(hfinal$B, hfinal$hic_meanB, main="DE Gene Beta vs. Mean Hi-C Contact Beta")
+plot(hfinal$B, hfinal$hic_sumB, main="DE Gene Beta vs. Summed Hi-C Contact Betas")
+plot(hfinal$B, hfinal$hic_min_p_B, main="DE Gene Beta vs. Min Hi-C p-val's Contact Beta")
+
+plot(hfinal$adj.P.Val, hfinal$hic_BH_pval)
+plot(hfinal$B, hfinal$diff_n_contacts, xlab="Species Expression Beta", ylab="Species Difference in # Contacts")
+
+
+meta.data <- data.frame("SP"=c("H", "H", "C", "C", "H", "H", "C", "C"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2))
+RPKM <- RPKM[c(9, 7, 2, 5, 8, 6, 3:4, 1)]
+RPKM_hic <- left_join(RPKM, hfinal, by="genes")
+design <- model.matrix(~1+RPKM_hic$hic_meanB) #Parameterize a model where hic mean beta explains expression
+lmFit(RPKM_hic[,1:8], design) -> test
+lm(RPKM_hic[,1:8]~RPKM_hic$hic_meanB) -> test
+###Now to move on to linear modeling, doing it in both the full data set and the | 4 individuals condition. I utilize limma to make this quick, parllelizable, and simple. First make the model, then do the actual fitting, and finally do multiple testing adjustment with topTable.
+design <- model.matrix(~1+meta.data$SP+meta.data$SX+meta.data$Batch) #Parameterize the linear model, with an intercept, and fixed effect terms for species, sex, and library prep batch. If you prefer to think in contrasts, my contrast is humans minus chimps. I prefer to think of one species as the baseline in the linear model, and in this case that's chimps (so chimps get a 0 for species, and humans get a 1).
+
+
+#Quality control checks, looking at distributions/trends from top rank of FDRs and p-vals for DE and DHIC.
+deorder <- h_minFDR$adj.P.Val[order(h_minFDR$adj.P.Val)]
+dhorder <- h_minFDR$min_FDR.H[order(h_minFDR$min_FDR.H)]
+deorderp <- h_minFDR$P.Value[order(h_minFDR$P.Value)]
+dhorderp <- h_minFDR$min_FDR_pval[order(h_minFDR$min_FDR_pval)]
+
+de <- ifelse(h_minFDR$adj.P.Val<=0.1, 1, 0)
+dhic <- ifelse(h_minFDR$min_FDR.H<=0.05, 1, 0)
+dis <- table(as.data.frame(cbind(de, dhic)))
+dis
+dis <- data.frame(DE=deorder, DH=dhorder, DEp=deorderp, DHp=dhorderp)
+ggplot(dis) + geom_point(aes(x=1:6497, y=DE), color="red", size=0.01) + geom_point(aes(x=1:6497, y=DH), color="blue", size=0.01)
+ggplot(dis) + geom_point(aes(x=1:6497, y=DEp), color="pink", size=0.01) + geom_point(aes(x=1:6497, y=DHp), color="green", size=0.01)
+plot(deorderp, deorder)
+plot(dhorderp, dhorder)
+
+lmFit(full.data[,304:311], design) %>% eBayes(.) -> model.full
+lmFit(data.filtered[,304:311], design) %>% eBayes(.) -> model.4
+volc.full <- topTable(model.full, coef = 2, sort.by = "none", number = Inf)
+volc.4 <- topTable(model.4, coef = 2, sort.by = "none", number = Inf)
+```
+
+
+## Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```
