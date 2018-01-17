@@ -9,7 +9,7 @@
 <meta name="generator" content="pandoc" />
 
 
-<meta name="author" content="Eres, Ittai" />
+<meta name="author" content="Ittai Eres" />
 
 <meta name="date" content="2017-10-11" />
 
@@ -25,8 +25,8 @@
 <link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
 <script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
-<link href="site_libs/highlightjs-1.1/textmate.css" rel="stylesheet" />
-<script src="site_libs/highlightjs-1.1/highlight.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
 <link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
 
 <style type="text/css">code{white-space: pre;}</style>
@@ -36,10 +36,12 @@
   }
 </style>
 <script type="text/javascript">
-if (window.hljs && document.readyState && document.readyState === "complete") {
-   window.setTimeout(function() {
-      hljs.initHighlighting();
-   }, 0);
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
 }
 </script>
 
@@ -303,7 +305,7 @@ div.tocify {
 
 
 <h1 class="title toc-ignore">linear_modeling</h1>
-<h4 class="author"><em>Eres, Ittai</em></h4>
+<h4 class="author"><em>Ittai Eres</em></h4>
 <h4 class="date"><em>2017-10-11</em></h4>
 
 </div>
@@ -313,14 +315,17 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2017-12-08</p>
+<p><strong>Last updated:</strong> 2018-01-16</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 5774ca0</p>
+<p><strong>Code version:</strong> 44519a4</p>
 <!-- Add your analysis here -->
+<div id="linear-modeling" class="section level3">
+<h3>Linear Modeling</h3>
+<p>Having performed some basic quality control and filtering on the data, I now move to quantify how well Hi-C interaction frequency values can be predicted from species identity. To accomplish this, I utilize limma to linearly model Hi-C interaction frequencies as a function of all the metadata about each sample’s species, sex, and batch. I then add information from linear modeling to the full dataframe, including log-fold changes between species, p-values, betas, and variances. I then make a plot of the mean vs. the log-fold change as an MA plot proxy for quality control. I move on to look at distributions of all the p-values and betas for each of the terms, make some QQ plots to check for normality in the p-values for each term, and represent the log-fold change and p-values in a volcano plot of the data.</p>
 <pre class="r"><code>###Read in data, normalized in initial_QC document, both with all hits and conditioned upon a hit being discovered in 4 individuals.
-full.data &lt;- fread(&quot;~/Desktop/Hi-C/full.data.10.Nov17&quot;, header = TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
-data.4 &lt;- fread(&quot;~/Desktop/Hi-C/data.4.10.Nov17&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
+full.data &lt;- fread(&quot;~/Desktop/Hi-C/full.data.10.2018&quot;, header = TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
+data.4 &lt;- fread(&quot;~/Desktop/Hi-C/data.4.10.2018&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
 
 ###Reassign metadata here, just for quick reference.
 meta.data &lt;- data.frame(&quot;SP&quot;=c(&quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;, &quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;), &quot;SX&quot;=c(&quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;), &quot;Batch&quot;=c(1, 1, 1, 1, 2, 2, 2, 2))
@@ -343,6 +348,7 @@ full.data$sx_pval &lt;- model.full$p.value[,3]
 full.data$btc_pval &lt;- model.full$p.value[,4]
 full.data$sx_beta &lt;- model.full$coefficients[,3]
 full.data$btc_beta &lt;- model.full$coefficients[,4]
+full.data$SE &lt;- sqrt(model.full$s2.post)*model.full$stdev.unscaled[,2]
 
 
 data.4$sp_beta &lt;- volc.4$logFC
@@ -355,6 +361,7 @@ data.4$sx_pval &lt;- model.4$p.value[,3]
 data.4$btc_pval &lt;- model.4$p.value[,4]
 data.4$sx_beta &lt;- model.4$coefficients[,3]
 data.4$btc_beta &lt;- model.4$coefficients[,4]
+data.4$SE &lt;- sqrt(model.4$s2.post) * model.4$stdev.unscaled[,2]
 
 
 ###Before moving to any actual assessment of the linear modeling, do a QC check by producing MA plots for both the full set and | 4 individuals. The MA plot here is the mean of Hi-C contact frequencies (avg_IF) on the x-axis, and the logFC (species beta, in this case) on the y-axis. What we are generally looking for is a fairly uniform cloud around 0 stretching across the x-axis.
@@ -366,32 +373,30 @@ ggplot(data=full.data[,c(&#39;avg_IF&#39;,&#39;sp_beta&#39;)], aes(x=avg_IF, y=s
 
 ###Check some of the more basic linear modeling issues: distributions of betas, p-vals, QQplot, volcano plot, etc.
 ##Check p-vals and betas for all covariates in the full model, on all the data.
-ggplot(data=full.data[,319:328], aes(x=sp_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Species&quot;) + xlab(&quot;P-value&quot;)</code></pre>
+ggplot(data=full.data[,322:332], aes(x=sp_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Species&quot;) + xlab(&quot;P-value&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-3.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=sx_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Sex&quot;) + xlab(&quot;P-value&quot;)</code></pre>
+<pre class="r"><code>ggplot(data=full.data[,322:332], aes(x=sx_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Sex&quot;) + xlab(&quot;P-value&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-4.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=btc_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Batch&quot;) + xlab(&quot;P-value&quot;)</code></pre>
+<pre class="r"><code>ggplot(data=full.data[,322:332], aes(x=btc_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Batch&quot;) + xlab(&quot;P-value&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-5.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=sp_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Species&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
-<pre><code>Warning: Removed 4 rows containing non-finite values (stat_bin).</code></pre>
+<pre class="r"><code>ggplot(data=full.data[,322:332], aes(x=sp_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Species&quot;) + xlab(&quot;Beta&quot;) + coord_cartesian(xlim=c(-6, 6), ylim=c(0, 3500))</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-6.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=sx_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Sex&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
+<pre class="r"><code>ggplot(data=full.data[,322:332], aes(x=sx_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Sex&quot;) + xlab(&quot;Beta&quot;) + coord_cartesian(xlim=c(-6, 6), ylim=c(0, 3500))</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-7.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=full.data[,319:328], aes(x=btc_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Batch&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
+<pre class="r"><code>ggplot(data=full.data[,322:332], aes(x=btc_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Batch&quot;) + xlab(&quot;Beta&quot;) + coord_cartesian(xlim=c(-6, 6), ylim=c(0, 3500))</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-8.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>##Check p-vals and betas for all covariates in the full model, on data conditioned upon hit discovery in 4 individuals.
-ggplot(data=data.4[,319:328], aes(x=sp_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Species | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
+ggplot(data=data.4[,322:332], aes(x=sp_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Species | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-9.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=sx_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Sex | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
+<pre class="r"><code>ggplot(data=data.4[,322:332], aes(x=sx_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Sex | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-10.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=btc_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Batch | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
+<pre class="r"><code>ggplot(data=data.4[,322:332], aes(x=btc_pval)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;P-vals for Batch | 4&quot;) + xlab(&quot;P-value&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-11.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=sp_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Species | 4&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
-<pre><code>Warning: Removed 4 rows containing non-finite values (stat_bin).</code></pre>
+<pre class="r"><code>ggplot(data=data.4[,322:332], aes(x=sp_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Species | 4&quot;) + xlab(&quot;Beta&quot;) + coord_cartesian(xlim=c(-6, 6), ylim=c(0, 850))</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-12.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=sx_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Sex | 4&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
+<pre class="r"><code>ggplot(data=data.4[,322:332], aes(x=sx_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Sex | 4&quot;) + xlab(&quot;Beta&quot;) + coord_cartesian(xlim=c(-6, 6), ylim=c(0, 850))</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-13.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=data.4[,319:328], aes(x=btc_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Batch | 4&quot;) + xlab(&quot;Beta&quot;) + scale_x_continuous(limits=c(-6, 6))</code></pre>
+<pre class="r"><code>ggplot(data=data.4[,322:332], aes(x=btc_beta)) + geom_histogram(binwidth=0.001) + ggtitle(&quot;Betas for Batch | 4&quot;) + xlab(&quot;Beta&quot;) + coord_cartesian(xlim=c(-6, 6), ylim=c(0, 850))</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-14.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#These all look pretty good, with p-val distributions for sex and batch being fairly uniform, and betas all around being fairly normally distributed. We see distinct enrichment for significant p-values for the species term, which is what we were hoping for! Also of note is the fact that the beta distribution for species looks wider than those for batch and sex, reassuring us that species is a driving factor in differential Hi-C contacts.
 
@@ -428,8 +433,9 @@ ggplot(data=volcplot.full, aes(x=beta, y=pval, color=species)) + geom_point() + 
 <pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 p-values&quot;) + ggtitle(&quot;Contact Frequency Differences | 4 Individuals&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-24.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#Write out the data with the new columns added on!
-fwrite(full.data, &quot;~/Desktop/Hi-C/full.data.10.Nov17&quot;, quote = TRUE, sep = &quot;\t&quot;, row.names = FALSE, col.names = TRUE, na=&quot;NA&quot;, showProgress = FALSE)
-fwrite(data.4, &quot;~/Desktop/Hi-C/data.4.10.Nov17&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=TRUE, na=&quot;NA&quot;, showProgress = FALSE)</code></pre>
+fwrite(full.data, &quot;~/Desktop/Hi-C/full.data.10.2018&quot;, quote = TRUE, sep = &quot;\t&quot;, row.names = FALSE, col.names = TRUE, na=&quot;NA&quot;, showProgress = FALSE)
+fwrite(data.4, &quot;~/Desktop/Hi-C/data.4.10.2018&quot;, quote=FALSE, sep=&quot;\t&quot;, row.names=FALSE, col.names=TRUE, na=&quot;NA&quot;, showProgress = FALSE)</code></pre>
+<p>From this analysis two concerns emerge for further exploration: the QQ plots for the species p-values seem inflated, and the volcano plot seems highly asymmetrical. I’ll examine this further in the next analysis on linear modeling QC.</p>
 <!-- Insert the session information into the document -->
 <pre class="r"><code>sessionInfo()</code></pre>
 <pre><code>R version 3.4.0 (2017-04-21)
@@ -448,48 +454,50 @@ attached base packages:
 [8] base     
 
 other attached packages:
- [1] bedr_1.0.3         purrr_0.2.2.2      readr_1.1.1       
- [4] tibble_1.3.3       tidyverse_1.1.1    edgeR_3.18.1      
- [7] RColorBrewer_1.1-2 heatmaply_0.10.1   viridis_0.4.0     
-[10] viridisLite_0.2.0  stringr_1.2.0      gplots_3.0.1      
-[13] Hmisc_4.0-3        Formula_1.2-2      survival_2.41-3   
-[16] lattice_0.20-35    dplyr_0.7.2        plotly_4.7.0      
-[19] ggplot2_2.2.1      reshape2_1.4.2     data.table_1.10.4 
-[22] tidyr_0.6.3        plyr_1.8.4         limma_3.32.4      
+ [1] bedr_1.0.4          forcats_0.2.0       purrr_0.2.4        
+ [4] readr_1.1.1         tibble_1.3.4        tidyverse_1.2.1    
+ [7] edgeR_3.20.1        RColorBrewer_1.1-2  heatmaply_0.13.0   
+[10] viridis_0.4.0       viridisLite_0.2.0   stringr_1.2.0      
+[13] gplots_3.0.1        Hmisc_4.0-3         Formula_1.2-2      
+[16] survival_2.41-3     lattice_0.20-35     dplyr_0.7.4        
+[19] plotly_4.7.1        ggplot2_2.2.1       reshape2_1.4.2     
+[22] data.table_1.10.4-3 tidyr_0.7.2         plyr_1.8.4         
+[25] limma_3.34.3       
 
 loaded via a namespace (and not attached):
- [1] nlme_3.1-131         bitops_1.0-6         lubridate_1.6.0     
- [4] httr_1.3.1           rprojroot_1.2        prabclus_2.2-6      
- [7] tools_3.4.0          backports_1.1.0      R6_2.2.2            
-[10] rpart_4.1-11         KernSmooth_2.23-15   lazyeval_0.2.0      
-[13] colorspace_1.3-2     trimcluster_0.1-2    nnet_7.3-12         
-[16] gridExtra_2.2.1      mnormt_1.5-5         VennDiagram_1.6.17  
-[19] git2r_0.19.0         rvest_0.3.2          htmlTable_1.9       
-[22] TSP_1.1-5            xml2_1.1.1           labeling_0.3        
-[25] diptest_0.75-7       caTools_1.17.1       scales_0.4.1        
-[28] checkmate_1.8.3      DEoptimR_1.0-8       mvtnorm_1.0-6       
-[31] psych_1.7.5          robustbase_0.92-7    digest_0.6.12       
-[34] foreign_0.8-69       R.utils_2.5.0        rmarkdown_1.6       
-[37] base64enc_0.1-3      pkgconfig_2.0.1      htmltools_0.3.6     
-[40] readxl_1.0.0         htmlwidgets_0.9      rlang_0.1.1         
-[43] rstudioapi_0.7       bindr_0.1            jsonlite_1.5        
-[46] mclust_5.3           gtools_3.5.0         R.oo_1.21.0         
-[49] acepack_1.4.1        dendextend_1.5.2     magrittr_1.5        
-[52] modeltools_0.2-21    futile.logger_1.4.3  Matrix_1.2-10       
-[55] Rcpp_0.12.12         munsell_0.4.3        R.methodsS3_1.7.1   
-[58] stringi_1.1.5        whisker_0.3-2        yaml_2.1.14         
-[61] MASS_7.3-47          flexmix_2.3-14       grid_3.4.0          
-[64] parallel_3.4.0       gdata_2.18.0         crayon_1.3.4        
-[67] forcats_0.2.0        haven_1.1.0          splines_3.4.0       
-[70] hms_0.3              locfit_1.5-9.1       knitr_1.17          
-[73] fpc_2.1-10           codetools_0.2-15     stats4_3.4.0        
-[76] futile.options_1.0.0 glue_1.1.1           gclus_1.3.1         
-[79] evaluate_0.10.1      latticeExtra_0.6-28  lambda.r_1.2        
-[82] modelr_0.1.1         foreach_1.4.3        testthat_1.0.2      
-[85] cellranger_1.1.0     gtable_0.2.0         kernlab_0.9-25      
-[88] assertthat_0.2.0     broom_0.4.2          class_7.3-14        
-[91] seriation_1.2-2      iterators_1.0.8      registry_0.3        
-[94] bindrcpp_0.2         cluster_2.0.6       </code></pre>
+ [1] colorspace_1.3-2     class_7.3-14         modeltools_0.2-21   
+ [4] mclust_5.4           rprojroot_1.2        htmlTable_1.11.0    
+ [7] futile.logger_1.4.3  base64enc_0.1-3      rstudioapi_0.7      
+[10] flexmix_2.3-14       mvtnorm_1.0-6        lubridate_1.7.1     
+[13] xml2_1.1.1           codetools_0.2-15     splines_3.4.0       
+[16] R.methodsS3_1.7.1    mnormt_1.5-5         robustbase_0.92-8   
+[19] knitr_1.17           jsonlite_1.5         broom_0.4.3         
+[22] cluster_2.0.6        kernlab_0.9-25       R.oo_1.21.0         
+[25] httr_1.3.1           backports_1.1.1      assertthat_0.2.0    
+[28] Matrix_1.2-12        lazyeval_0.2.1       cli_1.0.0           
+[31] acepack_1.4.1        htmltools_0.3.6      tools_3.4.0         
+[34] bindrcpp_0.2         gtable_0.2.0         glue_1.2.0          
+[37] Rcpp_0.12.14         cellranger_1.1.0     trimcluster_0.1-2   
+[40] gdata_2.18.0         nlme_3.1-131         iterators_1.0.8     
+[43] fpc_2.1-10           psych_1.7.8          testthat_1.0.2      
+[46] rvest_0.3.2          gtools_3.5.0         dendextend_1.6.0    
+[49] DEoptimR_1.0-8       MASS_7.3-47          scales_0.5.0        
+[52] TSP_1.1-5            hms_0.4.0            parallel_3.4.0      
+[55] lambda.r_1.2         yaml_2.1.15          gridExtra_2.3       
+[58] rpart_4.1-11         latticeExtra_0.6-28  stringi_1.1.6       
+[61] gclus_1.3.1          foreach_1.4.3        checkmate_1.8.5     
+[64] seriation_1.2-2      caTools_1.17.1       rlang_0.1.4         
+[67] pkgconfig_2.0.1      prabclus_2.2-6       bitops_1.0-6        
+[70] evaluate_0.10.1      bindr_0.1            labeling_0.3        
+[73] htmlwidgets_0.9      magrittr_1.5         R6_2.2.2            
+[76] haven_1.1.0          whisker_0.3-2        foreign_0.8-69      
+[79] nnet_7.3-12          modelr_0.1.1         crayon_1.3.4        
+[82] futile.options_1.0.0 KernSmooth_2.23-15   rmarkdown_1.8       
+[85] locfit_1.5-9.1       grid_3.4.0           readxl_1.0.0        
+[88] git2r_0.19.0         digest_0.6.12        diptest_0.75-7      
+[91] webshot_0.5.0        VennDiagram_1.6.18   R.utils_2.6.0       
+[94] stats4_3.4.0         munsell_0.4.3        registry_0.5        </code></pre>
+</div>
 
 <hr>
 <p>
