@@ -1,7 +1,7 @@
 ---
-title: "Untitled"
-author: "First Last"
-date: YYYY-MM-DD
+title: "Linear Modeling QC"
+author: "Ittai Eres"
+date: 2017-10-15
 output: html_document
 ---
 
@@ -46,7 +46,9 @@ library(compiler)
 library(bedr)
 enableJIT(3)
 ```
-```{r Linear Modeling QC}
+###QC on QQ Plots
+Having observed inflated p-values in QQ plots from doing linear modeling, as well as a stark asymmetry in the distribution of betas for the species term in the volcano plot, here I move to examine both issues. The QQ plot issue is not truly concerning, as we were not necessarily expecting normality in this set of hits enriched for significant Hi-C contacts. It seems likely that any set of significant Hi-C hits called independently in each species will have some inflation in the significance of a species term for linearly modeling the interaction frequencies. That the QQ plot does not look like a GWAS QQ plot is not truly concerning, however, just to be sure, first I will run a series of QQ plots once again after shuffling some of the metadata labels. This simply ensures the inflation seen is not an artifact of processing. I tackle the volcano plot asymmetry after alleviating QQ plot concerns and doing some further genomic filtering explained below.
+```{r QQ Plots}
 #This file will examine first the inflation of p-values from the QQ plot at the end of linear_modeling.Rmd, and then the asymmetry seen in the volcano plots from linear modeling.
 
 #First, grab the qqplotting function I utilize from linear_modeling.Rmd:
@@ -58,8 +60,8 @@ newqqplot=function(pvals, quant, title){
 }
 
 #Now, as always, read in data files modified by initial_QC.Rmd and linear_modeling.Rmd
-full.data <- fread("~/Desktop/Hi-C/full.data.10.Nov17", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
-data.4 <- fread("~/Desktop/Hi-C/data.4.10.Nov17", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
+full.data <- fread("~/Desktop/Hi-C/full.data.10.2018", header = TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
+data.4 <- fread("~/Desktop/Hi-C/data.4.10.2018", header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress = FALSE)
 
 #This is the QQ plot for species from the linear model for Hi-C values from linear_modeling.Rmd. We can see a significant inflation of p-values here rising above the expected normal distribution alarmingly quickly:
 newqqplot(-log10(data.4$sp_pval), c(0.5, 0.75), "QQ Plot, Species P-vals, Data | 4")
@@ -108,10 +110,13 @@ newqqplot(-log10(fake1$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design SP only
 newqqplot(-log10(fake2$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design SP only, 2 | 4")
 newqqplot(-log10(fake3$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design SP only, 3 | 4")
 newqqplot(-log10(fake4$P.Value), c(0.5, 0.75), "QQ Plot, Shuffled Design SP only, 4 | 4")
+```
+These are slightly better, but many show some small degree of deflation. After looking at all these QQ plots concerns about p-value inflation are fairly assuaged, and it's again worth noting that there was no real cause for concern in the first place. Once again, I pulled out significant Hi-C hits from each species, so it makes sense that this set of hits might already be enriched for strong species differences. I conclude that the signal seen in the QQ plot is not an artifact of making incorrect assumptions in linear modeling.
 
-#These are slightly better, but many still show some small degree of deflation. After looking at all these QQ plots our concerns about p-value inflation are fairly assuaged, and it's worth noting that we perhaps shouldn't have even been worried in the first place. We pulled out significant Hi-C hits from each species, so it makes sense that this set of hits might already be enriched for strong species differences. We conclude the signal seen in the QQ plot is not an artifact of making incorrect assumptions in linear modeling.
-
-#However, we might still be concerned that some of the observed differences are not truly driven by biology, but due to differences in genome builds or other issues induced by liftOver. I now add several other metrics measuring differences in bin sizes and pair distances between humans and chimps, to help identify differences that may be primarily driven by mapping of orthology or different genome builds rather than true biology. I will then subset the QQ plots to particular classes of these hits and see if any pattern emerges. This utilizes the normal set of p-values from the original design conditioned upon discovery in 4 individuals. To do this, I first have to pull out the mean start and end positions of bins for each of the species from the data:
+###Genomic Differences
+However, we might still be concerned that some of the observed differences are not truly driven by biology, but due to differences in genome builds or other issues induced by liftOver. I now add several other metrics measuring differences in bin sizes and pair distances between humans and chimps, to help identify differences that may be primarily driven by mapping of orthology or different genome builds rather than true biology. I will then subset the QQ plots to particular classes of these hits and see if any pattern emerges. This utilizes the normal set of p-values from the original design conditioned upon discovery in 4 individuals. I also place hits into classes based on differences in bin size or distance between pair mates, and use a 3-dimensional plot to see if any class(es) of hits show strong inflation in their species p-values from linear modeling. This represents one of the final filtering steps.
+```{r Genomic Differences}
+#To do this, I first have to pull out the mean start and end positions of bins for each of the species from the data:
 H1startCmean <- rowMeans(data.4[,c('Hstart1-C', 'Hstart1-D', 'Hstart1-G', 'Hstart1-H')], na.rm=TRUE)
 H1endCmean <- rowMeans(data.4[,c('Hend1-C', 'Hend1-D', 'Hend1-G', 'Hend1-H')], na.rm=TRUE)
 H2startCmean <- rowMeans(data.4[,c('Hstart2-C', 'Hstart2-D', 'Hstart2-G', 'Hstart2-H')], na.rm=TRUE)
@@ -190,11 +195,16 @@ true3d$prop <- true3d$num_sig/true3d$set_size #Get the proportion of these diffe
 #I will then take this data frame and export it to plot.ly's online interface, in order to make a 3D plot that will allow me to visualize FDR significance inflation in any of these sets (and subsequently filter them out). The 3D plot looks like this:
 htmltools::includeHTML("/Users/ittaieres/Hi-C/analysis/QQQC.html")
 
-#Based on the 3D QQ quality control plot, some of these classes should be filtered out due to inflation of # hits significant @ 5% FDR. This relatively conservative filtering gets rid of ~78k hits, or about a fifth of them. There is a slightly less conservative filtering as well that does not exclude the class of hits with no distance difference but maximal bin size difference (minclass); that would only get rid of ~50k hits instead. For the time being, I go more conservative:
+#Based on the 3D QQ quality control plot, the hit classes with larger distance-between-mates differences should be filtered out due to inflation of # hits significant @ 5% FDR. This gets rid of ~55k hits, or about a seventh of them. Essentially I am removing any hits that showed a difference in distance of greater than 20kb when lifting Over acros the species, to eliminate technical genomic differences that may drive signal in the species term:
 highclass <- which(plot3d$dist_diff>20000)
 data.filtered <- data.4[-highclass,] #Just removed high class since it has the starkest effect on proportion of hits significant @ 5% FDR
+```
+Now I have obliterated any remaining concerns about the QQ plot inflation, and filtered out another class of Hi-C significant hits where species differences may have been driven by issues with liftOver between genomes.
 
-#Now, I go to the asymmetry issue. Here I once again show the volcano plot for 4 individuals. Observe the stark asymmetry with a pile-up of hits on the left side as compared to the right.
+###Volcano Plot Asymmetry
+Now, I go to the asymmetry issue seen in the volcano plot on the linear modeling outputs. I first utilize the set of data conditioned upon discovery in 4 individuals, and break this information down on a chromosome-by-chromosome basis to see if there are particular chromosomes driving the asymmetry. Upon observation of chromosome-specific effects I quantify the extent of asymmetry on individual chromosomes using a null expectation of a binomial distribution with 50/50 probability of betas being positive or negative. I then repeat these analyses and visualize them on the final set of filtered data from above.
+```{r Volcano Plot Asymmetry}
+#Here I once again show the volcano plot for 4 individuals. Observe the stark asymmetry with a pile-up of hits on the left side as compared to the right.
 volcplot.4 <- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species, chr=data.4$Hchr)
 ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences | 4 Individuals")
 ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
@@ -207,8 +217,8 @@ levels(volcplot.4$chr)
 ggplot(volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle("Volcano Plots by Chr") + facet_wrap(~as.factor(chr), nrow=5, ncol=5) + guides(color=FALSE) + ylab("-log10 p-values") + xlab("Log2 Fold Change in Contact Frequency")
 #This is extremely interesting. It appears that the asymmetry seen is being driven primarily by only some of the chromosomes, and particularly ones where large-scale rearrangements have transpired between humans and chimps (e.g. chrs 2, 16, 17). This will warrant further investigation in another element of the analysis; for now, I am satisfied that the asymmetry is not an issue with the entire dataset but is confined to individual chromosomes.
 
-#Now, check this again, but on the data I have filtered accounting for potential genomic differences introduced by liftOver:
-volcplot.filt <- data.frame(pval=-log10(data.filtered$sp_pval), beta=data.filtered$sp_beta, species=data.filtered$disc_species, chr=data.filtered$Hchr)
+#Now, check this again, but on the data I have filtered accounting for potential genomic differences introduced by liftOver. From here on out all analyses will be run on this filtered set of data:
+volcplot.filt <- data.frame(pval=-log10(data.filtered$sp_BH_pval), beta=data.filtered$sp_beta, species=data.filtered$disc_species, chr=data.filtered$Hchr)
 ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
 #This volcano plot makes it look as though the asymmetry goes away entirely, with both sides of the volcano showing a visually similar number of hits (no longer AS stark of asymmetry).
 
@@ -216,28 +226,35 @@ ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point() + 
 levels(volcplot.filt$chr)
 volcplot.filt$chr <- factor(volcplot.filt$chr, levels(volcplot.filt$chr)[c(1, 12, 16:22, 2:11, 13:15, 23:24)]) #Reorder factor levels!
 levels(volcplot.filt$chr)
-ggplot(volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle("Volcano Plots by Chr") + facet_wrap(~as.factor(chr), nrow=5, ncol=5) + guides(color=FALSE) + ylab("-log10 p-values") + xlab("Log2 Fold Change in Contact Frequency")
+ggplot(volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle("Volcano Plots by Chr") + facet_wrap(~as.factor(chr), nrow=5, ncol=5) + guides(color=FALSE) + ylab("-log10 BH-adjusted p-values") + xlab("Log2 Fold Change in Contact Frequency")
 #We can still see that there are certain chromosomes with a lot of asymmetry to them in terms of distribution of significant betas for the linear modeling--chimps still seem to dominate chromosomes 2, 15-17, and some others.
 
 #Now try to quantify the extent of asymmetry in the chromosomes, with a particular focus on hits that are statistically significant.
-asym.stats <- data.frame(chr=unique(data.filtered$Hchr), binom.p=rep(NA, 24))
+asym.stats <- data.frame(chr=unique(data.filtered$Hchr), binom.p=rep(NA, 24), prop.h=rep(NA, 24), prop.c=rep(NA, 24))
 rownames(asym.stats) <- asym.stats$chr
 for(chromo in unique(data.filtered$Hchr)){
-  mydat <- filter(data.filtered, Hchr==chromo, sp_pval<=0.05) #Iterate through chromosomes
+  mydat <- filter(data.filtered, Hchr==chromo, sp_BH_pval<=0.05) #Iterate through chromosomes
   side <- ifelse(mydat$sp_beta<0, 0, 1) #Assign sides of the beta dist'n to the betas
   asym.obs <- min(sum(side==1), sum(side==0)) #Find which side of the beta dist'n has less points, so I can use pbinom on default w/ lower.tail to find probability of observing a result as or MORE asymmetric than this one.
   asym.stats[chromo, 2] <- pbinom(asym.obs, length(side), 0.5) #Find that probability with the assumption of 50/50 chance of landing on either side.
+  asym.stats[chromo, 3] <- sum(side==1)/length(side) #Find the proportion of the hits that fall on the human side of the distribution (positive, indicating increased contact frequency here in humans as compared to chimps)
+  asym.stats[chromo, 4] <- sum(side==0)/length(side) #Same thing as above, but for chimps this time.
 }
 #Now we can look at the actual results to quantify how asymmetric the significant hits are from each chromosome:
 asym.stats
 #ChrY did not have any significant hits, so get a p-value of 1. Chr7 is so asymmetric it is impossible to calculate, while chromosomes 1, 2, 6, 9, 11, 15, 16, 17, and X all showed asymmetry in direction of effects with extreme statistical significance.
 
+#Now, make volcano plots by chromosome again, this time labeling each chromosome with its binomial p-value and the percentage of significant hits showing stronger contact frequencies in each species on either side of the distribution.
+ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle("Volcano Plots by Chr") + facet_wrap(~chr, nrow=5, ncol=5) + guides(color=FALSE) + ylab("-log10 BH-adjusted p-values") + xlab("Log2 Fold Change in Contact Frequency") + geom_text(data=asym.stats, aes(x=-4.5, y=0.75, label=paste(round(prop.c*100, digits=1), "%", sep=""), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=4, y=0.75, label=paste(round(prop.h*100, digits=1), "%", sep=""), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=0, y=3.75, label=signif(binom.p, digits=3), color=NULL), show.legend=FALSE, size=2)
+#ggsave('~/Desktop/volcchr.jpg', device="jpeg", antialias="none") This was an earlier attempt at clearing up some image resolution blurriness with the text.
+ggsave('~/Desktop/volcchr2.jpg', device="jpeg", dpi=5000) #Works well!
+
 #Write out the data with the new columns added on!
-fwrite(full.data, "~/Desktop/Hi-C/full.data.10.Nov17", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA", showProgress = FALSE)
-fwrite(data.4, "~/Desktop/Hi-C/data.4.10.Nov17", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA", showProgress = FALSE)
+fwrite(full.data, "~/Desktop/Hi-C/full.data.10.2018", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA", showProgress = FALSE)
+fwrite(data.4, "~/Desktop/Hi-C/data.4.10.2018", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA", showProgress = FALSE)
 fwrite(data.filtered, "~/Desktop/Hi-C/data.4.filtered.txt", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA", showProgress = FALSE)
 ```
-
+From this analysis we have dealt with some quality control issues, and filtered down the data to a final set of biologically significant Hi-C interaction frequencies, many of which appear species-specific. There are clearly strong differences between the species that make their 3D regulatory landscapes divergent. Now, I move to orthogonal gene expression analyses.
 
 
 ## Session information
