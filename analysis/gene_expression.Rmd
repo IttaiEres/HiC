@@ -284,9 +284,10 @@ I now look to see if genes that are differentially expressed are also differenti
 #A function for calculating proportion of DE genes that are DHi-C under a variety of different paradigms. Accounts for when no genes are DHi-C and when all genes are DHi-C. Returns the proportion of DE genes that are also DHi-C, as well as the expected proportion based on conditional probability alone.
 prop.calculator <- function(de.vec, hic.vec, i, k){
   my.result <- data.frame(prop=NA, exp.prop=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
-  bad.indices <- which(is.na(hic.vec)) #First obtain indices where Hi-C info is missing, then remove from both vectors.
+  bad.indices <- which(is.na(hic.vec)) #First obtain indices where Hi-C info is missing, if there are any, then remove from both vectors.
+  if(length(bad.indices>0)){
   de.vec <- de.vec[-bad.indices]
-  hic.vec <- hic.vec[-bad.indices]
+  hic.vec <- hic.vec[-bad.indices]}
   de.vec <- ifelse(de.vec<=i, 1, 0)
   hic.vec <- ifelse(hic.vec<=k, 1, 0)
   if(sum(hic.vec, na.rm=TRUE)==0){#The case where no genes show up as DHi-C.
@@ -313,7 +314,7 @@ enrichment.plotter <- function(df, HiC_col, DE_col, xlab, i=c(0.01, 0.025, 0.05,
   enrich.table <- data.frame(DEFDR = c(rep(i[1], 100), rep(i[2], 100), rep(i[3], 100), rep(i[4], 100), rep(i[5], 100)), DHICFDR=rep(k, 5), prop.obs=NA, prop.exp=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
   for(de.FDR in i){
     for(hic.FDR in k){
-      enrich.table[which(enrich.table$DEFDR==de.FDR&enrich.table$DHICFDR==hic.FDR), 3:9] <- prop.calculator(df[,HiC_col], df[,DE_col], de.FDR, hic.FDR)
+      enrich.table[which(enrich.table$DEFDR==de.FDR&enrich.table$DHICFDR==hic.FDR), 3:9] <- prop.calculator(df[,DE_col], df[,HiC_col], de.FDR, hic.FDR)
     }
   }
   des.enriched <- ggplot(data=enrich.table, aes(x=DHICFDR, y=prop.obs, group=as.factor(DEFDR), color=as.factor(DEFDR))) +geom_line()+ geom_line(aes(y=prop.exp), linetype="dashed", size=0.5) + ggtitle("Enrichment of DHiC in DE Genes") + xlab(xlab) + ylab("Proportion of DE genes that are DHiC") + guides(color=guide_legend(title="FDR for DE Genes"))
