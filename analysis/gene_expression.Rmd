@@ -432,20 +432,32 @@ permuter <- function(exprs, cov_matrix, meta_df){
 
 
 ##Visualization of the permutations!
-minFDRexp <- fread("~/Desktop/HiC_covs/results/permout_h_minFDR", header = TRUE, stringsAsFactors = FALSE)
-minFDRe <- minFDRexp/sum(minFDRexp[1,])
-minFDRo <- lmcorrect(hmin[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], hmin[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], meta.data)
-minFDRo <- data.frame(DEneither=sum(h_minFDR_pvals$before>0.05&h_minFDR_pvals$after>0.05), DEbefore=sum(h_minFDR_pvals$before<=0.05&h_minFDR_pvals$after>0.05), DEafter=sum(h_minFDR_pvals$before>0.05&h_minFDR_pvals$after<=0.05), DEboth=sum(h_minFDR_pvals$before<=0.05&h_minFDR_pvals$after<=0.05))
-minFDRo <- minFDRo/sum(minFDRo[1,])
+perm.vis <- function(file, df, metadata, hictype){
+  expected <- fread(paste("~/Desktop/HiC_covs/results/", file, sep=""), stringsAsFactors = FALSE, data.table = FALSE, header = TRUE)
+  expected <- (expected/sum(expected[1,]))*100
+  observed <- lmcorrect(df[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")], df[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")], metadata)
+  observed <- (observed/sum(observed[1,]))*100
+  deneither <- ggplot(data=expected, aes(x="", y=DEneither)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=observed$DEneither, color="Observed"), size=3) + ggtitle("Percent of genes with no evidence for DE regardless") + ylab("% genes not DE in either") + xlab(paste("1000 Permutations of Hi-C data ", hictype, sep="")) + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
+  debefore <- ggplot(data=expected, aes(x="", y=DEbefore)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=observed$DEbefore, color="Observed"), size=3) + ggtitle("Percent of genes with reduced evidence for DE after Hi-C correction") + ylab("% genes DE before, but not after, Hi-C correction") + xlab(paste("1000 Permutations of Hi-C data ", hictype, sep="")) + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
+  deafter <- ggplot(data=expected, aes(x="", y=DEafter)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=observed$DEafter, color="Observed"), size=3) + ggtitle("Percent of genes with increased evidence for DE after Hi-C correction") + ylab("% genes DE after, but not before, Hi-C correction") + xlab(paste("1000 Permutations of Hi-C data ", hictype, sep="")) + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
+  deboth <- ggplot(data=expected, aes(x="", y=DEboth)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=observed$DEboth, color="Observed"), size=3) + ggtitle("Percent of genes with evidence for DE regardless") + ylab("% genes DE in both") + xlab(paste("1000 Permutations of Hi-C data ", hictype, sep="")) + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
+  print(deneither)
+  print(debefore)
+  print(deafter)
+  print(deboth)
+}
 
-ggplot(data=minFDRe, aes(x="", y=DEbefore*100)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=minFDRo$DEbefore*100, color="Observed"), size=3) + ggtitle("Percent of genes with reduced evidence for DE after Hi-C correction") + ylab("% genes DE before, but not after, Hi-C correction") + xlab("1000 Permutations of Hi-C data") + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))#+ guides(color=guide_legend(title="Data", override.aes = list(shape=5))) #Finally have it a way where it just shows points in legend for both; better than showing boxplots for both.
+perm.vis("permout_h_minFDR", hmin, meta.data, "for min FDR contact, Humans")
+perm.vis("permout_h_maxB", hmaxB, meta.data,  "for max beta contact, Humans")
+perm.vis("permout_h_US", hUS, meta.data, "for upstream contact, Humans")
+perm.vis("permout_c_minFDR", cmin, meta.data, "for min FDR contact, Chimps")
+perm.vis("permout_c_maxB", cmaxB, meta.data, "for max beta contact, Chimps")
+perm.vis("permout_c_US", cUS, meta.data, "for upstream contact, Chimps")
+```
 
-ggplot(data=minFDRe, aes(x="", y=DEafter*100)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=minFDRo$DEafter*100, color="Observed"), size=3) + ggtitle("Percent of genes with increased evidence for DE after Hi-C correction") + ylab("% genes DE after, but not before, Hi-C correction") + xlab("1000 Permutations of Hi-C data") + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
 
-ggplot(data=minFDRe, aes(x="", y=DEneither*100)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=minFDRo$DEneither*100, color="Observed"), size=3) + ggtitle("Percent of genes with no evidence for DE regardless") + ylab("% genes not DE in either") + xlab("1000 Permutations of Hi-C data") + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
 
-ggplot(data=minFDRe, aes(x="", y=DEboth*100)) + geom_boxplot(aes(color="Expected"), show.legend=FALSE) + geom_point(aes(y=minFDRo$DEboth*100, color="Observed"), size=3) + ggtitle("Percent of genes with evidence for DE regardless") + ylab("% genes DE in both") + xlab("1000 Permutations of Hi-C data") + scale_color_manual(values=c("blue", "red"), guide=FALSE) +guides(color=guide_legend("Data", override.aes = list(shape=c(16, 16))))
-
+```{r, include=FALSE, echo=FALSE, eval=FALSE}
 #######Effect size differences/sign changes
 design <- model.matrix(~1+meta.data$SP+meta.data$SX)
 exprs <- hmin[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")]
@@ -463,6 +475,7 @@ lmFit(resid_hic, design=design) %>% eBayes(.) -> fit_a
 #Get effect sizes.
 beta_b <- fit_b$coefficients[,2]
 beta_a <- fit_a$coefficients[,2]
+
 se_beta_b <- se_beta_hic <- se_beta_a <- cov_beta_ba <- vector("numeric", nrow(hic))
 
 #Get variances of beta_before's species effect:
