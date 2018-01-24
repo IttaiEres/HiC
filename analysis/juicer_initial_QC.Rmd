@@ -1,0 +1,130 @@
+---
+title: "Hi-C Data Normalization and Initial Quality Control, Juicer"
+author: "Ittai Eres"
+date: 2018-01-23
+output: html_document
+---
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+```{r read-chunk, include=FALSE, cache=FALSE}
+knitr::read_chunk("chunks.R")
+```
+
+<!-- Update knitr chunk options -->
+```{r knitr-opts-chunk, include=FALSE}
+```
+
+<!-- Insert the date the file was last updated -->
+```{r last-updated, echo=FALSE, results='asis'}
+```
+
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+```{r code-version, echo=FALSE, results='asis'}
+```
+
+<!-- Add your analysis here -->
+
+```{r library loading, echo=FALSE, include=FALSE}
+#Load in necessary packages
+library(limma)
+library(plyr)
+library(tidyr)
+library(data.table)
+library(reshape2)
+library(ggplot2)
+library(plotly)
+library(dplyr)
+library(Hmisc)
+library(gplots)
+library(stringr)
+library(heatmaply)
+library(RColorBrewer)
+library(edgeR)
+library(tidyverse)
+library(compiler)
+library(bedr)
+enableJIT(3)
+```
+
+###Initial Data read-in and quality control
+First, I read in the data and normalize it with cyclic pairwise loess normalization. Then I look at histograms of the distributions of the contact frequencies on an individual-by-individual basis, to see if they are comparable. I also look at a plot of the mean vs. the variance as an additional quality control metric; this is typically done on RNA-seq count data. In that case, it's done to check if the normalized data are distributed in a particular fashion (e.g. a poisson model would have a linear mean-variance relationship). In the limma/voom pipeline, count data are log-cpm transformed and a loess trend line of variance vs. mean is then fit to create weights for individual genes to be fed into linear modeling with limma. Since this is not a QC metric typically used for Hi-C data, the only thing I hope to see is no particularly strong relationship between variance and mean.
+```{r Initial Hi-C Data Read-in and QC}
+###Read in data, normalize it with cyclic loess (pairwise), clean it from any rows that have missing values.
+full.data <- fread("~/Desktop/final.juicer.10kb.info", header=TRUE, stringsAsFactors = FALSE, data.table=FALSE, showProgress = FALSE) #Start w/ roughly 13.6k hits here
+full.contacts <- full.data[complete.cases(full.data[,112:119]), 112:119] #Reduces to 12.8k; lose ~700 hits that don't have full info.
+boxplot(full.contacts, ylim=c(0, 30), horizontal = TRUE)
+full.contacts <- as.data.frame(normalizeCyclicLoess(full.contacts, span=1/4, iterations=3, method="pairs"))
+boxplot(full.contacts, ylim=c(0, 30), horizontal=TRUE)
+full.data <- full.data[complete.cases(full.data[,112:119]),]
+full.data[,112:119] <- full.contacts
+
+###First, a quick look at histograms of the distributions of the significant Hi-C hits from homer, in both humans and chimps.
+ggplot(data=melt(full.contacts[,c(1:2, 5:6)]), aes(x=value)) + geom_histogram(binwidth=0.01, aes(group=variable)) + facet_wrap(~as.factor(variable)) + ggtitle("Distributions of Juicer-Significant Hi-C Contacts, Humans") + xlab("Juicer KR-Normalized Interaction Frequency") + coord_cartesian(xlim=c(0, 5), ylim=c(0, 125)) #Human dist'ns
+ggplot(data=melt(full.contacts[,c(3:4, 7:8)]), aes(x=value)) + geom_histogram(binwidth=0.01, aes(group=variable)) + facet_wrap(~as.factor(variable)) + ggtitle("Distributions of Homer-Significant Hi-C Contacts, Chimps") + xlab("Homer-Normalized Interaction Frequency") + coord_cartesian(xlim=c(0, 5), ylim=c(0, 125)) #Chimp Dist'ns
+#Both sets of distributions look fairly bimodal, with chimps in particular showing a peak around 0.
+
+###As an initial quality control metric, take a look at the mean vs. variance plot for the normalized data. Also go ahead and add on columns for mean frequencies and variances both within and across the species, while they're being calculated here anyway:
+select(full.data, "A-21792_KR", "B-28126_KR", "E-28815_KR", "F-28834_KR") %>% apply(., 1, mean) -> full.data$Hmean
+select(full.data, "C-3649_KR", "D-40300_KR", "G-3624_KR", "H-3651_KR") %>% apply(., 1, mean) -> full.data$Cmean
+select(full.data, "A-21792_KR", "B-28126_KR", "E-28815_KR", "F-28834_KR", "C-3649_KR", "D-40300_KR", "G-3624_KR", "H-3651_KR") %>% apply(., 1, mean) -> full.data$ALLmean #Get means across species.
+select(full.data, "A-21792_KR", "B-28126_KR", "E-28815_KR", "F-28834_KR") %>% apply(., 1, var) -> full.data$Hvar #Get human variances.
+select(full.data, "C-3649_KR", "D-40300_KR", "G-3624_KR", "H-3651_KR") %>% apply(., 1, var) -> full.data$Cvar #Get chimp variances.
+select(full.data, "A-21792_KR", "B-28126_KR", "E-28815_KR", "F-28834_KR", "C-3649_KR", "D-40300_KR", "G-3624_KR", "H-3651_KR") %>% apply(., 1, var) -> full.data$ALLvar #Get variance across species.
+{plot(full.data$ALLmean, full.data$ALLvar, main="Mean vs. Variance in Homer-corrected contact frequency", xlab="Mean Hi-C Contact Frequency", ylab="Variance in Hi-C Contact Frequency")
+  abline(lm(full.data$ALLmean~full.data$ALLvar), col="red")}
+#Very flat line of the regression. Solid looking.
+```
+On the whole, the distributions look fairly comparable across individuals and species, and the mean vs. variance plots show weak correlation at best between the two metrics. Now knowing the data are comparable in this sense, the next question would be whether they are different enough between the species to separate them from one another with unsupervised clustering and PCA methods.
+
+###Data clustering with Principal Components Analysis (PCA) and correlation heatmap clustering.
+Now I use PCA, breaking down the interaction frequency values into principal components that best represent the variability within the data. This technique uses orthogonal transformation to convert the many dimensions in variability of this dataset into a lower-dimensional picture that can be used to separate out functional groups in the data. In this case, the expectation is that the strongest principal component, representing the plurality of the variance, will separate out humans and chimps along its axis, grouping the two species independently, as we expect their interaction frequency values to cluster together. I then also compute pairwise pearson correlations between each of the individuals across all Hi-C contacts, and use unsupervised hierarchical clustering to create a heatmap that once again will group individuals based on similarity in interaction frequency values. Again, I would expect this technique to separate out the species very distinctly from one another.
+```{r Clustering w/ PCA and Heatmaps}
+###Now do principal components analysis (PCA) on these data to see how they separate:
+meta.data <- data.frame("SP"=c("H", "H", "C", "C", "H", "H", "C", "C"), "SX"=c("F", "M", "M", "F", "M", "F", "M", "F"), "Batch"=c(1, 1, 1, 1, 2, 2, 2, 2)) #need the metadata first to make this interesting; obtain this information from my study design
+pca <- prcomp(t(full.contacts), scale=TRUE, center=TRUE)
+ggplot(data=as.data.frame(pca$x), aes(x=PC1, y=PC2, shape=as.factor(meta.data$SP), color=as.factor(meta.data$Batch), size=2)) + geom_point() +labs(title="PCA on normalized Hi-C Contact Frequency") + guides(color=guide_legend(order=1), size=FALSE, shape=guide_legend(order=2)) + xlab(paste("PC1 (", 100*summary(pca)$importance[2,1], "% of variance)")) + ylab((paste("PC2 (", 100*summary(pca)$importance[2,2], "% of variance)"))) + labs(color="Batch", shape="Species") + scale_shape_manual(labels=c("Chimp", "Human"), values=c(16, 17)) #PCA shows the species separating nicely along PC1, which explains the highest proportion of the variance (as seen from scree plot below). This is nice and suggests that there ARE true differences in the data between species we are likely to detect here. None of the other PCs correlate with the number of PE reads, the tags per base pair statistic, or the fraction of interchromosomal reads, all from the homer output (not shown).
+barplot(summary(pca)$importance[2,], xlab="PCs", ylab="Proportion of Variance Explained", main="PCA on normalized Hi-C contact frequency") #Scree plot showing all the PCs and the proportion of the variance they explain.
+
+###Heatmap clustering of these data as another quality control metric:
+corheat <- cor(full.contacts, use="complete.obs", method="pearson") #Corheat for the full data set, and heatmap. Pearson clusters poorly.
+corheats <- cor(full.contacts, use="complete.obs", method="spearman")
+colnames(corheat) <- c("A_HF", "B_HM", "C_CM", "D_CF", "E_HM", "F_HF", "G_CM", "H_CF")
+rownames(corheat) <- colnames(corheat)
+colnames(corheats) <- colnames(corheat)
+rownames(corheats) <- colnames(corheat)
+heatmaply(corheat, main="Pairwise Pearson Correlation @ 10kb", k_row=2, k_col=2, symm=TRUE, margins=c(50, 50, 30, 30)) #Clusters poorly.
+heatmaply(corheats, main="Pairwise Spearman Correlation @ 10kb", k_row=2, k_col=2, symm=TRUE, margins=c(50, 50, 30, 30)) #Clusters well!
+```
+
+###Variance exploration
+Now I look at several metrics to assess variance in the data, checking which species hits were discovered as significant in and how many individuals a given hit was discovered in. I look at this to understand if there are some cutoffs that should be made to reduce the noisiness of the data and maximize the significance of further findings.
+```{r Variance QC}
+###Add columns to full.data to indicate species of discovery and number of individuals discovered in. These pieces of information are good to know about each of the hits generally, but can also be used to make decisions about filtering out certain classes of hits if variance is associated with any of these metrics.  
+humNAs <- rowSums(is.na(full.data[,1:53])) #52 is when there is no human info. 13 NAs per individual.
+chimpNAs <- rowSums(is.na(full.data[,54:105])) #Same as above of course.
+full.data$found_in_H <- (4-humNAs/13) #Set a new column identifying number of humans hit was found in
+full.data$found_in_C <- (4-chimpNAs/13) #Set a new column identifying number of chimps hit was found in
+full.data$disc_species <- ifelse(full.data$found_in_C>0&full.data$found_in_H>0, "B", ifelse(full.data$found_in_C==0, "H", "C")) #Set a column identifying which species (H, C, or Both) the hit in question was identified in. Works with nested ifelses.
+full.data$tot_indiv_IDd <- full.data$found_in_C+full.data$found_in_H #Add a column specifying total number of individuals homer found the significant hit in.
+
+###Take a look at what proportion of the significant hits were discovered in either of the species (or both of them).
+sum(full.data$disc_species=="H") #~8k
+sum(full.data$disc_species=="C") #~3k
+sum(full.data$disc_species=="B") #~2k
+#This is reassuring, as similar numbers of discoveries in both species suggests comparable power for detection.
+
+###Now I look at variance in interaction frequency as a function of the number of individuals in which a pair was independently called as significant. Essentially, I'm checking here to see if there is some kind of cutoff I should make for the significant hits--i.e., if the variance looks to drop off significantly after a hit is discovered in at least 2 individuals, this suggests possibly filtering out any hit only discovered in 1 individual.
+myplot <- data.frame(disc_species=full.data$disc_species, found_in_H=full.data$found_in_H, found_in_C=full.data$found_in_C, tot_indiv_IDd=full.data$tot_indiv_IDd, Hvar=full.data$Hvar, Cvar=full.data$Cvar, ALLvar=full.data$ALLvar)
+ggplot(data=myplot, aes(group=tot_indiv_IDd, x=tot_indiv_IDd, y=ALLvar)) + geom_boxplot() + ggtitle("Number of Individuals a Hi-C Hit is Discovered in vs. Variance") + xlab("# Individuals where Hi-C contact called significant") + ylab("Variance in Interaction Frequency") + coord_cartesian(ylim=c(0, 10))
+ggplot(data=myplot, aes(group=tot_indiv_IDd, x=tot_indiv_IDd, y=ALLvar)) + geom_boxplot() + scale_y_continuous(limits=c(0, 1)) + ggtitle("Number of Individuals a Hi-C Hit is Discovered in vs. Variance") + xlab("# Individuals where Hi-C contact called significant") + ylab("Variance in Interaction Frequency")
+
+fwrite(full.data, "~/Desktop/Hi-C/juicer.full.data.10.2018", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA", showProgress = FALSE)
+```
+
+## Session information
+
+<!-- Insert the session information into the document -->
+```{r session-info}
+```
