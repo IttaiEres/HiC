@@ -15,3 +15,6 @@ This website details computational analyses done on my thesis project, which uti
 *  [Orthogonal analysis with gene expression data collected from the same cell lines](gene_expression.html)
 
 #### Analyses Utilizing Juicer
+*  [Reading in of the data, normalization, and initial quality control metrics](juicer_initial_QC.html)
+*  [Linear modeling of the data to find quantitative contact differences between humans and chimpanzees](juicer_linear_modeling.html)
+*  [Quality control on the linear modeling, to account for p-value inflation and volcano plot asymmetry](juicer_linear_modeling_QC.html)
