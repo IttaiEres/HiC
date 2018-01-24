@@ -318,7 +318,7 @@ shared across the workflowr files. -->
 <p><strong>Last updated:</strong> 2018-01-24</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> bd59693</p>
+<p><strong>Code version:</strong> 724a940</p>
 <!-- Add your analysis here -->
 <div id="overlap-between-hi-c-data-and-orthogonal-gene-expression-data" class="section level3">
 <h3>Overlap Between Hi-C Data and Orthogonal Gene Expression Data</h3>
@@ -722,6 +722,227 @@ ggplot(data=h_minFDR_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point
 <p><img src="figure/gene_expression.Rmd/Linear%20modeling%20magic-5.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=h_US_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + geom_vline(xintercept=-log10(0.05), color=&quot;red&quot;) + geom_abline(slope=1, intercept=0, color=&quot;green&quot;, linetype=&quot;dashed&quot;) + ggtitle(&quot;Evidence for DE before vs. after regressing out Hi-C US bin FDR (H)&quot;) + xlab(&quot;-log10(p-value of DE before Hi-C regression)&quot;) + ylab(&quot;-log10(p-value of DE after Hi-C regression&quot;)</code></pre>
 <p><img src="figure/gene_expression.Rmd/Linear%20modeling%20magic-6.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>###A function that runs a linear model, both with and without Hi-C corrected expression values, and returns a dataframe of hit classes (DE or not before and after correction). This is very similar to the function just run, but instead of obtaining p-values before and after correction at the end, it returns counts of genes in the 4 different classes possible here (DE in neither, DE in both, DE before but not after, and DE after but not before):
+lmcorrect &lt;- function(exprs, cov_matrix, meta_df){
+  result &lt;- data.frame(DEneither=NA, DEbefore=NA, DEafter=NA, DEboth=NA)
+  hic_present &lt;- sapply(1:nrow(cov_matrix), function(i) !any(is.na(cov_matrix[i,]))) #First, remove any rows w/ missing Hi-C data.
+  exprs &lt;- data.matrix(exprs[hic_present,]) #Filter expression with this
+  cov_matrix &lt;- data.matrix(cov_matrix[hic_present,]) #Filter Hi-C data with this
+  
+  #Now, prepare to run the actual models. First run a model w/ Hi-C as a covariate to evaluate
+  design &lt;- model.matrix(~1+meta_df$SP+meta_df$SX)
+  resid_hic &lt;- array(0, dim=c(nrow(exprs), ncol(cov_matrix))) #Initialize a dataframe for storing the residuals.
+  for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
+   resid_hic[i,] &lt;- lm(exprs[i,]~cov_matrix[i,])$resid 
+  }
+  lmFit(exprs, design=design) %&gt;% eBayes(.) %&gt;% topTable(., coef=2, adjust=&quot;BH&quot;, number=Inf, sort.by=&quot;none&quot;) -&gt; fit_before
+  lmFit(resid_hic, design=design) %&gt;% eBayes(.) %&gt;% topTable(., coef=2, adjust=&quot;BH&quot;, number=Inf, sort.by=&quot;none&quot;) -&gt; fit_after
+  
+  result[1,] &lt;- c(sum(fit_before$adj.P.Val&gt;0.05&amp;fit_after$adj.P.Val&gt;0.05), sum(fit_before$adj.P.Val&lt;=0.05&amp;fit_after$adj.P.Val&gt;0.05), sum(fit_before$adj.P.Val&gt;0.05&amp;fit_after$adj.P.Val&lt;=0.05), sum(fit_before$adj.P.Val&lt;=0.05&amp;fit_after$adj.P.Val&lt;=0.05))
+  return(result)
+}
+
+#This is merely a function for running permutations of the function above with the Hi-C values shuffled. I perform this on the RCC Midway2 cluster, since it would take an absurd amount of time otherwise. The idea here is to get a sense of how significant the explanatory power Hi-C has for expression here is, by comparing it to what it would be under a &quot;null&quot; model where the Hi-C values are assigned at random.
+permuter &lt;- function(exprs, cov_matrix, meta_df){
+  results &lt;- data.frame(DEneither=rep(NA, 1000), DEbefore=rep(NA, 1000), DEafter=rep(NA, 1000), DEboth=rep(NA, 1000))
+  for(model in 1:1000){
+    hicperm &lt;- cov_matrix[,sample(ncol(cov_matrix))]
+    results[model,] &lt;- lmcorrect(exprs, hicperm, meta_df)
+  }
+}
+
+
+##Visualization of the permutations!
+perm.vis &lt;- function(file, df, metadata, hictype){
+  expected &lt;- fread(paste(&quot;~/Desktop/HiC_covs/results/&quot;, file, sep=&quot;&quot;), stringsAsFactors = FALSE, data.table = FALSE, header = TRUE)
+  expected &lt;- (expected/sum(expected[1,]))*100
+  observed &lt;- lmcorrect(df[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)], df[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)], metadata)
+  observed &lt;- (observed/sum(observed[1,]))*100
+  deneither &lt;- ggplot(data=expected, aes(x=&quot;&quot;, y=DEneither)) + geom_boxplot(aes(color=&quot;Expected&quot;), show.legend=FALSE) + geom_point(aes(y=observed$DEneither, color=&quot;Observed&quot;), size=3) + ggtitle(&quot;Percent of genes with no evidence for DE regardless&quot;) + ylab(&quot;% genes not DE in either&quot;) + xlab(paste(&quot;1000 Permutations of Hi-C data &quot;, hictype, sep=&quot;&quot;)) + scale_color_manual(values=c(&quot;blue&quot;, &quot;red&quot;), guide=FALSE) +guides(color=guide_legend(&quot;Data&quot;, override.aes = list(shape=c(16, 16))))
+  debefore &lt;- ggplot(data=expected, aes(x=&quot;&quot;, y=DEbefore)) + geom_boxplot(aes(color=&quot;Expected&quot;), show.legend=FALSE) + geom_point(aes(y=observed$DEbefore, color=&quot;Observed&quot;), size=3) + ggtitle(&quot;Percent of genes with reduced evidence for DE after Hi-C correction&quot;) + ylab(&quot;% genes DE before, but not after, Hi-C correction&quot;) + xlab(paste(&quot;1000 Permutations of Hi-C data &quot;, hictype, sep=&quot;&quot;)) + scale_color_manual(values=c(&quot;blue&quot;, &quot;red&quot;), guide=FALSE) +guides(color=guide_legend(&quot;Data&quot;, override.aes = list(shape=c(16, 16))))
+  deafter &lt;- ggplot(data=expected, aes(x=&quot;&quot;, y=DEafter)) + geom_boxplot(aes(color=&quot;Expected&quot;), show.legend=FALSE) + geom_point(aes(y=observed$DEafter, color=&quot;Observed&quot;), size=3) + ggtitle(&quot;Percent of genes with increased evidence for DE after Hi-C correction&quot;) + ylab(&quot;% genes DE after, but not before, Hi-C correction&quot;) + xlab(paste(&quot;1000 Permutations of Hi-C data &quot;, hictype, sep=&quot;&quot;)) + scale_color_manual(values=c(&quot;blue&quot;, &quot;red&quot;), guide=FALSE) +guides(color=guide_legend(&quot;Data&quot;, override.aes = list(shape=c(16, 16))))
+  deboth &lt;- ggplot(data=expected, aes(x=&quot;&quot;, y=DEboth)) + geom_boxplot(aes(color=&quot;Expected&quot;), show.legend=FALSE) + geom_point(aes(y=observed$DEboth, color=&quot;Observed&quot;), size=3) + ggtitle(&quot;Percent of genes with evidence for DE regardless&quot;) + ylab(&quot;% genes DE in both&quot;) + xlab(paste(&quot;1000 Permutations of Hi-C data &quot;, hictype, sep=&quot;&quot;)) + scale_color_manual(values=c(&quot;blue&quot;, &quot;red&quot;), guide=FALSE) +guides(color=guide_legend(&quot;Data&quot;, override.aes = list(shape=c(16, 16))))
+  print(deneither)
+  print(debefore)
+  print(deafter)
+  print(deboth)
+}
+
+perm.vis(&quot;permout_h_minFDR&quot;, hmin, meta.data, &quot;for min FDR contact, Humans&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-2.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-3.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>perm.vis(&quot;permout_h_maxB&quot;, hmaxB, meta.data,  &quot;for max beta contact, Humans&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-5.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-6.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-7.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>perm.vis(&quot;permout_h_US&quot;, hUS, meta.data, &quot;for upstream contact, Humans&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-9.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-10.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-11.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-12.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>perm.vis(&quot;permout_c_minFDR&quot;, cmin, meta.data, &quot;for min FDR contact, Chimps&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-13.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-14.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-15.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-16.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>perm.vis(&quot;permout_c_maxB&quot;, cmaxB, meta.data, &quot;for max beta contact, Chimps&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-17.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-18.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-19.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-20.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>perm.vis(&quot;permout_c_US&quot;, cUS, meta.data, &quot;for upstream contact, Chimps&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-21.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-22.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-23.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Permutation%20Visualizations-24.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#######Effect size differences/sign changes
+design &lt;- model.matrix(~1+meta.data$SP+meta.data$SX)
+exprs &lt;- hmin[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)]
+hic &lt;- hmin[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)]
+present &lt;- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
+exprs &lt;- data.matrix(exprs[present,])
+hic &lt;- data.matrix(hic[present,])
+lmFit(exprs, design=design) %&gt;% eBayes(.) -&gt; fit_full
+
+
+#Filter to just DE genes here.
+filter &lt;- topTable(fit_full, coef=2, adjust=&quot;BH&quot;, number=Inf, sort.by=&quot;none&quot;)
+good.indices &lt;- which(filter$adj.P.Val &lt;= 0.05)
+
+#Now run analyses
+exprs &lt;- exprs[good.indices,]
+hic &lt;- hic[good.indices,]
+resid_hic &lt;- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
+for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
+     resid_hic[i,] &lt;- lm(exprs[i,]~hic[i,])$resid 
+}
+lmFit(exprs, design=design) %&gt;% eBayes(.) -&gt; fit_b
+lmFit(resid_hic, design=design) %&gt;% eBayes(.) -&gt; fit_a
+
+#Get effect sizes.
+beta_b &lt;- fit_b$coefficients[,2]
+beta_a &lt;- fit_a$coefficients[,2]
+
+se_beta_b &lt;- se_beta_hic &lt;- se_beta_a &lt;- cov_beta_ba &lt;- vector(&quot;numeric&quot;, nrow(hic))
+
+#Get variances of beta_before&#39;s species effect:
+se_beta_b &lt;- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
+
+#Get variances of se_beta_hic, Hi-C effect:
+for (g in 1:length(se_beta_hic)) {
+  design_2 &lt;- model.matrix(~ as.numeric(hic[g,]))  
+  sigma_g &lt;- fit_b$sigma[g]
+  se_beta_hic[g] &lt;- sigma_g*sqrt((solve(t(design_2)%*%design_2))[2,2])
+}
+
+#Get variances of beta_after&#39;s species effect:
+A &lt;- solve(t(design)%*%design)%*%t(design)
+contr.vector &lt;- array(c(0,1), dim=c(2,1))
+# compute beta_after by hand
+for (g in 1:length(se_beta_a)) {
+  M_g &lt;- hic[g,]
+  design_2g &lt;- model.matrix(~ as.numeric(M_g))  
+  A_2g &lt;- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
+  sigma_g &lt;- fit_b$sigma[g]
+  var_beta2g &lt;- (se_beta_hic^2)[g]
+  var_part1 &lt;- (se_beta_b[g])^2
+  var_part2 &lt;- ( A%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A) )[2,2]
+  var_part3 &lt;- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A) )[2,2]
+  se_beta_a[g] &lt;- sqrt(var_part1 + var_part2 + var_part3)
+}
+#Get covariance of beta_b and beta_a
+for(g in 1:length(cov_beta_ba)){
+  M_g &lt;- hic[g,]
+  design_2g &lt;- model.matrix(~ as.numeric(M_g))
+  A_2g &lt;- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
+  sigma_g &lt;- fit_b$sigma[g]
+  var_part1 &lt;- (se_beta_b[g])^2
+  cov_beta_ba[g] &lt;- var_part1 - (sigma_g^2)*((A %*% t(A_2g) %*%contr.vector%*%t(M_g)%*%t(A))[2,2])
+}
+
+#Covariance beta_b-beta_a
+cov_diff_sqrt &lt;- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
+beta_diff &lt;- beta_b-beta_a
+
+#Now run some of that ASH!
+fit_ash &lt;- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)</code></pre>
+<pre><code>Due to absence of package REBayes, switching to EM algorithm</code></pre>
+<pre class="r"><code>ind_sig &lt;- (fit_ash$result$svalue &lt; 0.05)
+ind_sig[ind_sig == TRUE] &lt;- &quot;red&quot;
+ind_sig[ind_sig == FALSE] &lt;- &quot;black&quot;
+
+make_plot &lt;- cbind(beta_b-beta_a, cov_diff_sqrt, ind_sig, fit_ash$result$lfdr)
+colnames(make_plot) &lt;- c(&quot;Diff&quot;, &quot;SE&quot;, &quot;Sign&quot;, &quot;LFDR&quot;)
+make_plot[,1] &lt;- as.numeric(make_plot[,1])
+make_plot[,2] &lt;- as.numeric(make_plot[,2])
+make_plot[,3] &lt;- as.character(make_plot[,3])
+make_plot[,4] &lt;- as.numeric(make_plot[,4])
+
+plot(x=make_plot[,1], y=make_plot[,2], ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (DE genes)&quot;, pch=16, cex=0.6, col=make_plot[,3])
+legend(&quot;topleft&quot;, legend=c(&quot;s &lt; 0.05&quot;, &quot;s &gt;= 0.05&quot;), col=c(&quot;red&quot;, &quot;black&quot;), pch=16:16, cex=0.8)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>####Now do the same thing for non-DE genes
+exprs &lt;- hmin[,c(&quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)]
+hic &lt;- hmin[,c(&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)]
+present &lt;- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
+exprs &lt;- data.matrix(exprs[present,])
+hic &lt;- data.matrix(hic[present,])
+exprs &lt;- exprs[-good.indices,]
+hic &lt;- hic[-good.indices,]
+resid_hic &lt;- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
+for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
+     resid_hic[i,] &lt;- lm(exprs[i,]~hic[i,])$resid 
+}
+lmFit(exprs, design=design) %&gt;% eBayes(.) -&gt; fit_b
+lmFit(resid_hic, design=design) %&gt;% eBayes(.) -&gt; fit_a
+
+#Get effect sizes.
+beta_b &lt;- fit_b$coefficients[,2]
+beta_a &lt;- fit_a$coefficients[,2]
+
+se_beta_b &lt;- se_beta_hic &lt;- se_beta_a &lt;- cov_beta_ba &lt;- vector(&quot;numeric&quot;, nrow(hic))
+
+#Get variances of beta_before&#39;s species effect:
+se_beta_b &lt;- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
+
+#Get variances of se_beta_hic, Hi-C effect:
+for (g in 1:length(se_beta_hic)) {
+  design_2 &lt;- model.matrix(~ as.numeric(hic[g,]))  
+  sigma_g &lt;- fit_b$sigma[g]
+  se_beta_hic[g] &lt;- sigma_g*sqrt((solve(t(design_2)%*%design_2))[2,2])
+}
+
+#Get variances of beta_after&#39;s species effect:
+A &lt;- solve(t(design)%*%design)%*%t(design)
+contr.vector &lt;- array(c(0,1), dim=c(2,1))
+# compute beta_after by hand
+for (g in 1:length(se_beta_a)) {
+  M_g &lt;- hic[g,]
+  design_2g &lt;- model.matrix(~ as.numeric(M_g))  
+  A_2g &lt;- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
+  sigma_g &lt;- fit_b$sigma[g]
+  var_beta2g &lt;- (se_beta_hic^2)[g]
+  var_part1 &lt;- (se_beta_b[g])^2
+  var_part2 &lt;- ( A%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A) )[2,2]
+  var_part3 &lt;- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A) )[2,2]
+  se_beta_a[g] &lt;- sqrt(var_part1 + var_part2 + var_part3)
+}
+#Get covariance of beta_b and beta_a
+for(g in 1:length(cov_beta_ba)){
+  M_g &lt;- hic[g,]
+  design_2g &lt;- model.matrix(~ as.numeric(M_g))
+  A_2g &lt;- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
+  sigma_g &lt;- fit_b$sigma[g]
+  var_part1 &lt;- (se_beta_b[g])^2
+  cov_beta_ba[g] &lt;- var_part1 - (sigma_g^2)*((A %*% t(A_2g) %*%contr.vector%*%t(M_g)%*%t(A))[2,2])
+}
+
+#Covariance beta_b-beta_a
+cov_diff_sqrt &lt;- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
+beta_diff &lt;- beta_b-beta_a
+
+#Now run some of that ASH!
+fit_ash &lt;- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)</code></pre>
+<pre><code>Due to absence of package REBayes, switching to EM algorithm</code></pre>
+<pre class="r"><code>ind_sig &lt;- (fit_ash$result$svalue &lt; 0.05)
+ind_sig[ind_sig == TRUE] &lt;- &quot;red&quot;
+ind_sig[ind_sig == FALSE] &lt;- &quot;black&quot;
+
+make_plot &lt;- cbind(beta_b-beta_a, cov_diff_sqrt, ind_sig, fit_ash$result$lfdr)
+colnames(make_plot) &lt;- c(&quot;Diff&quot;, &quot;SE&quot;, &quot;Sign&quot;, &quot;LFDR&quot;)
+make_plot[,1] &lt;- as.numeric(make_plot[,1])
+make_plot[,2] &lt;- as.numeric(make_plot[,2])
+make_plot[,3] &lt;- as.character(make_plot[,3])
+make_plot[,4] &lt;- as.numeric(make_plot[,4])
+
+plot(x=make_plot[,1], y=make_plot[,2], ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (non-DE genes)&quot;, pch=16, cex=0.6, col=make_plot[,3])
+legend(&quot;topright&quot;, legend=c(&quot;s &lt; 0.05&quot;, &quot;s &gt;= 0.05&quot;), col=c(&quot;red&quot;, &quot;black&quot;), pch=16:16, cex=0.8)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-2.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
@@ -743,15 +964,15 @@ attached base packages:
 [8] base     
 
 other attached packages:
- [1] bindrcpp_0.2        bedr_1.0.4          forcats_0.2.0      
- [4] purrr_0.2.4         readr_1.1.1         tibble_1.3.4       
- [7] tidyverse_1.2.1     edgeR_3.20.1        RColorBrewer_1.1-2 
-[10] heatmaply_0.13.0    viridis_0.4.0       viridisLite_0.2.0  
-[13] stringr_1.2.0       gplots_3.0.1        Hmisc_4.0-3        
-[16] Formula_1.2-2       survival_2.41-3     lattice_0.20-35    
-[19] dplyr_0.7.4         plotly_4.7.1        ggplot2_2.2.1      
-[22] reshape2_1.4.2      data.table_1.10.4-3 tidyr_0.7.2        
-[25] plyr_1.8.4          limma_3.34.3       
+ [1] bindrcpp_0.2        ashr_2.0.5          bedr_1.0.4         
+ [4] forcats_0.2.0       purrr_0.2.4         readr_1.1.1        
+ [7] tibble_1.3.4        tidyverse_1.2.1     edgeR_3.20.1       
+[10] RColorBrewer_1.1-2  heatmaply_0.13.0    viridis_0.4.0      
+[13] viridisLite_0.2.0   stringr_1.2.0       gplots_3.0.1       
+[16] Hmisc_4.0-3         Formula_1.2-2       survival_2.41-3    
+[19] lattice_0.20-35     dplyr_0.7.4         plotly_4.7.1       
+[22] ggplot2_2.2.1       reshape2_1.4.2      data.table_1.10.4-3
+[25] tidyr_0.7.2         plyr_1.8.4          limma_3.34.3       
 
 loaded via a namespace (and not attached):
  [1] colorspace_1.3-2     class_7.3-14         modeltools_0.2-21   
@@ -759,33 +980,34 @@ loaded via a namespace (and not attached):
  [7] futile.logger_1.4.3  base64enc_0.1-3      rstudioapi_0.7      
 [10] flexmix_2.3-14       mvtnorm_1.0-6        lubridate_1.7.1     
 [13] xml2_1.1.1           codetools_0.2-15     splines_3.4.0       
-[16] R.methodsS3_1.7.1    mnormt_1.5-5         robustbase_0.92-8   
-[19] knitr_1.17           jsonlite_1.5         broom_0.4.3         
-[22] cluster_2.0.6        kernlab_0.9-25       R.oo_1.21.0         
-[25] httr_1.3.1           backports_1.1.1      assertthat_0.2.0    
-[28] Matrix_1.2-12        lazyeval_0.2.1       cli_1.0.0           
-[31] acepack_1.4.1        htmltools_0.3.6      tools_3.4.0         
-[34] gtable_0.2.0         glue_1.2.0           Rcpp_0.12.14        
-[37] cellranger_1.1.0     trimcluster_0.1-2    gdata_2.18.0        
-[40] nlme_3.1-131         iterators_1.0.8      fpc_2.1-10          
-[43] psych_1.7.8          testthat_1.0.2       rvest_0.3.2         
-[46] gtools_3.5.0         dendextend_1.6.0     DEoptimR_1.0-8      
-[49] MASS_7.3-47          scales_0.5.0         TSP_1.1-5           
-[52] hms_0.4.0            parallel_3.4.0       lambda.r_1.2        
-[55] yaml_2.1.15          gridExtra_2.3        rpart_4.1-11        
-[58] latticeExtra_0.6-28  stringi_1.1.6        gclus_1.3.1         
-[61] foreach_1.4.3        checkmate_1.8.5      seriation_1.2-2     
-[64] caTools_1.17.1       rlang_0.1.4          pkgconfig_2.0.1     
-[67] prabclus_2.2-6       bitops_1.0-6         evaluate_0.10.1     
-[70] bindr_0.1            labeling_0.3         htmlwidgets_0.9     
-[73] magrittr_1.5         R6_2.2.2             haven_1.1.0         
-[76] whisker_0.3-2        foreign_0.8-69       nnet_7.3-12         
-[79] modelr_0.1.1         crayon_1.3.4         futile.options_1.0.0
-[82] KernSmooth_2.23-15   rmarkdown_1.8        locfit_1.5-9.1      
-[85] grid_3.4.0           readxl_1.0.0         git2r_0.19.0        
-[88] digest_0.6.12        diptest_0.75-7       webshot_0.5.0       
-[91] VennDiagram_1.6.18   R.utils_2.6.0        stats4_3.4.0        
-[94] munsell_0.4.3        registry_0.5        </code></pre>
+[16] R.methodsS3_1.7.1    pscl_1.5.2           doParallel_1.0.11   
+[19] mnormt_1.5-5         robustbase_0.92-8    knitr_1.17          
+[22] jsonlite_1.5         broom_0.4.3          cluster_2.0.6       
+[25] kernlab_0.9-25       R.oo_1.21.0          httr_1.3.1          
+[28] backports_1.1.1      assertthat_0.2.0     Matrix_1.2-12       
+[31] lazyeval_0.2.1       cli_1.0.0            acepack_1.4.1       
+[34] htmltools_0.3.6      tools_3.4.0          gtable_0.2.0        
+[37] glue_1.2.0           Rcpp_0.12.14         cellranger_1.1.0    
+[40] trimcluster_0.1-2    gdata_2.18.0         nlme_3.1-131        
+[43] iterators_1.0.8      fpc_2.1-10           psych_1.7.8         
+[46] testthat_1.0.2       rvest_0.3.2          gtools_3.5.0        
+[49] dendextend_1.6.0     DEoptimR_1.0-8       MASS_7.3-47         
+[52] scales_0.5.0         TSP_1.1-5            hms_0.4.0           
+[55] parallel_3.4.0       lambda.r_1.2         yaml_2.1.15         
+[58] gridExtra_2.3        rpart_4.1-11         SQUAREM_2017.10-1   
+[61] latticeExtra_0.6-28  stringi_1.1.6        gclus_1.3.1         
+[64] foreach_1.4.3        checkmate_1.8.5      seriation_1.2-2     
+[67] caTools_1.17.1       truncnorm_1.0-7      rlang_0.1.4         
+[70] pkgconfig_2.0.1      prabclus_2.2-6       bitops_1.0-6        
+[73] evaluate_0.10.1      bindr_0.1            labeling_0.3        
+[76] htmlwidgets_0.9      magrittr_1.5         R6_2.2.2            
+[79] haven_1.1.0          whisker_0.3-2        foreign_0.8-69      
+[82] nnet_7.3-12          modelr_0.1.1         crayon_1.3.4        
+[85] futile.options_1.0.0 KernSmooth_2.23-15   rmarkdown_1.8       
+[88] locfit_1.5-9.1       grid_3.4.0           readxl_1.0.0        
+[91] git2r_0.19.0         digest_0.6.12        diptest_0.75-7      
+[94] webshot_0.5.0        VennDiagram_1.6.18   R.utils_2.6.0       
+[97] stats4_3.4.0         munsell_0.4.3        registry_0.5        </code></pre>
 </div>
 
 <hr>
