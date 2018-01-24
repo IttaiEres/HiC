@@ -44,6 +44,7 @@ library(edgeR)
 library(tidyverse)
 library(compiler)
 library(bedr)
+library(ashr)
 enableJIT(3)
 ```
 ###Overlap Between Hi-C Data and Orthogonal Gene Expression Data
@@ -405,7 +406,7 @@ ggplot(data=h_maxB_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(s
 ggplot(data=h_US_pvals, aes(x=-log10(before), y=-log10(after))) + geom_point(size=0.01) + geom_hline(yintercept=-log10(0.05), color="red") + geom_vline(xintercept=-log10(0.05), color="red") + geom_abline(slope=1, intercept=0, color="green", linetype="dashed") + ggtitle("Evidence for DE before vs. after regressing out Hi-C US bin FDR (H)") + xlab("-log10(p-value of DE before Hi-C regression)") + ylab("-log10(p-value of DE after Hi-C regression")
 ```
 
-```{r include=FALSE, echo=FALSE, eval=FALSE}
+```{r Permutation Visualizations}
 ###A function that runs a linear model, both with and without Hi-C corrected expression values, and returns a dataframe of hit classes (DE or not before and after correction). This is very similar to the function just run, but instead of obtaining p-values before and after correction at the end, it returns counts of genes in the 4 different classes possible here (DE in neither, DE in both, DE before but not after, and DE after but not before):
 lmcorrect <- function(exprs, cov_matrix, meta_df){
   result <- data.frame(DEneither=NA, DEbefore=NA, DEafter=NA, DEboth=NA)
@@ -462,7 +463,7 @@ perm.vis("permout_c_US", cUS, meta.data, "for upstream contact, Chimps")
 
 
 
-```{r, include=FALSE, echo=FALSE, eval=FALSE}
+```{r Differences in Effect Sizes}
 #######Effect size differences/sign changes
 design <- model.matrix(~1+meta.data$SP+meta.data$SX)
 exprs <- hmin[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")]
@@ -470,6 +471,16 @@ hic <- hmin[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_288
 present <- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
 exprs <- data.matrix(exprs[present,])
 hic <- data.matrix(hic[present,])
+lmFit(exprs, design=design) %>% eBayes(.) -> fit_full
+
+
+#Filter to just DE genes here.
+filter <- topTable(fit_full, coef=2, adjust="BH", number=Inf, sort.by="none")
+good.indices <- which(filter$adj.P.Val <= 0.05)
+
+#Now run analyses
+exprs <- exprs[good.indices,]
+hic <- hic[good.indices,]
 resid_hic <- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
 for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
      resid_hic[i,] <- lm(exprs[i,]~hic[i,])$resid 
@@ -498,16 +509,125 @@ A <- solve(t(design)%*%design)%*%t(design)
 contr.vector <- array(c(0,1), dim=c(2,1))
 # compute beta_after by hand
 for (g in 1:length(se_beta_a)) {
-  M_g <- t(hic[g,])
+  M_g <- hic[g,]
   design_2g <- model.matrix(~ as.numeric(M_g))  
   A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
   sigma_g <- fit_b$sigma[g]
   var_beta2g <- (se_beta_hic^2)[g]
   var_part1 <- (se_beta_b[g])^2
-  var_part2 <- ( A[2,]%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A[2,]) )[2,2]
-  var_part3 <- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A[2,]) )[2,2]
+  var_part2 <- ( A%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A) )[2,2]
+  var_part3 <- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A) )[2,2]
   se_beta_a[g] <- sqrt(var_part1 + var_part2 + var_part3)
-  }
+}
+#Get covariance of beta_b and beta_a
+for(g in 1:length(cov_beta_ba)){
+  M_g <- hic[g,]
+  design_2g <- model.matrix(~ as.numeric(M_g))
+  A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
+  sigma_g <- fit_b$sigma[g]
+  var_part1 <- (se_beta_b[g])^2
+  cov_beta_ba[g] <- var_part1 - (sigma_g^2)*((A %*% t(A_2g) %*%contr.vector%*%t(M_g)%*%t(A))[2,2])
+}
+
+#Covariance beta_b-beta_a
+cov_diff_sqrt <- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
+beta_diff <- beta_b-beta_a
+
+#Now run some of that ASH!
+fit_ash <- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)
+
+ind_sig <- (fit_ash$result$svalue < 0.05)
+ind_sig[ind_sig == TRUE] <- "red"
+ind_sig[ind_sig == FALSE] <- "black"
+
+make_plot <- cbind(beta_b-beta_a, cov_diff_sqrt, ind_sig, fit_ash$result$lfdr)
+colnames(make_plot) <- c("Diff", "SE", "Sign", "LFDR")
+make_plot[,1] <- as.numeric(make_plot[,1])
+make_plot[,2] <- as.numeric(make_plot[,2])
+make_plot[,3] <- as.character(make_plot[,3])
+make_plot[,4] <- as.numeric(make_plot[,4])
+
+plot(x=make_plot[,1], y=make_plot[,2], ylab="Standard error of the difference", xlab="Difference in effect size from 2 lms", main="Difference of effect size (DE genes)", pch=16, cex=0.6, col=make_plot[,3])
+legend("topleft", legend=c("s < 0.05", "s >= 0.05"), col=c("red", "black"), pch=16:16, cex=0.8)
+
+
+
+####Now do the same thing for non-DE genes
+exprs <- hmin[,c("A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651")]
+hic <- hmin[,c("A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")]
+present <- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
+exprs <- data.matrix(exprs[present,])
+hic <- data.matrix(hic[present,])
+exprs <- exprs[-good.indices,]
+hic <- hic[-good.indices,]
+resid_hic <- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
+for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
+     resid_hic[i,] <- lm(exprs[i,]~hic[i,])$resid 
+}
+lmFit(exprs, design=design) %>% eBayes(.) -> fit_b
+lmFit(resid_hic, design=design) %>% eBayes(.) -> fit_a
+
+#Get effect sizes.
+beta_b <- fit_b$coefficients[,2]
+beta_a <- fit_a$coefficients[,2]
+
+se_beta_b <- se_beta_hic <- se_beta_a <- cov_beta_ba <- vector("numeric", nrow(hic))
+
+#Get variances of beta_before's species effect:
+se_beta_b <- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
+
+#Get variances of se_beta_hic, Hi-C effect:
+for (g in 1:length(se_beta_hic)) {
+  design_2 <- model.matrix(~ as.numeric(hic[g,]))  
+  sigma_g <- fit_b$sigma[g]
+  se_beta_hic[g] <- sigma_g*sqrt((solve(t(design_2)%*%design_2))[2,2])
+}
+
+#Get variances of beta_after's species effect:
+A <- solve(t(design)%*%design)%*%t(design)
+contr.vector <- array(c(0,1), dim=c(2,1))
+# compute beta_after by hand
+for (g in 1:length(se_beta_a)) {
+  M_g <- hic[g,]
+  design_2g <- model.matrix(~ as.numeric(M_g))  
+  A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
+  sigma_g <- fit_b$sigma[g]
+  var_beta2g <- (se_beta_hic^2)[g]
+  var_part1 <- (se_beta_b[g])^2
+  var_part2 <- ( A%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A) )[2,2]
+  var_part3 <- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A) )[2,2]
+  se_beta_a[g] <- sqrt(var_part1 + var_part2 + var_part3)
+}
+#Get covariance of beta_b and beta_a
+for(g in 1:length(cov_beta_ba)){
+  M_g <- hic[g,]
+  design_2g <- model.matrix(~ as.numeric(M_g))
+  A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
+  sigma_g <- fit_b$sigma[g]
+  var_part1 <- (se_beta_b[g])^2
+  cov_beta_ba[g] <- var_part1 - (sigma_g^2)*((A %*% t(A_2g) %*%contr.vector%*%t(M_g)%*%t(A))[2,2])
+}
+
+#Covariance beta_b-beta_a
+cov_diff_sqrt <- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
+beta_diff <- beta_b-beta_a
+
+#Now run some of that ASH!
+fit_ash <- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)
+
+ind_sig <- (fit_ash$result$svalue < 0.05)
+ind_sig[ind_sig == TRUE] <- "red"
+ind_sig[ind_sig == FALSE] <- "black"
+
+make_plot <- cbind(beta_b-beta_a, cov_diff_sqrt, ind_sig, fit_ash$result$lfdr)
+colnames(make_plot) <- c("Diff", "SE", "Sign", "LFDR")
+make_plot[,1] <- as.numeric(make_plot[,1])
+make_plot[,2] <- as.numeric(make_plot[,2])
+make_plot[,3] <- as.character(make_plot[,3])
+make_plot[,4] <- as.numeric(make_plot[,4])
+
+plot(x=make_plot[,1], y=make_plot[,2], ylab="Standard error of the difference", xlab="Difference in effect size from 2 lms", main="Difference of effect size (non-DE genes)", pch=16, cex=0.6, col=make_plot[,3])
+legend("topright", legend=c("s < 0.05", "s >= 0.05"), col=c("red", "black"), pch=16:16, cex=0.8)
 ```
 
 ```{r, include=FALSE, echo=FALSE, eval=FALSE}
