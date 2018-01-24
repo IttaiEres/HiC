@@ -318,7 +318,7 @@ shared across the workflowr files. -->
 <p><strong>Last updated:</strong> 2018-01-24</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> b3955fc</p>
+<p><strong>Code version:</strong> ddddee7</p>
 <!-- Add your analysis here -->
 <div id="overlap-between-hi-c-data-and-orthogonal-gene-expression-data" class="section level3">
 <h3>Overlap Between Hi-C Data and Orthogonal Gene Expression Data</h3>
@@ -581,6 +581,9 @@ fwrite(c_US, &quot;~/Desktop/HiC_covs/c_US&quot;, quote = FALSE, sep = &quot;\t&
 #A function for calculating proportion of DE genes that are DHi-C under a variety of different paradigms. Accounts for when no genes are DHi-C and when all genes are DHi-C. Returns the proportion of DE genes that are also DHi-C, as well as the expected proportion based on conditional probability alone.
 prop.calculator &lt;- function(de.vec, hic.vec, i, k){
   my.result &lt;- data.frame(prop=NA, exp.prop=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
+  bad.indices &lt;- which(is.na(hic.vec)) #First obtain indices where Hi-C info is missing, then remove from both vectors.
+  de.vec &lt;- de.vec[-bad.indices]
+  hic.vec &lt;- hic.vec[-bad.indices]
   de.vec &lt;- ifelse(de.vec&lt;=i, 1, 0)
   hic.vec &lt;- ifelse(hic.vec&lt;=k, 1, 0)
   if(sum(hic.vec, na.rm=TRUE)==0){#The case where no genes show up as DHi-C.
@@ -603,14 +606,14 @@ prop.calculator &lt;- function(de.vec, hic.vec, i, k){
 }
 
 #This is a function that computes observed and expected proportions of DE and DHiC enrichments,  and spits out a variety of different visualizations for them. As input it takes a dataframe, the names of its DHiC and DE p-value columns, and a name to represent the type of Hi-C contact summary for the gene that ends up on the x-axis of all the plots.
-enrichment.plotter &lt;- function(df, HiC_col, DE_col, xlab, i=c(0.01, 0.05, 0.1), k=seq(0.01, 1, 0.01)){
-  enrich.table &lt;- data.frame(DEFDR = c(rep(i[1], 100), rep(i[2], 100), rep(i[3], 100)), DHICFDR=rep(k, 3), prop.obs=NA, prop.exp=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
+enrichment.plotter &lt;- function(df, HiC_col, DE_col, xlab, i=c(0.01, 0.025, 0.05, 0.075, 0.1), k=seq(0.01, 1, 0.01)){
+  enrich.table &lt;- data.frame(DEFDR = c(rep(i[1], 100), rep(i[2], 100), rep(i[3], 100), rep(i[4], 100), rep(i[5], 100)), DHICFDR=rep(k, 5), prop.obs=NA, prop.exp=NA, chisq.p=NA, Dneither=NA, DE=NA, DHiC=NA, Dboth=NA)
   for(de.FDR in i){
     for(hic.FDR in k){
       enrich.table[which(enrich.table$DEFDR==de.FDR&amp;enrich.table$DHICFDR==hic.FDR), 3:9] &lt;- prop.calculator(df[,HiC_col], df[,DE_col], de.FDR, hic.FDR)
     }
   }
-  des.enriched &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=prop.obs*100, group=as.factor(DEFDR), color=as.factor(DEFDR))) +geom_line()+ geom_line(aes(y=prop.exp*100), linetype=&quot;dashed&quot;, size=0.5) + ggtitle(&quot;Enrichment of DHiC in DE Genes&quot;) + xlab(xlab) + ylab(&quot;Proportion of DE genes that are DHiC&quot;) + guides(color=guide_legend(title=&quot;FDR for DE Genes&quot;))
+  des.enriched &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=prop.obs, group=as.factor(DEFDR), color=as.factor(DEFDR))) +geom_line()+ geom_line(aes(y=prop.exp), linetype=&quot;dashed&quot;, size=0.5) + ggtitle(&quot;Enrichment of DHiC in DE Genes&quot;) + xlab(xlab) + ylab(&quot;Proportion of DE genes that are DHiC&quot;) + guides(color=guide_legend(title=&quot;FDR for DE Genes&quot;))
   dhics.enriched &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=Dboth/(Dboth+DHiC), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_line() + geom_line(aes(y=(((((DE+Dboth)/(Dneither+DE+DHiC+Dboth))*((DHiC+Dboth)/(Dneither+DE+DHiC+Dboth)))*(Dneither+DE+DHiC+Dboth))/(DHiC+Dboth))), linetype=&quot;dashed&quot;) + ylab(&quot;Proportion of DHi-C genes that are DE&quot;) +xlab(xlab) + ggtitle(&quot;Enrichment of DE in DHiC Genes&quot;)
   joint.enriched &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=Dboth/(Dneither+DE+DHiC+Dboth), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_line() + ylab(&quot;Proportion of ALL Genes both DE &amp; DHi-C&quot;) + xlab(xlab) + geom_line(aes(y=((DE+Dboth)/(Dneither+DE+DHiC+Dboth))*((DHiC+Dboth)/(Dneither+DE+DHiC+Dboth))), linetype=&quot;dashed&quot;) + ggtitle(&quot;Enrichment of Joint DE &amp; DHi-C in All Genes&quot;)
   chisq.p &lt;- ggplot(data=enrich.table, aes(x=DHICFDR, y=-log10(chisq.p), group=as.factor(DEFDR), color=as.factor(DEFDR))) + geom_point() + geom_hline(yintercept=-log10(0.05), color=&quot;red&quot;) + ggtitle(&quot;Chi-squared Test P-values for Enrichment of DHiC in DE Genes&quot;) + xlab(xlab) + ylab(&quot;-log10(chi-squared p-values)&quot;)
@@ -620,130 +623,23 @@ enrichment.plotter &lt;- function(df, HiC_col, DE_col, xlab, i=c(0.01, 0.05, 0.1
   print(chisq.p)
 }
 
+
 #For most of these, using the gene.hic.filt df is sufficient as their Hi-C FDR numbers are the same. For the upstream genes it&#39;s a little more complicated because gene.hic.filt doesn&#39;t incorporate strand information on the genes, so use the specific US dfs for that, with the USFDR column.
 enrichment.plotter(gene.hic.filt, &quot;min_FDR.H&quot;, &quot;adj.P.Val&quot;, &quot;Minimum FDR of Hi-C Contacts Overlapping Gene, Human&quot;)</code></pre>
-<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-1.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-2.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-3.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-4.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;min_FDR.C&quot;, &quot;adj.P.Val&quot;, &quot;Minimum FDR of Hi-C Contacts Overlapping Gene, Chimp&quot;)</code></pre>
-<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-5.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-6.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-7.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-8.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>enrichment.plotter(h_US, &quot;USFDR&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Closest Upstream Hi-C Contact Overlapping Gene, Human&quot;)</code></pre>
-<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-9.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-10.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-11.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-12.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>enrichment.plotter(c_US, &quot;USFDR&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Closest Upstream Hi-C Contact Overlapping Gene, Chimp&quot;)</code></pre>
-<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-13.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-14.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-15.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-16.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;max_B_FDR.H&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Hi-C Contact Overlapping Gene w/ Strongest Effect Size, Human&quot;)</code></pre>
-<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-17.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-18.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-19.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-20.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;max_B_FDR.C&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Hi-C Contact Overlapping Gene w/ Strongest Effect Size, Chimp&quot;)</code></pre>
-<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-21.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-22.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-23.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-24.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;median_FDR.H&quot;, &quot;adj.P.Val&quot;, &quot;Median FDR of Hi-C Contacts Overlapping Gene, Human&quot;)</code></pre>
-<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-25.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-26.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-27.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-28.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;median_FDR.C&quot;, &quot;adj.P.Val&quot;, &quot;Median FDR of Hi-C Contacts Overlapping Gene, Chimp&quot;)</code></pre>
-<pre><code>Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect
-
-Warning in chisq.test(mytable): Chi-squared approximation may be incorrect</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-29.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-30.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-31.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-32.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>enrichment.plotter(gene.hic.filt, &quot;weighted_Z.s2post.H&quot;, &quot;adj.P.Val&quot;, &quot;FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Human&quot;)</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-33.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-34.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-35.png" width="672" style="display: block; margin: auto;" /><img src="figure/gene_expression.Rmd/Differential%20Expression-Differential%20Hi-C%20Enrichment%20Analyses-36.png" width="672" style="display: block; margin: auto;" /></p>
