@@ -207,7 +207,9 @@ Now, I go to the asymmetry issue seen in the volcano plot on the linear modeling
 #Here I once again show the volcano plot for 4 individuals. Observe the stark asymmetry with a pile-up of hits on the left side as compared to the right.
 volcplot.4 <- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species, chr=data.4$Hchr)
 ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences | 4 Individuals")
-ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
+ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4") + scale_color_manual(name="Species", labels=c("Both", "Chimp", "Human"), values=c("#F8766D", "#00BA38", "#619CFF")) #Modify to add clearer labels
+
+ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery") + scale_color_manual(name="Species", labels=c("Both", "Chimp", "Human"), values=c("#F8766D", "#00BA38", "#619CFF")) + theme(plot.title=element_text(hjust=0.35)) #Modify to add clearer labels, hjust to adjust title location.
 
 #As expected, we see that hits which produce a strong negative beta in the linear model (suggesting a marked decrease in contact frequency in humans as compared to chimps) are primarily discovered as significant by homer in chimpanzees. The inverse also holds true for human discoveries. This is reassuring, but still, why the asymmetry? Here I break this plot down on a chromosome-by-chromosome basis to see if this is being driven by individual chromosomes ore is an overall issue with the technique or its processing:
 #First rearrange chrs to make a prettier plot that has chrs sequential:
@@ -219,7 +221,7 @@ ggplot(volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) 
 
 #Now, check this again, but on the data I have filtered accounting for potential genomic differences introduced by liftOver. From here on out all analyses will be run on this filtered set of data:
 volcplot.filt <- data.frame(pval=-log10(data.filtered$sp_BH_pval), beta=data.filtered$sp_beta, species=data.filtered$disc_species, chr=data.filtered$Hchr)
-ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
+ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Filtered Contact Frequency Differences Colored by Species of Discovery") + scale_color_manual(name="Species", labels=c("Both", "Chimp", "Human"), values=c("#F8766D", "#00BA38", "#619CFF")) + theme(plot.title=element_text(hjust=0.27)) #Modify to add clearer labels
 #This volcano plot makes it look as though the asymmetry goes away entirely, with both sides of the volcano showing a visually similar number of hits (no longer AS stark of asymmetry).
 
 #If we break this down on a chromosome-by-chromosome basis:
@@ -245,10 +247,10 @@ asym.stats
 #ChrY did not have any significant hits, so get a p-value of 1. Chr7 is so asymmetric it is impossible to calculate, while chromosomes 1, 2, 6, 9, 11, 15, 16, 17, and X all showed asymmetry in direction of effects with extreme statistical significance.
 
 #Now, make volcano plots by chromosome again, this time labeling each chromosome with its binomial p-value and the percentage of significant hits showing stronger contact frequencies in each species on either side of the distribution.
-ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle("Volcano Plots by Chr") + facet_wrap(~chr, nrow=5, ncol=5) + guides(color=FALSE) + ylab("-log10 BH-adjusted p-values") + xlab("Log2 Fold Change in Contact Frequency") + geom_text(data=asym.stats, aes(x=-4.5, y=0.75, label=paste(round(prop.c*100, digits=1), "%", sep=""), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=4, y=0.75, label=paste(round(prop.h*100, digits=1), "%", sep=""), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=0, y=3.75, label=signif(binom.p, digits=3), color=NULL), show.legend=FALSE, size=2)
+ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle("Volcano Plots by Chromosome") + facet_wrap(~chr, nrow=5, ncol=5) + guides(color=FALSE) + ylab("-log10 BH-corrected p-values") + xlab("Log2 Fold Change in Contact Frequency") + geom_text(data=asym.stats, aes(x=-4.5, y=0.75, label=paste(round(prop.c*100, digits=1), "%", sep=""), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=4, y=0.75, label=paste(round(prop.h*100, digits=1), "%", sep=""), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=0, y=3.75, label=signif(binom.p, digits=3), color=NULL), show.legend=FALSE, size=2)
 #ggsave('~/Desktop/volcchr.jpg', device="jpeg", antialias="none") This was an earlier attempt at clearing up some image resolution blurriness with the text.
-ggsave('~/Desktop/volcchr2.jpg', device="jpeg", dpi=5000) #Works well!
-
+#ggsave('~/Desktop/volcchr2.jpg', device="jpeg", dpi=5000) #Works well!
+ggsave("~/Desktop/volcchr2.jpg", device="jpg", dpi=200)
 #Write out the data with the new columns added on!
 fwrite(full.data, "~/Desktop/Hi-C/full.data.10.2018", quote = TRUE, sep = "\t", row.names = FALSE, col.names = TRUE, na="NA", showProgress = FALSE)
 fwrite(data.4, "~/Desktop/Hi-C/data.4.10.2018", quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE, na="NA", showProgress = FALSE)

@@ -135,7 +135,7 @@ newqqplot(-log10(data.4$btc_pval), c(0.5, 0.75), "QQ Plot, Batch P-vals, Data | 
 volcplot.full <- data.frame(pval=-log10(full.data$sp_pval), beta=full.data$sp_beta, species=full.data$disc_species)
 volcplot.4 <- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species)
 ggplot(data=volcplot.full, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("P-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery")
-ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4")
+ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 p-values") + ggtitle("Contact Frequency Differences Colored by Species of Discovery | 4") + scale_color_manual(name="Species", labels=c("Both", "Chimp", "Human"), values=c("#F8766D", "#00BA38", "#619CFF")) #Modify to add clearer labels
 ggplot(data=volcplot.full, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 BH-corrected p-values") + ggtitle("Contact Frequency Differences")
 ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab("Log2 Fold Change in Contact Frequency") + ylab("-log10 p-values") + ggtitle("Contact Frequency Differences | 4 Individuals")
 

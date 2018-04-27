@@ -1,5 +1,5 @@
 ---
-title: "Hi-C Data Normalization and Initial Quality Control"
+title: "Hi-C Data Normalization and Initial Quality Control, Homer"
 author: "Ittai Eres"
 date: 2017-10-06
 output: html_document
@@ -122,7 +122,8 @@ barplot(summary(pca)$importance[2,], xlab="PCs", ylab="Proportion of Variance Ex
 
 ###Heatmap clustering of these data as another quality control metric:
 corheat <- cor(full.contacts, use="complete.obs", method="pearson") #Corheat for the full data set, and heatmap
-colnames(corheat) <- c("A_HF", "B_HM", "C_CM", "D_CF", "E_HM", "F_HF", "G_CM", "H_CF")
+#colnames(corheat) <- c("A_HF", "B_HM", "C_CM", "D_CF", "E_HM", "F_HF", "G_CM", "H_CF")
+colnames(corheat) <- c("H_F1", "H_M1", "C_M1", "C_F1", "H_M2", "H_F2", "C_M2", "C_F2") #Better for presentation
 rownames(corheat) <- colnames(corheat)
 heatmaply(corheat, main="Pairwise Pearson Correlation @ 10kb", k_row=2, k_col=2, symm=TRUE, margins=c(50, 50, 30, 30))
 #We can see that all the humans cluster together, as do all the chimps. This is very good, despite the fact that the correlations are fairly low.
@@ -175,7 +176,8 @@ barplot(summary(pca4)$importance[2,], xlab="PCs", ylab="Proportion of Variance E
 
 ###Heatmap clustering of these data after conditioning upon discovery in 4 individuals. Would expect to see the same clustering, with perhaps higher correlation values due to conditioning upon discovery in 4 individuals.
 corheat4 <- cor(data.4[,304:311], use="complete.obs", method="pearson") #Corheat for the full data set, and heatmap
-colnames(corheat4) <- c("A_HF", "B_HM", "C_CM", "D_CF", "E_HM", "F_HF", "G_CM", "H_CF")
+#colnames(corheat4) <- c("A_HF", "B_HM", "C_CM", "D_CF", "E_HM", "F_HF", "G_CM", "H_CF")
+colnames(corheat4) <- c("H_F1", "H_M1", "C_M1", "C_F1", "H_M2", "H_F2", "C_M2", "C_F2") #Better for presentation
 rownames(corheat4) <- colnames(corheat4)
 heatmaply(corheat4, main="Pairwise Pearson Correlation Clustering @ 10kb | 4", k_row=2, k_col=2, symm=TRUE, margins=c(50, 50, 30, 30))
 #Indeed, we can again see that all the humans cluster together, as do all the chimps. This is very good, and given this new condition, we also see higher within-species correlations for the significant hits, in the 0.6-0.7 range (was much closer to 0.3 before).
