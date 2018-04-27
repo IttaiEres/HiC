@@ -315,10 +315,10 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-01-16</p>
+<p><strong>Last updated:</strong> 2018-04-27</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 44519a4</p>
+<p><strong>Code version:</strong> 549472e</p>
 <!-- Add your analysis here -->
 <div id="qc-on-qq-plots" class="section level3">
 <h3>QC on QQ Plots</h3>
@@ -352,7 +352,7 @@ lmFit(data.4[,304:311], model.matrix(~1+fake.meta2$SP+fake.meta2$SX+fake.meta2$B
 lmFit(data.4[,304:311], model.matrix(~1+fake.meta3$SP+fake.meta3$SX+fake.meta3$Batch)) %&gt;% eBayes(.) %&gt;% topTable(., coef=2, sort.by=&quot;none&quot;, number=Inf) -&gt; fake3</code></pre>
 <pre><code>Coefficients not estimable: fake.meta3$SXM </code></pre>
 <pre><code>Warning: Partial NA coefficients for 347206 probe(s)</code></pre>
-<pre><code>Warning in ebayes(fit = fit, proportion = proportion, stdev.coef.lim =
+<pre><code>Warning in .ebayes(fit = fit, proportion = proportion, stdev.coef.lim =
 stdev.coef.lim, : Estimation of var.prior failed - set to default value</code></pre>
 <pre class="r"><code>lmFit(data.4[,304:311], model.matrix(~1+fake.meta4$SP+fake.meta4$SX+fake.meta4$Batch)) %&gt;% eBayes(.) %&gt;% topTable(., coef=2, sort.by=&quot;none&quot;, number=Inf) -&gt; fake4
 
@@ -574,8 +574,10 @@ data.filtered &lt;- data.4[-highclass,] #Just removed high class since it has th
 volcplot.4 &lt;- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species, chr=data.4$Hchr)
 ggplot(data=volcplot.4, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences | 4 Individuals&quot;)</code></pre>
 <p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery | 4&quot;)</code></pre>
+<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery | 4&quot;) + scale_color_manual(name=&quot;Species&quot;, labels=c(&quot;Both&quot;, &quot;Chimp&quot;, &quot;Human&quot;), values=c(&quot;#F8766D&quot;, &quot;#00BA38&quot;, &quot;#619CFF&quot;)) #Modify to add clearer labels</code></pre>
 <p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery&quot;) + scale_color_manual(name=&quot;Species&quot;, labels=c(&quot;Both&quot;, &quot;Chimp&quot;, &quot;Human&quot;), values=c(&quot;#F8766D&quot;, &quot;#00BA38&quot;, &quot;#619CFF&quot;)) + theme(plot.title=element_text(hjust=0.35)) #Modify to add clearer labels, hjust to adjust title location.</code></pre>
+<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-3.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#As expected, we see that hits which produce a strong negative beta in the linear model (suggesting a marked decrease in contact frequency in humans as compared to chimps) are primarily discovered as significant by homer in chimpanzees. The inverse also holds true for human discoveries. This is reassuring, but still, why the asymmetry? Here I break this plot down on a chromosome-by-chromosome basis to see if this is being driven by individual chromosomes ore is an overall issue with the technique or its processing:
 #First rearrange chrs to make a prettier plot that has chrs sequential:
 levels(volcplot.4$chr)</code></pre>
@@ -588,13 +590,13 @@ levels(volcplot.4$chr)</code></pre>
  [9] &quot;chr9&quot;  &quot;chr10&quot; &quot;chr11&quot; &quot;chr12&quot; &quot;chr13&quot; &quot;chr14&quot; &quot;chr15&quot; &quot;chr16&quot;
 [17] &quot;chr17&quot; &quot;chr18&quot; &quot;chr19&quot; &quot;chr20&quot; &quot;chr21&quot; &quot;chr22&quot; &quot;chrX&quot;  &quot;chrY&quot; </code></pre>
 <pre class="r"><code>ggplot(volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle(&quot;Volcano Plots by Chr&quot;) + facet_wrap(~as.factor(chr), nrow=5, ncol=5) + guides(color=FALSE) + ylab(&quot;-log10 p-values&quot;) + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;)</code></pre>
-<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-3.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-4.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#This is extremely interesting. It appears that the asymmetry seen is being driven primarily by only some of the chromosomes, and particularly ones where large-scale rearrangements have transpired between humans and chimps (e.g. chrs 2, 16, 17). This will warrant further investigation in another element of the analysis; for now, I am satisfied that the asymmetry is not an issue with the entire dataset but is confined to individual chromosomes.
 
 #Now, check this again, but on the data I have filtered accounting for potential genomic differences introduced by liftOver. From here on out all analyses will be run on this filtered set of data:
 volcplot.filt &lt;- data.frame(pval=-log10(data.filtered$sp_BH_pval), beta=data.filtered$sp_beta, species=data.filtered$disc_species, chr=data.filtered$Hchr)
-ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery | 4&quot;)</code></pre>
-<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-4.png" width="672" style="display: block; margin: auto;" /></p>
+ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Filtered Contact Frequency Differences Colored by Species of Discovery&quot;) + scale_color_manual(name=&quot;Species&quot;, labels=c(&quot;Both&quot;, &quot;Chimp&quot;, &quot;Human&quot;), values=c(&quot;#F8766D&quot;, &quot;#00BA38&quot;, &quot;#619CFF&quot;)) + theme(plot.title=element_text(hjust=0.27)) #Modify to add clearer labels</code></pre>
+<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-5.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#This volcano plot makes it look as though the asymmetry goes away entirely, with both sides of the volcano showing a visually similar number of hits (no longer AS stark of asymmetry).
 
 #If we break this down on a chromosome-by-chromosome basis:
@@ -608,7 +610,7 @@ levels(volcplot.filt$chr)</code></pre>
  [9] &quot;chr9&quot;  &quot;chr10&quot; &quot;chr11&quot; &quot;chr12&quot; &quot;chr13&quot; &quot;chr14&quot; &quot;chr15&quot; &quot;chr16&quot;
 [17] &quot;chr17&quot; &quot;chr18&quot; &quot;chr19&quot; &quot;chr20&quot; &quot;chr21&quot; &quot;chr22&quot; &quot;chrX&quot;  &quot;chrY&quot; </code></pre>
 <pre class="r"><code>ggplot(volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle(&quot;Volcano Plots by Chr&quot;) + facet_wrap(~as.factor(chr), nrow=5, ncol=5) + guides(color=FALSE) + ylab(&quot;-log10 BH-adjusted p-values&quot;) + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;)</code></pre>
-<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-5.png" width="672" style="display: block; margin: auto;" /></p>
+<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-6.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#We can still see that there are certain chromosomes with a lot of asymmetry to them in terms of distribution of significant betas for the linear modeling--chimps still seem to dominate chromosomes 2, 15-17, and some others.
 
 #Now try to quantify the extent of asymmetry in the chromosomes, with a particular focus on hits that are statistically significant.
@@ -652,10 +654,11 @@ chrY   chrY 1.000000e+00       NaN        NaN</code></pre>
 <pre class="r"><code>#ChrY did not have any significant hits, so get a p-value of 1. Chr7 is so asymmetric it is impossible to calculate, while chromosomes 1, 2, 6, 9, 11, 15, 16, 17, and X all showed asymmetry in direction of effects with extreme statistical significance.
 
 #Now, make volcano plots by chromosome again, this time labeling each chromosome with its binomial p-value and the percentage of significant hits showing stronger contact frequencies in each species on either side of the distribution.
-ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle(&quot;Volcano Plots by Chr&quot;) + facet_wrap(~chr, nrow=5, ncol=5) + guides(color=FALSE) + ylab(&quot;-log10 BH-adjusted p-values&quot;) + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + geom_text(data=asym.stats, aes(x=-4.5, y=0.75, label=paste(round(prop.c*100, digits=1), &quot;%&quot;, sep=&quot;&quot;), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=4, y=0.75, label=paste(round(prop.h*100, digits=1), &quot;%&quot;, sep=&quot;&quot;), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=0, y=3.75, label=signif(binom.p, digits=3), color=NULL), show.legend=FALSE, size=2)</code></pre>
-<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-6.png" width="672" style="display: block; margin: auto;" /></p>
+ggplot(data=volcplot.filt, aes(x=beta, y=pval, color=species)) + geom_point(size=0.001) + ggtitle(&quot;Volcano Plots by Chromosome&quot;) + facet_wrap(~chr, nrow=5, ncol=5) + guides(color=FALSE) + ylab(&quot;-log10 BH-corrected p-values&quot;) + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + geom_text(data=asym.stats, aes(x=-4.5, y=0.75, label=paste(round(prop.c*100, digits=1), &quot;%&quot;, sep=&quot;&quot;), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=4, y=0.75, label=paste(round(prop.h*100, digits=1), &quot;%&quot;, sep=&quot;&quot;), color=NULL), show.legend=FALSE, size=2) + geom_text(data=asym.stats, aes(x=0, y=3.75, label=signif(binom.p, digits=3), color=NULL), show.legend=FALSE, size=2)</code></pre>
+<p><img src="figure/linear_modeling_QC.Rmd/Volcano%20Plot%20Asymmetry-7.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#ggsave(&#39;~/Desktop/volcchr.jpg&#39;, device=&quot;jpeg&quot;, antialias=&quot;none&quot;) This was an earlier attempt at clearing up some image resolution blurriness with the text.
-ggsave(&#39;~/Desktop/volcchr2.jpg&#39;, device=&quot;jpeg&quot;, dpi=5000) #Works well!</code></pre>
+#ggsave(&#39;~/Desktop/volcchr2.jpg&#39;, device=&quot;jpeg&quot;, dpi=5000) #Works well!
+ggsave(&quot;~/Desktop/volcchr2.jpg&quot;, device=&quot;jpg&quot;, dpi=200)</code></pre>
 <pre><code>Saving 7 x 5 in image</code></pre>
 <pre class="r"><code>#Write out the data with the new columns added on!
 fwrite(full.data, &quot;~/Desktop/Hi-C/full.data.10.2018&quot;, quote = TRUE, sep = &quot;\t&quot;, row.names = FALSE, col.names = TRUE, na=&quot;NA&quot;, showProgress = FALSE)
@@ -683,49 +686,49 @@ attached base packages:
 [8] base     
 
 other attached packages:
- [1] bindrcpp_0.2        bedr_1.0.4          forcats_0.2.0      
- [4] purrr_0.2.4         readr_1.1.1         tibble_1.3.4       
- [7] tidyverse_1.2.1     edgeR_3.20.1        RColorBrewer_1.1-2 
-[10] heatmaply_0.13.0    viridis_0.4.0       viridisLite_0.2.0  
-[13] stringr_1.2.0       gplots_3.0.1        Hmisc_4.0-3        
+ [1] bindrcpp_0.2        bedr_1.0.4          forcats_0.3.0      
+ [4] purrr_0.2.4         readr_1.1.1         tibble_1.4.2       
+ [7] tidyverse_1.2.1     edgeR_3.20.9        RColorBrewer_1.1-2 
+[10] heatmaply_0.14.1    viridis_0.5.0       viridisLite_0.3.0  
+[13] stringr_1.3.0       gplots_3.0.1        Hmisc_4.1-1        
 [16] Formula_1.2-2       survival_2.41-3     lattice_0.20-35    
 [19] dplyr_0.7.4         plotly_4.7.1        ggplot2_2.2.1      
-[22] reshape2_1.4.2      data.table_1.10.4-3 tidyr_0.7.2        
-[25] plyr_1.8.4          limma_3.34.3       
+[22] reshape2_1.4.3      data.table_1.10.4-3 tidyr_0.8.0        
+[25] plyr_1.8.4          limma_3.34.9       
 
 loaded via a namespace (and not attached):
  [1] colorspace_1.3-2     class_7.3-14         modeltools_0.2-21   
- [4] mclust_5.4           rprojroot_1.2        htmlTable_1.11.0    
+ [4] mclust_5.4           rprojroot_1.3-2      htmlTable_1.11.2    
  [7] futile.logger_1.4.3  base64enc_0.1-3      rstudioapi_0.7      
-[10] flexmix_2.3-14       mvtnorm_1.0-6        lubridate_1.7.1     
-[13] xml2_1.1.1           codetools_0.2-15     splines_3.4.0       
+[10] flexmix_2.3-14       mvtnorm_1.0-7        lubridate_1.7.3     
+[13] xml2_1.2.0           codetools_0.2-15     splines_3.4.0       
 [16] R.methodsS3_1.7.1    mnormt_1.5-5         robustbase_0.92-8   
-[19] knitr_1.17           jsonlite_1.5         broom_0.4.3         
+[19] knitr_1.20           jsonlite_1.5         broom_0.4.3         
 [22] cluster_2.0.6        kernlab_0.9-25       R.oo_1.21.0         
-[25] httr_1.3.1           backports_1.1.1      assertthat_0.2.0    
+[25] httr_1.3.1           backports_1.1.2      assertthat_0.2.0    
 [28] Matrix_1.2-12        lazyeval_0.2.1       cli_1.0.0           
 [31] acepack_1.4.1        htmltools_0.3.6      tools_3.4.0         
-[34] gtable_0.2.0         glue_1.2.0           Rcpp_0.12.14        
+[34] gtable_0.2.0         glue_1.2.0           Rcpp_0.12.16        
 [37] cellranger_1.1.0     trimcluster_0.1-2    gdata_2.18.0        
-[40] nlme_3.1-131         iterators_1.0.8      fpc_2.1-10          
-[43] psych_1.7.8          testthat_1.0.2       rvest_0.3.2         
-[46] gtools_3.5.0         dendextend_1.6.0     DEoptimR_1.0-8      
-[49] MASS_7.3-47          scales_0.5.0         TSP_1.1-5           
-[52] hms_0.4.0            parallel_3.4.0       lambda.r_1.2        
-[55] yaml_2.1.15          gridExtra_2.3        rpart_4.1-11        
-[58] latticeExtra_0.6-28  stringi_1.1.6        gclus_1.3.1         
-[61] foreach_1.4.3        checkmate_1.8.5      seriation_1.2-2     
-[64] caTools_1.17.1       rlang_0.1.4          pkgconfig_2.0.1     
+[40] nlme_3.1-131.1       iterators_1.0.9      fpc_2.1-11          
+[43] psych_1.7.8          testthat_2.0.0       rvest_0.3.2         
+[46] gtools_3.5.0         dendextend_1.7.0     DEoptimR_1.0-8      
+[49] MASS_7.3-49          scales_0.5.0         TSP_1.1-5           
+[52] hms_0.4.2            parallel_3.4.0       lambda.r_1.2        
+[55] yaml_2.1.18          gridExtra_2.3        rpart_4.1-13        
+[58] latticeExtra_0.6-28  stringi_1.1.7        gclus_1.3.1         
+[61] foreach_1.4.4        checkmate_1.8.5      seriation_1.2-3     
+[64] caTools_1.17.1       rlang_0.2.0          pkgconfig_2.0.1     
 [67] prabclus_2.2-6       bitops_1.0-6         evaluate_0.10.1     
-[70] bindr_0.1            labeling_0.3         htmlwidgets_0.9     
-[73] magrittr_1.5         R6_2.2.2             haven_1.1.0         
-[76] whisker_0.3-2        foreign_0.8-69       nnet_7.3-12         
-[79] modelr_0.1.1         crayon_1.3.4         futile.options_1.0.0
-[82] KernSmooth_2.23-15   rmarkdown_1.8        locfit_1.5-9.1      
-[85] grid_3.4.0           readxl_1.0.0         git2r_0.19.0        
-[88] digest_0.6.12        diptest_0.75-7       webshot_0.5.0       
-[91] VennDiagram_1.6.18   R.utils_2.6.0        stats4_3.4.0        
-[94] munsell_0.4.3        registry_0.5        </code></pre>
+[70] bindr_0.1.1          labeling_0.3         htmlwidgets_1.0     
+[73] magrittr_1.5         R6_2.2.2             pillar_1.2.1        
+[76] haven_1.1.1          whisker_0.3-2        foreign_0.8-69      
+[79] nnet_7.3-12          modelr_0.1.1         crayon_1.3.4        
+[82] futile.options_1.0.0 KernSmooth_2.23-15   rmarkdown_1.9       
+[85] locfit_1.5-9.1       grid_3.4.0           readxl_1.0.0        
+[88] git2r_0.21.0         digest_0.6.15        diptest_0.75-7      
+[91] webshot_0.5.0        VennDiagram_1.6.19   R.utils_2.6.0       
+[94] stats4_3.4.0         munsell_0.4.3        registry_0.5        </code></pre>
 </div>
 
 <hr>

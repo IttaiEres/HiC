@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+
+<meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<meta name="generator" content="pandoc" />
+
+
+<meta name="author" content="Ittai Eres" />
+
+<meta name="date" content="2018-03-13" />
+
+<title>Functional Enrichments of Hi-C Bins</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/font-awesome-4.5.0/css/font-awesome.min.css" rel="stylesheet" />
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+</head>
+
+<body>
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+  height: auto;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+
+<div class="container-fluid main-container">
+
+<!-- tabsets -->
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+</script>
+
+<!-- code folding -->
+
+
+
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+  padding-left: 25px;
+  text-indent: 0;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Hi-C</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li>
+  <a href="license.html">License</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+  <a href="https://github.com/jdblischak/workflowr">
+    <span class="fa fa-github"></span>
+     
+  </a>
+</li>
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Functional Enrichments of Hi-C Bins</h1>
+<h4 class="author"><em>Ittai Eres</em></h4>
+<h4 class="date"><em>2018-03-13</em></h4>
+
+</div>
+
+
+<!-- The file analysis/chunks.R contains chunks that define default settings
+shared across the workflowr files. -->
+<!-- Update knitr chunk options -->
+<!-- Insert the date the file was last updated -->
+<p><strong>Last updated:</strong> 2018-04-27</p>
+<!-- Insert the code version (Git commit SHA1) if Git repository exists and R
+ package git2r is installed -->
+<p><strong>Code version:</strong> 549472e</p>
+<!-- Add your analysis here -->
+<div id="reading-in-the-data-reformatting-for-enrichment-analyses" class="section level3">
+<h3>Reading in the data, reformatting for enrichment analyses</h3>
+<p>Here I merely read in the filtered data and create a function to reformat it for a variety of overlap analyses external to R.</p>
+<pre class="r"><code>#Now, read in filtered data from linear_modeling_QC.Rmd.
+data.filtered &lt;- fread(&quot;~/Desktop/Hi-C/data.4.filtered.txt&quot;, header=TRUE, data.table=FALSE, stringsAsFactors = FALSE, showProgress=FALSE)
+#meta.data &lt;- data.frame(&quot;SP&quot;=c(&quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;, &quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;), &quot;SX&quot;=c(&quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;), &quot;Batch&quot;=c(1, 1, 1, 1, 2, 2, 2, 2))
+
+#Now, prepare a bedPE file from my filtered data! Here I construct a function to do this in case I ever want to do it again. The H1 and H2 columns are good to use for this.
+bedpe.prep &lt;- function(homersigdf, res){ #Also is the BEDPE format!
+  H1 &lt;- homersigdf$H1
+  H2 &lt;- homersigdf$H2
+  H1_coords &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, H1))
+  H2_coords &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, H2))
+  H1_chrs &lt;- gsub(&quot;-.*&quot;, &quot;&quot;, H1)
+  H2_chrs &lt;- gsub(&quot;-.*&quot;, &quot;&quot;, H2)
+  H1_first &lt;- ifelse(H1_coords&lt;H2_coords, H1_coords, H2_coords)
+  H2_second &lt;- ifelse(H1_coords&lt;H2_coords, H2_coords, H1_coords)
+  result &lt;- data.frame(chr.1 = H1_chrs, start.1 = H1_first, end.1 = H1_first+res, chr.2 = H2_chrs, start.2 = H2_second, end.2 = H2_second+res)
+  return(result)
+}
+test &lt;- bedpe.prep(data.filtered, 10000)
+test &lt;- format(test, scientific=FALSE)
+fwrite(test, &quot;~/Desktop/pgltoolswork/new_updated/filt.bins.bedPE&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = TRUE, row.names=FALSE)</code></pre>
+</div>
+<div id="functional-enrichments-read-in-of-files-and-creation-of-comprehensive-dataframe." class="section level3">
+<h3>Functional enrichments: read-in of files and creation of comprehensive dataframe.</h3>
+<p>Looking at functional categories enriched in my specific bins. Here I pull out several histone mark peak files and chromHMM annotations, overlapping them with my significant Hi-C bins and adding in information from my linear modeling on the contacts as well as RNA-seq differential expression analyses.</p>
+<pre class="r"><code>#####First, obtain data frames from the gene_expression.Rmd file, so I can use the promoter information we have from our in-house metaorthoexon trios file.
+gene.hic &lt;- readRDS(&quot;~/Desktop/Hi-C/gene.hic.filt.RDS&quot;)
+
+###################ChromHMM Enrichments: I obtain the chromHMM bin annotations.
+HMM.info.1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/chromHMM_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+HMM.info.2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/chromHMM_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+
+#Fix things up, obtain single identifications for each bin based on highest abundance of annotations.
+HMM.info.1$HID &lt;- paste(HMM.info.1$V1, HMM.info.1$V2, sep=&quot;-&quot;)
+HMM.info.2$HID &lt;- paste(HMM.info.2$V1, HMM.info.2$V2, sep=&quot;-&quot;)
+group_by(HMM.info.1, HID) %&gt;% summarise(chromstate=V7[which.max(V13)]) -&gt; bin1.chroms #This does it by which element covers majority of the bin, rather than just frequency of elements as this would work: group_by(HMM.info.1, HID) %&gt;% summarise(chromstate=names(sort(-table(V7)))[1])
+group_by(HMM.info.2, HID) %&gt;% summarise(chromstate=V7[which.max(V13)]) -&gt; bin2.chroms
+colnames(bin1.chroms) &lt;- c(&quot;H1&quot;, &quot;bin1.HMM&quot;)
+colnames(bin2.chroms) &lt;- c(&quot;H2&quot;, &quot;bin2.HMM&quot;)
+
+#Add in linear modeling information from the data.filtered df of my homer hits.
+chromenrich &lt;- select(data.filtered, H1, H2, sp_BH_pval, sp_beta)
+chromrich &lt;- left_join(chromenrich, bin1.chroms, by=&quot;H1&quot;)
+chromrich &lt;- left_join(chromrich, bin2.chroms, by=&quot;H2&quot;)
+chromrich &lt;- chromrich[order(chromrich$sp_BH_pval),] #Order by FDR. Provides a df of the Hi-C bin hits and their chromHMM annotations.
+
+####Now, add in other chromatin mark peak files and info about their overlap with Hi-C bins:
+#####################CTCF Enrichments. Also works for other quantitative enrichments that just look at overlapping bases.
+CTCF.info &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/CTCF_not_ispan.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+CTCF.info$pairID &lt;- paste(paste(CTCF.info$V1, CTCF.info$V2, sep=&quot;-&quot;), paste(CTCF.info$V4, CTCF.info$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+
+######Start of other quantitative enrichments.
+DHS.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/DHS_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+DHS.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/DHS_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+Hac.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K27ac_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+Hac.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K27ac_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+Hme1.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K4me1_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+Hme1.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K4me1_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+Hme3.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K4me3_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+Hme3.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K4me3_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+HAR.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/HAR_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+HAR.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/HAR_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+
+DHS.bin1$HID &lt;- paste(DHS.bin1$V1, DHS.bin1$V2, sep=&quot;-&quot;)
+DHS.bin2$HID &lt;- paste(DHS.bin2$V1, DHS.bin2$V2, sep=&quot;-&quot;)
+group_by(DHS.bin1, HID) %&gt;% summarise(bin1.DHSval=sum(V14)) -&gt; bin1.DHS
+group_by(DHS.bin2, HID) %&gt;% summarise(bin2.DHSval=sum(V14)) -&gt; bin2.DHS
+
+Hac.bin1$HID &lt;- paste(Hac.bin1$V1, Hac.bin1$V2, sep=&quot;-&quot;)
+Hac.bin2$HID &lt;- paste(Hac.bin2$V1, Hac.bin2$V2, sep=&quot;-&quot;)
+group_by(Hac.bin1, HID) %&gt;% summarise(bin1.Hacval=sum(V14)) -&gt; bin1.Hac
+group_by(Hac.bin2, HID) %&gt;% summarise(bin2.Hacval=sum(V14)) -&gt; bin2.Hac
+
+Hme1.bin1$HID &lt;- paste(Hme1.bin1$V1, Hme1.bin1$V2, sep=&quot;-&quot;)
+Hme1.bin2$HID &lt;- paste(Hme1.bin2$V1, Hme1.bin2$V2, sep=&quot;-&quot;)
+group_by(Hme1.bin1, HID) %&gt;% summarise(bin1.Hme1val=sum(V14)) -&gt; bin1.Hme1
+group_by(Hme1.bin2, HID) %&gt;% summarise(bin2.Hme1val=sum(V14)) -&gt; bin2.Hme1
+
+Hme3.bin1$HID &lt;- paste(Hme3.bin1$V1, Hme3.bin1$V2, sep=&quot;-&quot;)
+Hme3.bin2$HID &lt;- paste(Hme3.bin2$V1, Hme3.bin2$V2, sep=&quot;-&quot;)
+group_by(Hme3.bin1, HID) %&gt;% summarise(bin1.Hme3val=sum(V14)) -&gt; bin1.Hme3
+group_by(Hme3.bin2, HID) %&gt;% summarise(bin2.Hme3val=sum(V14)) -&gt; bin2.Hme3
+
+HAR.bin1$HID &lt;- paste(HAR.bin1$V1, HAR.bin1$V2, sep=&quot;-&quot;)
+HAR.bin2$HID &lt;- paste(HAR.bin2$V1, HAR.bin2$V2, sep=&quot;-&quot;)
+group_by(HAR.bin1, HID) %&gt;% summarise(bin1.HARval=sum(V7)) -&gt; bin1.HAR
+group_by(HAR.bin2, HID) %&gt;% summarise(bin2.HARval=sum(V7)) -&gt; bin2.HAR
+
+colnames(bin1.DHS)[1] &lt;- colnames(bin1.Hac)[1] &lt;- colnames(bin1.Hme1)[1] &lt;- colnames(bin1.Hme3)[1] &lt;- colnames(bin1.HAR)[1] &lt;- &quot;H1&quot;
+colnames(bin2.DHS)[1] &lt;- colnames(bin2.Hac)[1] &lt;- colnames(bin2.Hme1)[1] &lt;- colnames(bin2.Hme3)[1] &lt;- colnames(bin2.HAR)[1] &lt;- &quot;H2&quot;
+
+#Sequential left joins to make huge table on paired data!
+left_join(chromrich, bin1.DHS, by = &quot;H1&quot;) %&gt;% left_join(., bin2.DHS, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hac, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hac, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hme1, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hme1, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hme3, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hme3, by=&quot;H2&quot;) %&gt;% left_join(., bin1.HAR, by=&quot;H1&quot;) %&gt;% left_join(., bin2.HAR, by=&quot;H2&quot;) -&gt; full.annotations
+
+full.annotations$pairID &lt;- paste(full.annotations$H1, full.annotations$H2, sep=&quot;_&quot;)
+full.annotations$CTCF.interrupt &lt;- ifelse(full.annotations$pairID %in% CTCF.info$pairID, &quot;no&quot;, &quot;yes&quot;)
+
+#Add a column to the df indicating which interactions include a promoter and which don&#39;t. Here I am defining a promoter based off the meta ortho exon trios file (true.promoter). I used to secondarily look at chromHMM promoters (promoter) but there&#39;s not much to be gleaned there.
+promoter.IDs &lt;- gene.hic$HID
+full.annotations$true.promoter &lt;- ifelse((full.annotations$H1 %in% promoter.IDs)|(full.annotations$H2 %in% promoter.IDs), &quot;yes&quot;, &quot;no&quot;)
+#full.annotations$HMM.promoter &lt;- ifelse(chromrich$bin1.HMM==&quot;1_TssA&quot;|chromrich$bin1.HMM==&quot;2_TssAFlnk&quot;|chromrich$bin1.HMM==&quot;3_TxFlnk&quot;|chromrich$bin2.HMM==&quot;1_TssA&quot;|chromrich$bin2.HMM==&quot;2_TssAFlnk&quot;|chromrich$bin2.HMM==&quot;3_TxFlnk&quot;, &quot;yes&quot;, &quot;no&quot;)
+
+#Just out of interest, see how many of the genes that are/not DE had promoters picked up by our Hi-C:
+nonprom.IDs &lt;- filter(gene.hic, adj.P.Val&gt;0.05) %&gt;% select(., HID)
+prom.IDs &lt;- filter(gene.hic, adj.P.Val&lt;=0.05) %&gt;% select(., HID)
+
+nrow(prom.IDs)</code></pre>
+<pre><code>[1] 1627</code></pre>
+<pre class="r"><code>sum((prom.IDs$HID %in% full.annotations$H1)|(prom.IDs$HID %in% full.annotations$H2))/nrow(prom.IDs)</code></pre>
+<pre><code>[1] 0.9452981</code></pre>
+<pre class="r"><code>nrow(nonprom.IDs)</code></pre>
+<pre><code>[1] 6547</code></pre>
+<pre class="r"><code>sum((nonprom.IDs$HID %in% full.annotations$H1)|(nonprom.IDs$HID %in% full.annotations$H2))/nrow(nonprom.IDs)</code></pre>
+<pre><code>[1] 0.9517336</code></pre>
+<pre class="r"><code>#Not interesting.
+
+#Grab info from gene.hic to add some information to this table about DE and DC status:
+DEbins &lt;- gene.hic$HID[which(gene.hic$adj.P.Val&lt;=0.05)]
+full.annotations$DE &lt;- ifelse((full.annotations$H1 %in% DEbins)|(full.annotations$H2 %in% DEbins), &quot;yes&quot;, &quot;no&quot;)
+full.annotations$DC &lt;- ifelse(full.annotations$sp_BH_pval&lt;=0.05, &quot;yes&quot;, &quot;no&quot;)
+full.annotations$differential &lt;- ifelse(full.annotations$DC==&quot;no&quot;&amp;full.annotations$DE==&quot;no&quot;, &quot;no&quot;, ifelse(full.annotations$DC==&quot;yes&quot;&amp;full.annotations$DE==&quot;yes&quot;, &quot;both&quot;, ifelse(full.annotations$DC==&quot;yes&quot;, &quot;contact&quot;, &quot;expression&quot;)))
+#I&#39;ll use this downstream in this file to look at enrichments of specific sets of histone marks in my data.
+
+#Now, save the full annotations df out as a variety of different files to calculate chromHMM annotations proportions on them on midway2.
+saveRDS(filter(full.annotations, true.promoter==&quot;yes&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/full.promoters.RDS&quot;)
+saveRDS(filter(full.annotations, true.promoter==&quot;no&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/full.no.promoters.RDS&quot;)
+saveRDS(filter(full.annotations, true.promoter==&quot;yes&quot;, DE==&quot;yes&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/promoters.DE.RDS&quot;)
+saveRDS(filter(full.annotations, true.promoter==&quot;yes&quot;, DE==&quot;no&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/promoters.not.DE.RDS&quot;)
+saveRDS(filter(full.annotations, true.promoter==&quot;yes&quot;, DC==&quot;yes&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/promoters.DC.RDS&quot;)
+saveRDS(filter(full.annotations, true.promoter==&quot;yes&quot;, DC==&quot;no&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/promoters.not.DC.RDS&quot;)
+
+saveRDS(filter(full.annotations, true.promoter==&quot;no&quot;, DE==&quot;yes&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/no.promoters.DE.RDS&quot;)
+saveRDS(filter(full.annotations, true.promoter==&quot;no&quot;, DE==&quot;no&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/no.promoters.not.DE.RDS&quot;)
+saveRDS(filter(full.annotations, true.promoter==&quot;no&quot;, DC==&quot;yes&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/no.promoters.DC.RDS&quot;)
+saveRDS(filter(full.annotations, true.promoter==&quot;no&quot;, DC==&quot;no&quot;), file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/no.promoters.not.DC.RDS&quot;)</code></pre>
+</div>
+<div id="chromhmm-visualization" class="section level3">
+<h3>ChromHMM Visualization</h3>
+<p>Now, I load in the chromHMM proportion tables from midway2, and visualize them to examine differences in dynamics of regulatory regions for promoter and non-promoter contacts.</p>
+<pre class="r"><code>#Just a function for calculating proportions of chromHMM annotations in bin sets of the significant hits. Primarily used on midway2, created and tested here. No particular function at this point right now--loading of proportion tables begins shortly after.
+anno.prop.calc &lt;- function(df, col1, col2, startbin, pval.col){
+  categories &lt;- unique(c(levels(as.factor(df[,col1])), levels(as.factor(df[,col2]))))
+  result &lt;- as.data.frame(matrix(ncol=length(categories), nrow=length((startbin+1):(nrow(df)+1))))
+  colnames(result) &lt;- categories
+  result$pval &lt;- NA
+  firstbit &lt;- table(c(as.character(df[1:startbin, col1]), as.character(df[1:startbin, col2])))
+  result[1, which(colnames(result) %in% names(firstbit))] &lt;- firstbit
+  result[1, &quot;pval&quot;] &lt;- df[startbin, pval.col]
+  for(row in (startbin+1):nrow(df)){
+    tmp.table &lt;- table(c(as.character(df[1:row, col1]), as.character(df[1:row, col2])))
+    result[row-(startbin-1), which(colnames(result) %in% names(tmp.table))] &lt;- tmp.table
+    result[row-(startbin-1), &quot;pval&quot;] &lt;- df[row, pval.col]
+  }
+  return(result)
+}
+
+#######Read in proportion tables from running on midway2! First I&#39;ll do this on the ones from using true.promoter set, just the meta trio exons file.
+prom.props &lt;- readRDS(&quot;~/Desktop/enrichdfs/metaproms/justmeta/10/full.promoters.RDS.result.RDS&quot;)
+nonprom.props &lt;- readRDS(&quot;~/Desktop/enrichdfs/metaproms/justmeta/10/full.no.promoters.RDS.result.RDS&quot;)
+
+colnames(nonprom.props) &lt;- colnames(prom.props) &lt;- c(&quot;Nothing&quot;, &quot;TssA&quot;, &quot;TssBiv&quot;, &quot;BivFlnk&quot;, &quot;EnhBiv&quot;, &quot;ReprPC&quot;, &quot;ReprPCWk&quot;, &quot;Quies&quot;, &quot;TssAFlnk&quot;, &quot;TxFlnk&quot;, &quot;Tx&quot;, &quot;TxWk&quot;, &quot;EnhG&quot;, &quot;Enh&quot;, &quot;ZNF/Rpts&quot;, &quot;Het&quot;, &quot;pval&quot;)
+
+prom.props$bin &lt;- 1:nrow(prom.props)
+nonprom.props$bin &lt;- 1:nrow(nonprom.props)
+prom.props &lt;- prom.props[,-17]
+nonprom.props &lt;- nonprom.props[,-17]
+
+ggprom &lt;- melt(prom.props, id=&quot;bin&quot;)
+ggnoprom &lt;- melt(nonprom.props[1:50000,], id=&quot;bin&quot;) #Only take the first ~50k rows of this because it takes FOREVER otherwise and there are only ~36k promoters anyway.
+
+#Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;Proportion of chromHMM Annotations, Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + theme(plot.title=element_text(hjust=11))</code></pre>
+<pre><code>Warning: Removed 4547 rows containing missing values (position_stack).</code></pre>
+<p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;Proportion of chromHMM Annotations, non-Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + theme(plot.title=element_text(hjust=1))</code></pre>
+<pre><code>Warning: Removed 28047 rows containing missing values (position_stack).</code></pre>
+<p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Read in, format properly, and visualize these same dynamics for promoter bins, split between those that were or were not DE/DC.
+prom.DC.props &lt;- readRDS(&quot;~/Desktop/enrichdfs/metaproms/justmeta/10/promoters.DC.RDS.result.RDS&quot;)
+prom.DE.props &lt;- readRDS(&quot;~/Desktop/enrichdfs/metaproms/justmeta/10/promoters.DE.RDS.result.RDS&quot;)
+prom.noDE &lt;- readRDS(&quot;~/Desktop/enrichdfs/metaproms/justmeta/10/promoters.not.DE.RDS.result.RDS&quot;)
+prom.noDC &lt;- readRDS(&quot;~/Desktop/enrichdfs/metaproms/justmeta/10/promoters.not.DC.RDS.result.RDS&quot;)
+
+prom.DC.props$bin &lt;- 1:nrow(prom.DC.props)
+prom.DE.props$bin &lt;- 1:nrow(prom.DE.props)
+prom.noDE$bin &lt;- 1:nrow(prom.noDE)
+prom.noDC$bin &lt;- 1:nrow(prom.noDC)
+prom.DC.props &lt;- prom.DC.props[,-17]
+prom.DE.props &lt;- prom.DE.props[,-17]
+prom.noDE &lt;- prom.noDE[,-17]
+prom.noDC &lt;- prom.noDC[,-17]
+
+ggpromDC &lt;- melt(prom.DC.props, id=&quot;bin&quot;)
+ggpromDE &lt;- melt(prom.DE.props, id=&quot;bin&quot;)
+ggprom.noDE &lt;- melt(prom.noDE, id=&quot;bin&quot;)
+ggprom.noDC &lt;- melt(prom.noDC, id=&quot;bin&quot;)
+
+ggplot(data=ggpromDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM Annotations, DC Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;))</code></pre>
+<pre><code>Warning: Removed 4487 rows containing missing values (position_stack).</code></pre>
+<p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=ggprom.noDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM Annotations, non-DC Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;))</code></pre>
+<pre><code>Warning: Removed 4685 rows containing missing values (position_stack).</code></pre>
+<p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=ggpromDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM Annotations, DE Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;))</code></pre>
+<pre><code>Warning: Removed 4044 rows containing missing values (position_stack).</code></pre>
+<p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM Annotations, non-DE Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;))</code></pre>
+<pre><code>Warning: Removed 3861 rows containing missing values (position_stack).</code></pre>
+<p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-6.png" width="672" style="display: block; margin: auto;" /></p>
+</div>
+<div id="quantitative-histone-mark-enrichments" class="section level3">
+<h3>Quantitative histone mark enrichments</h3>
+<p>Now, I look at the quantitative enrichment of histone mark peaks from other studies on iPSCs, examining the overlap of these peaks with different classes of Hi-C significant bins.</p>
+<pre class="r"><code>#####Examination of CTCF interruptions, 2x2 tables!
+table(full.annotations$CTCF.interrupt, full.annotations$true.promoter, dnn = c(&quot;CTCF Interruption?&quot; , &quot;Promoter?&quot;))</code></pre>
+<pre><code>                  Promoter?
+CTCF Interruption?     no    yes
+               no   46040  10099
+               yes 209936  25995</code></pre>
+<pre class="r"><code>chisq.test(table(full.annotations$CTCF.interrupt, full.annotations$true.promoter, dnn = c(&quot;CTCF Interruption?&quot; , &quot;Promoter?&quot;)))</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  table(full.annotations$CTCF.interrupt, full.annotations$true.promoter,     dnn = c(&quot;CTCF Interruption?&quot;, &quot;Promoter?&quot;))
+X-squared = 2034.2, df = 1, p-value &lt; 2.2e-16</code></pre>
+<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;no&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;no&quot;)$DC, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DC?&quot;))</code></pre>
+<pre><code>                  DC?
+CTCF Interruption?     no    yes
+               no   44275   1765
+               yes 203281   6655</code></pre>
+<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;no&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;no&quot;)$DC))</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  table(filter(full.annotations, true.promoter == &quot;no&quot;)$CTCF.interrupt,     filter(full.annotations, true.promoter == &quot;no&quot;)$DC)
+X-squared = 52.063, df = 1, p-value = 5.376e-13</code></pre>
+<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$DC, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DC?&quot;))</code></pre>
+<pre><code>                  DC?
+CTCF Interruption?    no   yes
+               no   9747   352
+               yes 25106   889</code></pre>
+<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$DC))</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.interrupt,     filter(full.annotations, true.promoter == &quot;yes&quot;)$DC)
+X-squared = 0.075565, df = 1, p-value = 0.7834</code></pre>
+<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DE?&quot;))</code></pre>
+<pre><code>                  DE?
+CTCF Interruption?    no   yes
+               no   7940  2159
+               yes 20139  5856</code></pre>
+<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DE?&quot;)))</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.interrupt,     filter(full.annotations, true.promoter == &quot;yes&quot;)$DE, dnn = c(&quot;CTCF Interruption?&quot;,         &quot;DE?&quot;))
+X-squared = 5.4927, df = 1, p-value = 0.0191</code></pre>
+<pre class="r"><code>#Make a doubled-down data frame for single columns of quantitative enrichments.
+dub.anno &lt;- data.frame(H1=c(full.annotations$H1, full.annotations$H2), sp_BH_pval=rep(full.annotations$sp_BH_pval, 2), sp_beta=rep(full.annotations$sp_beta, 2), HMM=c(as.character(full.annotations$bin1.HMM), as.character(full.annotations$bin2.HMM)), DHS=c(full.annotations$bin1.DHSval, full.annotations$bin2.DHSval), Hac=c(full.annotations$bin1.Hacval, full.annotations$bin2.Hacval), Hme1=c(full.annotations$bin1.Hme1val, full.annotations$bin2.Hme1val), Hme3=c(full.annotations$bin1.Hme3val, full.annotations$bin2.Hme3val), HAR=c(full.annotations$bin1.HARval, full.annotations$bin2.HARval), pairID=rep(full.annotations$pairID, 2), CTCF.interrupt=rep(full.annotations$CTCF.interrupt, 2), DC=rep(full.annotations$DC, 2), DE=rep(full.annotations$DE, 2), true.promoter=rep(full.annotations$true.promoter, 2), differential=rep(full.annotations$differential, 2))
+
+###############################Plots of enrichment for different classes of hits and different marks.
+##########DHS plots!!!
+all.DHS &lt;- ggplot(data=dub.anno) + geom_density(aes(x=DHS, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 1000))
+box.all.DHS &lt;- ggplot(data=dub.anno) + geom_boxplot(aes(x=true.promoter, y=DHS, group=true.promoter, color=true.promoter)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 500)) + annotate(&quot;text&quot;, x=1.5, y=300, label=&quot;&lt; 2.2 e -16&quot;, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=270, yend=270)
+print(all.DHS)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(box.all.DHS, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(dub.anno$DHS[which(dub.anno$true.promoter==&quot;yes&quot;)], dub.anno$DHS[which(dub.anno$true.promoter==&quot;no&quot;)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  dub.anno$DHS[which(dub.anno$true.promoter == &quot;yes&quot;)] and dub.anno$DHS[which(dub.anno$true.promoter == &quot;no&quot;)]
+t = 107.97, df = 80897, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 57.04851 59.15802
+sample estimates:
+mean of x mean of y 
+105.26799  47.16473 </code></pre>
+<pre class="r"><code>noprom.DHS &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_density(aes(x=DHS, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Contact&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 1000))
+box.noprom.DHS &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_boxplot(aes(x=differential, y=DHS, group=differential, color=differential, ymin=quantile(DHS, 0.025), ymax=quantile(DHS, 0.975), middle=median(DHS), lower=quantile(DHS, 0.25), upper=quantile(DHS, 0.75))) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Contact&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 500)) + annotate(&quot;text&quot;, x=1.5, y=300, label=&quot;&lt; 2.2 e -16&quot;, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=270, yend=270)
+print(noprom.DHS)
+print(box.noprom.DHS, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;contact&quot;)$DHS, filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;no&quot;)$DHS)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;no&quot;, differential == &quot;contact&quot;)$DHS and filter(dub.anno, true.promoter == &quot;no&quot;, differential == &quot;no&quot;)$DHS
+t = 18.936, df = 17718, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 13.73587 16.90786
+sample estimates:
+mean of x mean of y 
+ 61.98260  46.66074 </code></pre>
+<pre class="r"><code>prom.DHS &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=DHS, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 1000))
+box.prom.DHS &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=differential, y=DHS, group=differential, color=differential)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 600)) + annotate(&quot;text&quot;, x=3.5, y=300, label=&quot;0.609&quot;, size=3) + annotate(&quot;text&quot;, x=2.5, y=300, label=&quot;1.1 e -6&quot;, size=3) + annotate(&quot;text&quot;, x=1.5, y=400, label=&quot;0.0068&quot;, size=3) + annotate(&quot;text&quot;, label=&quot;9.09 e -8&quot;, x=2, y=480, size=3) + annotate(&quot;segment&quot;, x=1.1, y=370, xend=1.9, yend=370) + annotate(&quot;segment&quot;, x=2.1, y=270, xend=2.9, yend=270) + annotate(&quot;segment&quot;, x=3.1, y=270, xend=3.9, yend=270) + annotate(&quot;segment&quot;, x=1.1, y=450, xend=2.9, yend=450) + annotate(&quot;text&quot;, x=2.5, y=550, size=3, label=&quot;4.405 e -8&quot;) + annotate(&quot;segment&quot;, x=1.1, y=520, xend=3.9, yend=520) + annotate(&quot;text&quot;, x=3, y=400, label=&quot;1.7 e -7&quot;, size=3) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=370, yend=370)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.DHS)
+print(box.prom.DHS, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;contact&quot;)$DHS, filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;no&quot;)$DHS)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, differential == &quot;contact&quot;)$DHS and filter(dub.anno, true.promoter == &quot;yes&quot;, differential == &quot;no&quot;)$DHS
+t = 5.2438, df = 2077.9, p-value = 1.732e-07
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 11.26294 24.71989
+sample estimates:
+mean of x mean of y 
+ 122.3473  104.3559 </code></pre>
+<pre class="r"><code>DE.DHS &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=DHS, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 1000))
+boxDE.DHS &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DE, y=DHS, group=DE, color=DE), coef=3) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=400, label=&quot;0.2998&quot;, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=350, yend=350)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.5)
+print(DE.DHS)
+print(boxDE.DHS, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;yes&quot;)$DHS, filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;no&quot;)$DHS)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, DE == &quot;yes&quot;)$DHS and filter(dub.anno, true.promoter == &quot;yes&quot;, DE == &quot;no&quot;)$DHS
+t = 1.0368, df = 26276, p-value = 0.2998
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -1.149666  3.731949
+sample estimates:
+mean of x mean of y 
+ 106.2724  104.9813 </code></pre>
+<pre class="r"><code>DC.DHS &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=DHS, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 1000))
+boxDC.DHS &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DC, y=DHS, group=DC, color=DC), coef=3) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, label=&quot;7.072 e -13&quot;, size=3, x=1.5, y=400) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=350, yend=350)#+ geom_text(aes(x=1.5, y=2000, label=&quot;0.2901&quot;), show.legend=FALSE, size=3)
+print(DC.DHS)
+print(boxDC.DHS, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DC==&quot;yes&quot;)$DHS, filter(dub.anno, true.promoter==&quot;yes&quot;, DC==&quot;no&quot;)$DHS)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, DC == &quot;yes&quot;)$DHS and filter(dub.anno, true.promoter == &quot;yes&quot;, DC == &quot;no&quot;)$DHS
+t = 7.214, df = 2632.8, p-value = 7.072e-13
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 16.28449 28.44173
+sample estimates:
+mean of x mean of y 
+ 126.8622  104.4991 </code></pre>
+<pre class="r"><code>##############H3K27Ac plots!!!
+all.Hac &lt;- ggplot(data=dub.anno) + geom_density(aes(x=Hac, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 2500))
+box.all.Hac &lt;- ggplot(data=dub.anno) + geom_boxplot(aes(x=true.promoter, y=Hac, group=true.promoter, color=true.promoter), coef=3) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;text&quot;, label=&quot;&lt;2.2 e -16&quot;, x=1.5, y=400, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=350, yend=350)# + geom_text(aes(x=1.5, y=1500, label=&quot;&lt;2.2 e -16&quot;), show.legend=FALSE, size=3)#+ geom_text(aes(x=1, y=0.15, label=&quot;pval: &lt; 2.2 e -16&quot;, color=NULL), show.legend=FALSE, size=3)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(all.Hac)
+print(box.all.Hac, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-6.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(dub.anno$Hac[which(dub.anno$true.promoter==&quot;yes&quot;)], dub.anno$Hac[which(dub.anno$true.promoter==&quot;no&quot;)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  dub.anno$Hac[which(dub.anno$true.promoter == &quot;yes&quot;)] and dub.anno$Hac[which(dub.anno$true.promoter == &quot;no&quot;)]
+t = 84.897, df = 76448, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 181.7643 190.3553
+sample estimates:
+mean of x mean of y 
+235.23523  49.17541 </code></pre>
+<pre class="r"><code>noprom.Hac &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_density(aes(x=Hac, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Contact&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 2000))
+box.noprom.Hac &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_boxplot(aes(x=differential, y=Hac, group=differential, color=differential), coef=3) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Contact&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;text&quot;, label=&quot;&lt;2.2 e -16&quot;, x=1.5, y=400, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=350, yend=350)# + geom_text(aes(x=1.5, y=1500, label=&quot;9.99 e -14&quot;), show.legend=FALSE, size=3) Can&#39;t figure out why geom text won&#39;t work here/takes too long!!!
+print(noprom.Hac)
+print(box.noprom.Hac, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-7.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;contact&quot;)$Hac, filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;no&quot;)$Hac)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;no&quot;, differential == &quot;contact&quot;)$Hac and filter(dub.anno, true.promoter == &quot;no&quot;, differential == &quot;no&quot;)$Hac
+t = 10.392, df = 17691, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 20.12944 29.48856
+sample estimates:
+mean of x mean of y 
+ 73.16835  48.35935 </code></pre>
+<pre class="r"><code>prom.Hac &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hac, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 3500))
+box.prom.Hac &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=differential, y=Hac, group=differential, color=differential))+ scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank())+ coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=430, yend=430) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=700, yend=700) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=880, yend=880) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=430, yend=430) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=560, yend=560) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=430, yend=430) + annotate(&quot;text&quot;, label=&quot;0.2163&quot;, size=3, x=1.5, y=480) + annotate(&quot;text&quot;, label=&quot;0.0031&quot;, size=3, x=2.5, y=480) + annotate(&quot;text&quot;, label=&quot;0.7495&quot;, size=3, x=3.5, y=480) + annotate(&quot;text&quot;, label=&quot;0.001417&quot;, size=3, x=3, y=610) + annotate(&quot;text&quot;, label=&quot;0.004881&quot;, size=3, x=2, y=750) + annotate(&quot;text&quot;, label=&quot;0.003766&quot;, size=3, x=2.5, y=930)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(prom.Hac)
+print(box.prom.Hac, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;both&quot;)$Hac, filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;no&quot;)$Hac)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, differential == &quot;both&quot;)$Hac and filter(dub.anno, true.promoter == &quot;yes&quot;, differential == &quot;no&quot;)$Hac
+t = 2.9098, df = 536.87, p-value = 0.003766
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+  27.41567 141.34128
+sample estimates:
+mean of x mean of y 
+ 317.4226  233.0442 </code></pre>
+<pre class="r"><code>DE.Hac &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hac, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 3000))
+boxDE.Hac &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DE, y=Hac, group=DE, color=DE)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=250, yend=250) + annotate(&quot;text&quot;, x=1.5, y=300, label=&quot;0.5826&quot;, size=3)
+print(DE.Hac)
+print(boxDE.Hac, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-9.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;yes&quot;)$Hac, filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;no&quot;)$Hac)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, DE == &quot;yes&quot;)$Hac and filter(dub.anno, true.promoter == &quot;yes&quot;, DE == &quot;no&quot;)$Hac
+t = 0.54961, df = 25846, p-value = 0.5826
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -7.338732 13.058073
+sample estimates:
+mean of x mean of y 
+ 237.4599  234.6002 </code></pre>
+<pre class="r"><code>DC.Hac &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hac, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 2500))
+boxDC.Hac &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DC, y=Hac, group=DC, color=DC)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=400, yend=400) + annotate(&quot;text&quot;, x=1.5, y=450, label=&quot;3.115 e -5&quot;, size=3)
+print(DC.Hac)
+print(boxDC.Hac, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-10.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DC==&quot;yes&quot;)$Hac, filter(dub.anno, true.promoter==&quot;yes&quot;, DC==&quot;no&quot;)$Hac)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, DC == &quot;yes&quot;)$Hac and filter(dub.anno, true.promoter == &quot;yes&quot;, DC == &quot;no&quot;)$Hac
+t = 4.1721, df = 2636.5, p-value = 3.115e-05
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 28.01179 77.69115
+sample estimates:
+mean of x mean of y 
+ 286.2695  233.4181 </code></pre>
+<pre class="r"><code>######H3K4Me1 plots!!!
+all.Hme1 &lt;- ggplot(data=dub.anno) + geom_density(aes(x=Hme1, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 3000))
+box.all.Hme1 &lt;- ggplot(data=dub.anno) + geom_boxplot(aes(x=true.promoter, y=Hme1, group=true.promoter, color=true.promoter)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 3000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1250, yend=1250) + annotate(&quot;text&quot;, x=1.5, y=1450, label=&quot;&lt;2.2 e -16&quot;, size=3)
+print(all.Hme1)
+print(box.all.Hme1, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-11.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(dub.anno$Hme1[which(dub.anno$true.promoter==&quot;yes&quot;)], dub.anno$Hme1[which(dub.anno$true.promoter==&quot;no&quot;)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  dub.anno$Hme1[which(dub.anno$true.promoter == &quot;yes&quot;)] and dub.anno$Hme1[which(dub.anno$true.promoter == &quot;no&quot;)]
+t = 39.32, df = 90790, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 144.0636 159.1796
+sample estimates:
+mean of x mean of y 
+ 603.5505  451.9289 </code></pre>
+<pre class="r"><code>prom.Hme1 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hme1, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 6000))
+box.prom.Hme1 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=differential, y=Hme1, group=differential, color=differential), coef=3) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 6000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=3900, yend=3900) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=5100, yend=5100) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=2700, yend=2700) + annotate(&quot;text&quot;, x=1.5, y=1800, size=3, label=&quot;4.1 e -5&quot;) + annotate(&quot;text&quot;, x=2.5, y=1800, size=3, label=&quot;0.7422&quot;) + annotate(&quot;text&quot;, x=3.5, y=1800, size=3, label=&quot;8 e -7&quot;) + annotate(&quot;text&quot;, x=3, y=3000, size=3, label=&quot;0.01766&quot;) + annotate(&quot;text&quot;, x=2.5, y=5400, size=3, label=&quot;0.005727&quot;) + annotate(&quot;text&quot;, x=2, y=4200, size=3, label=&quot;2.436 e -5&quot;)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(prom.Hme1)
+print(box.prom.Hme1, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-12.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;both&quot;)$Hme1, filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;expression&quot;)$Hme1)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, differential == &quot;both&quot;)$Hme1 and filter(dub.anno, true.promoter == &quot;yes&quot;, differential == &quot;expression&quot;)$Hme1
+t = 4.2569, df = 551.51, p-value = 2.436e-05
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 119.1895 323.4240
+sample estimates:
+mean of x mean of y 
+ 791.5660  570.2593 </code></pre>
+<pre class="r"><code>noprom.Hme1 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_density(aes(x=Hme1, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Contact&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
+box.noprom.Hme1 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_boxplot(aes(x=differential, y=Hme1, group=differential, color=differential)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Contact&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2200)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;text&quot;, x=1.5, y=860, size=3, label=&quot;0.07058&quot;)
+print(noprom.Hme1)
+print(box.noprom.Hme1, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-13.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;no&quot;)$Hme1, filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;contact&quot;)$Hme1)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;no&quot;, differential == &quot;no&quot;)$Hme1 and filter(dub.anno, true.promoter == &quot;no&quot;, differential == &quot;contact&quot;)$Hme1
+t = -1.8083, df = 17961, p-value = 0.07058
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -27.386232   1.103427
+sample estimates:
+mean of x mean of y 
+ 451.4967  464.6381 </code></pre>
+<pre class="r"><code>DE.Hme1 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hme1, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
+  boxDE.Hme1 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DE, y=Hme1, group=DE, color=DE)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 2200)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=1360, label=&quot;8.823 e -5&quot;, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1250, yend=1250)
+print(DE.Hme1)
+print(boxDE.Hme1, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-14.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;yes&quot;)$Hme1, filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;no&quot;)$Hme1)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, DE == &quot;yes&quot;)$Hme1 and filter(dub.anno, true.promoter == &quot;yes&quot;, DE == &quot;no&quot;)$Hme1
+t = -3.9215, df = 26978, p-value = 8.823e-05
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -50.07676 -16.69994
+sample estimates:
+mean of x mean of y 
+ 577.5764  610.9647 </code></pre>
+<pre class="r"><code>DC.Hme1 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hme1, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 5000))
+boxDC.Hme1 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DC, y=Hme1, group=DC, color=DC)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 2200)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1200, yend=1200) + annotate(&quot;text&quot;, x=1.5, y=1310, label=&quot;0.6647&quot;, size=3)
+print(DC.Hme1)
+print(boxDC.Hme1, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-15.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DC==&quot;yes&quot;)$Hme1, filter(dub.anno, true.promoter==&quot;yes&quot;, DC==&quot;no&quot;)$Hme1)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, DC == &quot;yes&quot;)$Hme1 and filter(dub.anno, true.promoter == &quot;yes&quot;, DC == &quot;no&quot;)$Hme1
+t = 0.43351, df = 2662, p-value = 0.6647
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -30.40557  47.66591
+sample estimates:
+mean of x mean of y 
+ 611.8840  603.2538 </code></pre>
+<pre class="r"><code>####H3K4Me3 plots!!!
+all.Hme3 &lt;- ggplot(data=dub.anno) + geom_density(aes(x=Hme3, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 6000))
+box.all.Hme3 &lt;- ggplot(data=dub.anno) + geom_boxplot(aes(x=true.promoter, y=Hme3, group=true.promoter, color=true.promoter)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 4000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=2200, yend=2200) + annotate(&quot;text&quot;, label=&quot;&lt;2.2 e -16&quot;, x=1.5, y=2400, size=3)
+print(all.Hme3)
+print(box.all.Hme3, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-16.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(dub.anno$Hme3[which(dub.anno$true.promoter==&quot;yes&quot;)], dub.anno$Hme3[which(dub.anno$true.promoter==&quot;no&quot;)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  dub.anno$Hme3[which(dub.anno$true.promoter == &quot;yes&quot;)] and dub.anno$Hme3[which(dub.anno$true.promoter == &quot;no&quot;)]
+t = 140.79, df = 77697, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 780.9321 802.9823
+sample estimates:
+mean of x mean of y 
+1026.9251  234.9679 </code></pre>
+<pre class="r"><code>prom.Hme3 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hme3, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;))
+box.prom.Hme3 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=differential, y=Hme3, group=differential, color=differential)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 7500)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=2700, yend=2700) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=2700, yend=2700) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=2700, yend=2700) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=3900, yend=3900) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=5100, yend=5100) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=6300, yend=6300) + annotate(&quot;text&quot;, x=1.5, y=3100, size=3, label=&quot;0.05092&quot;) + annotate(&quot;text&quot;, x=2.5, y=3100, size=3, label=&quot;5.6 e -7&quot;) + annotate(&quot;text&quot;, x=3.5, y=3100, size=3, label=&quot;0.00814&quot;) + annotate(&quot;text&quot;, x=3, y=4300, size=3, label=&quot;6.713 e -10&quot;) + annotate(&quot;text&quot;, x=2.7, y=6700, size=3, label=&quot;9.428 e -7&quot;) + annotate(&quot;text&quot;, x=2, y=5500, size=3, label=&quot;9.359 e -6&quot;)
+print(prom.Hme3)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(box.prom.Hme3, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-17.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;both&quot;)$Hme3, filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;expression&quot;)$Hme3)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, differential == &quot;both&quot;)$Hme3 and filter(dub.anno, true.promoter == &quot;yes&quot;, differential == &quot;expression&quot;)$Hme3
+t = 4.4731, df = 553.33, p-value = 9.359e-06
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 197.9452 507.8971
+sample estimates:
+mean of x mean of y 
+ 1398.821  1045.900 </code></pre>
+<pre class="r"><code>noprom.Hme3 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_density(aes(x=Hme3, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Contact&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
+box.noprom.Hme3 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_boxplot(aes(x=differential, y=Hme3, group=differential, color=differential)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Contact&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=250, yend=250) + annotate(&quot;text&quot;, x=1.5, y=300, size=3, label=&quot;&lt;2.2 e -16&quot;)
+print(noprom.Hme3)
+print(box.noprom.Hme3, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-18.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;no&quot;)$Hme3, filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;contact&quot;)$Hme3)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;no&quot;, differential == &quot;no&quot;)$Hme3 and filter(dub.anno, true.promoter == &quot;no&quot;, differential == &quot;contact&quot;)$Hme3
+t = -15.905, df = 17591, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -131.0101 -102.2623
+sample estimates:
+mean of x mean of y 
+ 231.1313  347.7675 </code></pre>
+<pre class="r"><code>DE.Hme3 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hme3, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 7500))
+boxDE.Hme3 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DE, y=Hme3, group=DE, color=DE)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 5000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=2500, yend=2500) + annotate(&quot;text&quot;, x=1.5, y=2750, size=3, label=&quot;0.002958&quot;)
+print(DE.Hme3)
+print(boxDE.Hme3, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-19.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;yes&quot;)$Hme3, filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;no&quot;)$Hme3)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, DE == &quot;yes&quot;)$Hme3 and filter(dub.anno, true.promoter == &quot;yes&quot;, DE == &quot;no&quot;)$Hme3
+t = 2.9724, df = 25979, p-value = 0.002958
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 13.41531 65.36494
+sample estimates:
+mean of x mean of y 
+ 1057.568  1018.178 </code></pre>
+<pre class="r"><code>DC.Hme3 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=Hme3, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping DC true.promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) #+ coord_cartesian(xlim=c(0, 8000))
+boxDC.Hme3 &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DC, y=Hme3, group=DC, color=DC)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 6000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=3000, yend=3000) + annotate(&quot;text&quot;, x=1.5, y=3300, size=3, label=&quot;3.926 e -14&quot;)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.6)
+print(DC.Hme3)
+print(boxDC.Hme3, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-20.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DC==&quot;yes&quot;)$Hme3, filter(dub.anno, true.promoter==&quot;yes&quot;, DC==&quot;no&quot;)$Hme3)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(dub.anno, true.promoter == &quot;yes&quot;, DC == &quot;yes&quot;)$Hme3 and filter(dub.anno, true.promoter == &quot;yes&quot;, DC == &quot;no&quot;)$Hme3
+t = 7.6054, df = 2632.8, p-value = 3.926e-14
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 184.7422 313.0976
+sample estimates:
+mean of x mean of y 
+ 1267.286  1018.367 </code></pre>
+<pre class="r"><code>#######HAR Annotations! Seem fairly worthless but keep here in case I want to fux with them later (limits of 50 seem best for axes?)
+# all.HAR &lt;- ggplot(data=dub.anno) + geom_density(aes(x=HAR, group=promoter, color=promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of HAR Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and HAR peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) #+ coord_cartesian(xlim=c(0, 6000))
+# box.all.HAR &lt;- ggplot(data=dub.anno) + geom_boxplot(aes(x=promoter, y=HAR, group=promoter, color=promoter)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) #+ coord_cartesian(ylim=c(0, 6000)) #+ geom_text(aes(x=1.5, y=3000, label=&quot;&lt;2.2 e -16&quot;), show.legend=FALSE, size=3)
+# print(all.HAR)
+# print(box.all.HAR, vp=vp)
+# t.test(dub.anno$HAR[which(dub.anno$promoter==&quot;yes&quot;)], dub.anno$HAR[which(dub.anno$promoter==&quot;no&quot;)])
+# 
+# 
+# prom.HAR &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=HAR, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of HAR overlapping true.promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and HAR peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 200))
+# box.prom.HAR &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=differential, y=HAR, group=differential, color=differential)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 200)) #Not really clear to me why this ends at 8k!
+# print(prom.HAR)
+# vp &lt;- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
+# print(box.prom.HAR, vp=vp)
+# t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;contact&quot;)$HAR, filter(dub.anno, true.promoter==&quot;yes&quot;, differential==&quot;no&quot;)$HAR)
+# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.6)
+# 
+# noprom.HAR &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_density(aes(x=HAR, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of HAR overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and HAR peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 50))
+# box.noprom.HAR &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;no&quot;)) + geom_boxplot(aes(x=differential, y=HAR, group=differential, color=differential)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 50))# + geom_text(aes(x=1.5, y=1500, label=&quot;9.99 e -14&quot;), show.legend=FALSE, size=3) Can&#39;t figure out why geom text won&#39;t work here/takes too long!!!
+# print(noprom.HAR)
+# print(box.noprom.HAR, vp=vp)
+# t.test(filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;no&quot;)$HAR, filter(dub.anno, true.promoter==&quot;no&quot;, differential==&quot;expression&quot;)$HAR)
+# 
+# DE.HAR &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=HAR, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of HAR overlapping DE true.promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and HAR peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
+#   boxDE.HAR &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DE, y=HAR, group=DE, color=DE)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 8000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + geom_text(aes(x=1.5, y=4000, label=&quot;3 e -14&quot;), show.legend=FALSE, size=3)
+# print(DE.HAR)
+# print(boxDE.HAR, vp=vp)
+# t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;yes&quot;)$HAR, filter(dub.anno, true.promoter==&quot;yes&quot;, DE==&quot;no&quot;)$HAR)
+# 
+# DC.HAR &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_density(aes(x=HAR, group=DH, color=DH, y=..scaled..)) + ggtitle(&quot;Enrichment of HAR overlapping DC true.promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and HAR peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 8000))
+# boxDC.HAR &lt;- ggplot(data=filter(dub.anno, true.promoter==&quot;yes&quot;)) + geom_boxplot(aes(x=DH, y=HAR, group=DH, color=DH)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 8000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + geom_text(aes(x=1.5, y=4000, label=&quot;1.9 e -5&quot;), show.legend=FALSE, size=3)
+# print(DC.HAR)
+# print(boxDC.HAR, vp=vp)
+# t.test(filter(dub.anno, true.promoter==&quot;yes&quot;, DH==&quot;yes&quot;)$HAR, filter(dub.anno, true.promoter==&quot;yes&quot;, DH==&quot;no&quot;)$HAR)
+# ggplot(data=full.annotations) + geom_density(aes(x=bin1.HARval, group=promoter, color=promoter), linetype=&quot;dashed&quot;) + geom_density(aes(x=bin2.HARval, group=promoter, color=promoter)) + ggtitle(&quot;Enrichment of HAR overlapping ALL Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and HAR peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 50))</code></pre>
+</div>
+<div id="session-information" class="section level2">
+<h2>Session information</h2>
+<!-- Insert the session information into the document -->
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 3.4.0 (2017-04-21)
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
+Running under: OS X El Capitan 10.11.6
+
+Matrix products: default
+BLAS: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRblas.0.dylib
+LAPACK: /Library/Frameworks/R.framework/Versions/3.4/Resources/lib/libRlapack.dylib
+
+locale:
+[1] en_US.UTF-8/en_US.UTF-8/en_US.UTF-8/C/en_US.UTF-8/en_US.UTF-8
+
+attached base packages:
+[1] compiler  stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+ [1] bindrcpp_0.2        bedr_1.0.4          forcats_0.3.0      
+ [4] purrr_0.2.4         readr_1.1.1         tibble_1.4.2       
+ [7] tidyverse_1.2.1     edgeR_3.20.9        RColorBrewer_1.1-2 
+[10] heatmaply_0.14.1    viridis_0.5.0       viridisLite_0.3.0  
+[13] stringr_1.3.0       gplots_3.0.1        Hmisc_4.1-1        
+[16] Formula_1.2-2       survival_2.41-3     lattice_0.20-35    
+[19] dplyr_0.7.4         plotly_4.7.1        ggsignif_0.4.0     
+[22] ggplot2_2.2.1       reshape2_1.4.3      data.table_1.10.4-3
+[25] tidyr_0.8.0         plyr_1.8.4          limma_3.34.9       
+
+loaded via a namespace (and not attached):
+ [1] colorspace_1.3-2     class_7.3-14         modeltools_0.2-21   
+ [4] mclust_5.4           rprojroot_1.3-2      htmlTable_1.11.2    
+ [7] futile.logger_1.4.3  base64enc_0.1-3      rstudioapi_0.7      
+[10] flexmix_2.3-14       mvtnorm_1.0-7        lubridate_1.7.3     
+[13] xml2_1.2.0           R.methodsS3_1.7.1    codetools_0.2-15    
+[16] splines_3.4.0        mnormt_1.5-5         robustbase_0.92-8   
+[19] knitr_1.20           jsonlite_1.5         broom_0.4.3         
+[22] cluster_2.0.6        kernlab_0.9-25       R.oo_1.21.0         
+[25] httr_1.3.1           backports_1.1.2      assertthat_0.2.0    
+[28] Matrix_1.2-12        lazyeval_0.2.1       cli_1.0.0           
+[31] acepack_1.4.1        htmltools_0.3.6      tools_3.4.0         
+[34] gtable_0.2.0         glue_1.2.0           Rcpp_0.12.16        
+[37] cellranger_1.1.0     trimcluster_0.1-2    gdata_2.18.0        
+[40] nlme_3.1-131.1       iterators_1.0.9      fpc_2.1-11          
+[43] psych_1.7.8          testthat_2.0.0       rvest_0.3.2         
+[46] gtools_3.5.0         dendextend_1.7.0     DEoptimR_1.0-8      
+[49] MASS_7.3-49          scales_0.5.0         TSP_1.1-5           
+[52] hms_0.4.2            parallel_3.4.0       lambda.r_1.2        
+[55] yaml_2.1.18          gridExtra_2.3        rpart_4.1-13        
+[58] latticeExtra_0.6-28  stringi_1.1.7        gclus_1.3.1         
+[61] foreach_1.4.4        checkmate_1.8.5      seriation_1.2-3     
+[64] caTools_1.17.1       rlang_0.2.0          pkgconfig_2.0.1     
+[67] prabclus_2.2-6       bitops_1.0-6         evaluate_0.10.1     
+[70] bindr_0.1.1          labeling_0.3         htmlwidgets_1.0     
+[73] magrittr_1.5         R6_2.2.2             pillar_1.2.1        
+[76] haven_1.1.1          whisker_0.3-2        foreign_0.8-69      
+[79] nnet_7.3-12          modelr_0.1.1         crayon_1.3.4        
+[82] futile.options_1.0.0 KernSmooth_2.23-15   rmarkdown_1.9       
+[85] locfit_1.5-9.1       grid_3.4.0           readxl_1.0.0        
+[88] git2r_0.21.0         digest_0.6.15        diptest_0.75-7      
+[91] webshot_0.5.0        VennDiagram_1.6.19   R.utils_2.6.0       
+[94] stats4_3.4.0         munsell_0.4.3        registry_0.5        </code></pre>
+</div>
+
+<hr>
+<p>
+    This <a href="http://rmarkdown.rstudio.com">R Markdown</a> site was created with <a href="https://github.com/jdblischak/workflowr">workflowr</a>
+</p>
+<hr>
+
+<!-- To enable disqus, uncomment the section below and provide your disqus_shortname -->
+
+<!-- disqus
+  <div id="disqus_thread"></div>
+    <script type="text/javascript">
+        /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
+        var disqus_shortname = 'rmarkdown'; // required: replace example with your forum shortname
+
+        /* * * DON'T EDIT BELOW THIS LINE * * */
+        (function() {
+            var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+            dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+            (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+        })();
+    </script>
+    <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+    <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+-->
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.header').parent('thead').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

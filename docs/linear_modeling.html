@@ -315,10 +315,10 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-01-16</p>
+<p><strong>Last updated:</strong> 2018-04-27</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 44519a4</p>
+<p><strong>Code version:</strong> 549472e</p>
 <!-- Add your analysis here -->
 <div id="linear-modeling" class="section level3">
 <h3>Linear Modeling</h3>
@@ -426,7 +426,7 @@ volcplot.full &lt;- data.frame(pval=-log10(full.data$sp_pval), beta=full.data$sp
 volcplot.4 &lt;- data.frame(pval=-log10(data.4$sp_pval), beta=data.4$sp_beta, species=data.4$disc_species)
 ggplot(data=volcplot.full, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;P-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-21.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery | 4&quot;)</code></pre>
+<pre class="r"><code>ggplot(data=volcplot.4, aes(x=beta, y=pval, color=species)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 p-values&quot;) + ggtitle(&quot;Contact Frequency Differences Colored by Species of Discovery | 4&quot;) + scale_color_manual(name=&quot;Species&quot;, labels=c(&quot;Both&quot;, &quot;Chimp&quot;, &quot;Human&quot;), values=c(&quot;#F8766D&quot;, &quot;#00BA38&quot;, &quot;#619CFF&quot;)) #Modify to add clearer labels</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-22.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=volcplot.full, aes(x=beta, y=pval)) + geom_point() + xlab(&quot;Log2 Fold Change in Contact Frequency&quot;) + ylab(&quot;-log10 BH-corrected p-values&quot;) + ggtitle(&quot;Contact Frequency Differences&quot;)</code></pre>
 <p><img src="figure/linear_modeling.Rmd/Linear%20Modeling-23.png" width="672" style="display: block; margin: auto;" /></p>
@@ -454,49 +454,50 @@ attached base packages:
 [8] base     
 
 other attached packages:
- [1] bedr_1.0.4          forcats_0.2.0       purrr_0.2.4        
- [4] readr_1.1.1         tibble_1.3.4        tidyverse_1.2.1    
- [7] edgeR_3.20.1        RColorBrewer_1.1-2  heatmaply_0.13.0   
-[10] viridis_0.4.0       viridisLite_0.2.0   stringr_1.2.0      
-[13] gplots_3.0.1        Hmisc_4.0-3         Formula_1.2-2      
+ [1] bedr_1.0.4          forcats_0.3.0       purrr_0.2.4        
+ [4] readr_1.1.1         tibble_1.4.2        tidyverse_1.2.1    
+ [7] edgeR_3.20.9        RColorBrewer_1.1-2  heatmaply_0.14.1   
+[10] viridis_0.5.0       viridisLite_0.3.0   stringr_1.3.0      
+[13] gplots_3.0.1        Hmisc_4.1-1         Formula_1.2-2      
 [16] survival_2.41-3     lattice_0.20-35     dplyr_0.7.4        
-[19] plotly_4.7.1        ggplot2_2.2.1       reshape2_1.4.2     
-[22] data.table_1.10.4-3 tidyr_0.7.2         plyr_1.8.4         
-[25] limma_3.34.3       
+[19] plotly_4.7.1        ggplot2_2.2.1       reshape2_1.4.3     
+[22] data.table_1.10.4-3 tidyr_0.8.0         plyr_1.8.4         
+[25] limma_3.34.9       
 
 loaded via a namespace (and not attached):
  [1] colorspace_1.3-2     class_7.3-14         modeltools_0.2-21   
- [4] mclust_5.4           rprojroot_1.2        htmlTable_1.11.0    
+ [4] mclust_5.4           rprojroot_1.3-2      htmlTable_1.11.2    
  [7] futile.logger_1.4.3  base64enc_0.1-3      rstudioapi_0.7      
-[10] flexmix_2.3-14       mvtnorm_1.0-6        lubridate_1.7.1     
-[13] xml2_1.1.1           codetools_0.2-15     splines_3.4.0       
+[10] flexmix_2.3-14       mvtnorm_1.0-7        lubridate_1.7.3     
+[13] xml2_1.2.0           codetools_0.2-15     splines_3.4.0       
 [16] R.methodsS3_1.7.1    mnormt_1.5-5         robustbase_0.92-8   
-[19] knitr_1.17           jsonlite_1.5         broom_0.4.3         
+[19] knitr_1.20           jsonlite_1.5         broom_0.4.3         
 [22] cluster_2.0.6        kernlab_0.9-25       R.oo_1.21.0         
-[25] httr_1.3.1           backports_1.1.1      assertthat_0.2.0    
+[25] httr_1.3.1           backports_1.1.2      assertthat_0.2.0    
 [28] Matrix_1.2-12        lazyeval_0.2.1       cli_1.0.0           
 [31] acepack_1.4.1        htmltools_0.3.6      tools_3.4.0         
 [34] bindrcpp_0.2         gtable_0.2.0         glue_1.2.0          
-[37] Rcpp_0.12.14         cellranger_1.1.0     trimcluster_0.1-2   
-[40] gdata_2.18.0         nlme_3.1-131         iterators_1.0.8     
-[43] fpc_2.1-10           psych_1.7.8          testthat_1.0.2      
-[46] rvest_0.3.2          gtools_3.5.0         dendextend_1.6.0    
-[49] DEoptimR_1.0-8       MASS_7.3-47          scales_0.5.0        
-[52] TSP_1.1-5            hms_0.4.0            parallel_3.4.0      
-[55] lambda.r_1.2         yaml_2.1.15          gridExtra_2.3       
-[58] rpart_4.1-11         latticeExtra_0.6-28  stringi_1.1.6       
-[61] gclus_1.3.1          foreach_1.4.3        checkmate_1.8.5     
-[64] seriation_1.2-2      caTools_1.17.1       rlang_0.1.4         
+[37] Rcpp_0.12.16         cellranger_1.1.0     trimcluster_0.1-2   
+[40] gdata_2.18.0         nlme_3.1-131.1       iterators_1.0.9     
+[43] fpc_2.1-11           psych_1.7.8          testthat_2.0.0      
+[46] rvest_0.3.2          gtools_3.5.0         dendextend_1.7.0    
+[49] DEoptimR_1.0-8       MASS_7.3-49          scales_0.5.0        
+[52] TSP_1.1-5            hms_0.4.2            parallel_3.4.0      
+[55] lambda.r_1.2         yaml_2.1.18          gridExtra_2.3       
+[58] rpart_4.1-13         latticeExtra_0.6-28  stringi_1.1.7       
+[61] gclus_1.3.1          foreach_1.4.4        checkmate_1.8.5     
+[64] seriation_1.2-3      caTools_1.17.1       rlang_0.2.0         
 [67] pkgconfig_2.0.1      prabclus_2.2-6       bitops_1.0-6        
-[70] evaluate_0.10.1      bindr_0.1            labeling_0.3        
-[73] htmlwidgets_0.9      magrittr_1.5         R6_2.2.2            
-[76] haven_1.1.0          whisker_0.3-2        foreign_0.8-69      
-[79] nnet_7.3-12          modelr_0.1.1         crayon_1.3.4        
-[82] futile.options_1.0.0 KernSmooth_2.23-15   rmarkdown_1.8       
-[85] locfit_1.5-9.1       grid_3.4.0           readxl_1.0.0        
-[88] git2r_0.19.0         digest_0.6.12        diptest_0.75-7      
-[91] webshot_0.5.0        VennDiagram_1.6.18   R.utils_2.6.0       
-[94] stats4_3.4.0         munsell_0.4.3        registry_0.5        </code></pre>
+[70] evaluate_0.10.1      bindr_0.1.1          labeling_0.3        
+[73] htmlwidgets_1.0      magrittr_1.5         R6_2.2.2            
+[76] pillar_1.2.1         haven_1.1.1          whisker_0.3-2       
+[79] foreign_0.8-69       nnet_7.3-12          modelr_0.1.1        
+[82] crayon_1.3.4         futile.options_1.0.0 KernSmooth_2.23-15  
+[85] rmarkdown_1.9        locfit_1.5-9.1       grid_3.4.0          
+[88] readxl_1.0.0         git2r_0.21.0         digest_0.6.15       
+[91] diptest_0.75-7       webshot_0.5.0        VennDiagram_1.6.19  
+[94] R.utils_2.6.0        stats4_3.4.0         munsell_0.4.3       
+[97] registry_0.5        </code></pre>
 </div>
 
 <hr>
