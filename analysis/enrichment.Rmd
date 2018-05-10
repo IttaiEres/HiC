@@ -297,7 +297,11 @@ anno.prop.calc <- function(df, col1, col2, startbin, pval.col){
   return(result)
 }
 
-#######Read in proportion tables from running on midway2! First I'll do this on the ones from using true.promoter set, just the meta trio exons file.
+###Create vectors for the names of the chromHMM marks and their standardized colors, for passing to scale_fill_manual in ggplot2 calls below.
+HMM.marks <- c("Nothing", "TssA", "TssBiv", "BivFlnk", "EnhBiv","ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het")
+HMM.colors <- c(rgb(0, 0, 0, maxColorValue = 255), rgb(255, 0, 0, maxColorValue = 255), rgb(205, 92, 92, maxColorValue = 255),   rgb(233, 150, 122, maxColorValue = 255), rgb(189, 183, 107, maxColorValue = 255), rgb(128, 128, 128, maxColorValue = 255), rgb(192, 192, 192, maxColorValue = 255), rgb(255, 255, 255, maxColorValue = 255), rgb(255, 69, 0, maxColorValue = 255), rgb(50, 205, 50, maxColorValue = 255), rgb(0, 128, 0, maxColorValue = 255), rgb(0, 100, 0, maxColorValue = 255), rgb(194, 225, 5, maxColorValue = 255), rgb(255, 255, 0, maxColorValue = 255), rgb(102, 205, 170, maxColorValue = 255), rgb(138, 145, 208, maxColorValue = 255))
+
+#######Read in proportion tables from running on midway2! First I'll do this on the full set of pairs that contain a promoter bin, and then on just the set of bins that are themselves contacting a promoter (and not the promoters themselves).
 prom.props <- readRDS("~/Desktop/enrichdfs/newresults/full.promoters.RDS.result.RDS")
 nonprom.props <- readRDS("~/Desktop/enrichdfs/newresults/full.no.promoters.RDS.result.RDS")
 
@@ -315,16 +319,16 @@ ggprom <- melt(prom.props[1:10000,], id="bin")
 ggnoprom <- melt(nonprom.props[1:10000,], id="bin") #Only take the first ~50k rows of this because it takes FOREVER otherwise and there are only ~36k promoters anyway.
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=11))
-ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1))
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=11)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 #Maybe only the first 1000 are actually interesting...
 ggprom <- melt(prom.props[1:1000,], id="bin")
 ggnoprom <- melt(nonprom.props[1:1000,], id="bin") #Only take the first ~50k rows of this because it takes FOREVER otherwise and there are only ~36k promoters anyway.
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=11))
-ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1))
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 ##Mabe it's even less than 1000 actually. Do it entirely by FDR instead? Reload and reformat the dfs to see pvals again.
 prom.props <- readRDS("~/Desktop/enrichdfs/newresults/full.promoters.RDS.result.RDS")
@@ -341,8 +345,8 @@ ggprom <- melt(prom.props[1:250,], id="bin")
 ggnoprom <- melt(nonprom.props[1:250,], id="bin")
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=11))
-ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1))
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=11)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 #These aren't great right now because the colors don't even match for the annotations between the two...highly annoying, useless.
 
 #Read in, format properly, and visualize these same dynamics for promoter bins, split between those that were or were not DE/DC.
@@ -365,14 +369,75 @@ ggpromDE <- melt(prom.DE.props[1:4000,], id="bin")
 ggprom.noDE <- melt(prom.noDE[1:4000,], id="bin")
 ggprom.noDC <- melt(prom.noDC[1:1250,], id="bin")
 
-ggplot(data=ggpromDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, DC Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations"))
-ggplot(data=ggprom.noDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, non-DC Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations"))
+ggplot(data=ggpromDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, DC Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggprom.noDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, non-DC Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
-ggplot(data=ggpromDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, DE Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations"))
-ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, non-DE Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations"))
+ggplot(data=ggpromDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, DE Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, non-DE Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 #Again unfortunately p-values line up terribly, for instance max at the DC promoters is 5% and nonDC promoters 15% at the same rank (1200). At the smaller ranges (~250), it's even worse (.1% to 7%). In the DE case, at 4000 rank it's 65% and 29% DE to no DE, and around areas of extreme change (~250) it's 4.6% to .17%, and at 100 rank it's .47% to .06%...
 #Because nothing is conclusive here, just do 10%, 5%, and 1% FDR below.
+
+#####Repeat of what I just did, but now on only promoter-contacting bins (and not the promoters themselves).
+#First, make plot of the full range of dynamics, then separated out by differential status, and then by DC and DE statuses.
+prom.props <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.full.RDS.result.RDS")
+both.props <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DCDE.only.RDS.result.RDS")
+neither.props <-  readRDS("~/Desktop/enrichdfs/newresults/mates.proms.neither.only.RDS.result.RDS")
+expression.props <-  readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DE.only.RDS.result.RDS")
+contact.props <-  readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DC.only.RDS.result.RDS")
+
+colnames(prom.props) <- colnames(both.props) <- colnames(neither.props) <- colnames(expression.props) <- colnames(contact.props) <- c("Nothing", "TssA", "TssBiv", "BivFlnk", "EnhBiv", "ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het", "pval")
+
+prom.props$bin <- 1:nrow(prom.props)
+both.props$bin <- 1:nrow(both.props)
+neither.props$bin <- 1:nrow(neither.props)
+expression.props$bin <- 1:nrow(expression.props)
+contact.props$bin <- 1:nrow(contact.props)
+
+prom.props <- prom.props[,-17]
+both.props <- both.props[,-17]
+neither.props <- neither.props[,-17]
+expression.props <- expression.props[,-17]
+contact.props <- contact.props[,-17]
+
+ggprom <- melt(prom.props[1:10000,], id="bin")
+ggneither <- melt(neither.props[1:8000,], id="bin")
+ggboth <- melt(both.props, id="bin")
+ggexpression <- melt(expression.props, id="bin")
+ggcontact <- melt(contact.props, id="bin")
+
+#Visualize chromHMM annotation dynamics across FDR for promoter bins, and then by differential status.
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggboth, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, DC+DE Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggexpression, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, DE Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggcontact, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, DC Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggneither, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, non-DC/DE Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+
+###Now, read in, format properly, and visualize these same dynamics for promoter bins, split between those that were or were not DE/DC.
+prom.DC.props <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DC.RDS.result.RDS")
+prom.DE.props <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DE.RDS.result.RDS")
+prom.noDE <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.not.DE.RDS.result.RDS")
+prom.noDC <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.not.DC.RDS.result.RDS")
+
+prom.DC.props$bin <- 1:nrow(prom.DC.props)
+prom.DE.props$bin <- 1:nrow(prom.DE.props)
+prom.noDE$bin <- 1:nrow(prom.noDE)
+prom.noDC$bin <- 1:nrow(prom.noDC)
+prom.DC.props <- prom.DC.props[,-17]
+prom.DE.props <- prom.DE.props[,-17]
+prom.noDE <- prom.noDE[,-17]
+prom.noDC <- prom.noDC[,-17]
+
+ggpromDC <- melt(prom.DC.props, id="bin")
+ggpromDE <- melt(prom.DE.props[1:4000,], id="bin")
+ggprom.noDE <- melt(prom.noDE[1:4000,], id="bin")
+ggprom.noDC <- melt(prom.noDC[1:1250,], id="bin")
+
+ggplot(data=ggpromDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, DC Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggprom.noDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, non-DC Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+
+ggplot(data=ggpromDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, DE Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, non-DE Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 ###Now, also look at specific FDR levels for enrichments of a particular overlap! Prepare a df that has both the promoter and nonpromoter values for these, with duplicates within classes being filtered out (set to NA via deduplicator).
 head(mates.proms.full) #Created before, full set of promoter-contacting bins minus duplicates.
@@ -385,322 +450,228 @@ dubs.nonprom$true.promoter <- "no"
 
 #Now, for examining specific chromHMM marks, will want to combine these two--true.promoter is the variable that separates them out!
 chrom.annos <- rbind(dubs.nonprom, mates.proms.full)
-chrom.annos <- chrom.annos[order(chrom.annos$sp_BH_pval),]
+chrom.annos <- chrom.annos[order(chrom.annos$sp_BH_pval),] #Order by FDR. Duplicates have already been removed from each set. Set sizes are:
+sum(chrom.annos$true.promoter=="yes")
+sum(chrom.annos$true.promoter=="no")
+
+#Do the same thing for creating the other necessary DFs in comparison to the promoter-contacting set of bins. First DC/not and DE/not, then differential statuses.
+#Also do exclusive sets for differential status on the promoter bins:
+nonprom.DC <- filter(full.annotations, true.promoter=="no", DC=="yes") %>% deduplicator(.)
+nonprom.notDC <- filter(full.annotations, true.promoter=="no", DC=="no") %>% deduplicator(.)
+dubs.nonprom.DC <- data.frame(H1=rep(nonprom.DC$H1, 2), H2=rep(nonprom.DC$H2, 2), sp_BH_pval=rep(nonprom.DC$sp_BH_pval, 2), sp_beta=rep(nonprom.DC$sp_beta, 2), bin1.HMM=rep(nonprom.DC$bin1.HMM, 2), bin2.HMM=rep(nonprom.DC$bin2.HMM, 2), pairID=rep(nonprom.DC$pairID, 2), Nothing=c(nonprom.DC$Nothing.1, nonprom.DC$Nothing.2), TssA=c(nonprom.DC$TssA.1, nonprom.DC$TssA.2), TssBiv=c(nonprom.DC$TssBiv.1, nonprom.DC$TssBiv.2), BivFlnk=c(nonprom.DC$TssBiv.1, nonprom.DC$TssBiv.2), EnhBiv=c(nonprom.DC$EnhBiv.1, nonprom.DC$EnhBiv.2), ReprPc=c(nonprom.DC$ReprPC.1, nonprom.DC$ReprPC.2), ReprPCWk=c(nonprom.DC$ReprPCWk.1, nonprom.DC$ReprPCWk.2), Quies=c(nonprom.DC$Quies.1, nonprom.DC$Quies.2), TssAFlnk=c(nonprom.DC$TssAFlnk.1, nonprom.DC$TssAFlnk.2), TxFlnk=c(nonprom.DC$TxFlnk.1, nonprom.DC$TxFlnk.2), Tx=c(nonprom.DC$Tx.1, nonprom.DC$Tx.2), TxWk=c(nonprom.DC$TxWk.1, nonprom.DC$TxWk.2), EnhG=c(nonprom.DC$EnhG.1, nonprom.DC$EnhG.2), Enh=c(nonprom.DC$Enh.1, nonprom.DC$Enh.2), ZNF_Rpts=c(nonprom.DC$`ZNF/Rpts.1`, nonprom.DC$`ZNF/Rpts.2`), Het=c(nonprom.DC$Het.1, nonprom.DC$Het.2), DHSval=c(nonprom.DC$bin1.DHSval, nonprom.DC$bin2.DHSval), Hacval=c(nonprom.DC$bin1.Hacval, nonprom.DC$bin2.Hacval), Hme1val=c(nonprom.DC$bin1.Hme1val, nonprom.DC$bin2.Hme1val), Hme3val=c(nonprom.DC$bin1.Hme3val, nonprom.DC$bin2.Hme3val), HARval=c(nonprom.DC$bin1.HARval, nonprom.DC$bin2.HARval), DE=rep(nonprom.DC$DE, 2), DC=rep(nonprom.DC$DC, 2), differential=rep(nonprom.DC$differential, 2))
+dubs.nonprom.notDC <- data.frame(H1=rep(nonprom.notDC$H1, 2), H2=rep(nonprom.notDC$H2, 2), sp_BH_pval=rep(nonprom.notDC$sp_BH_pval, 2), sp_beta=rep(nonprom.notDC$sp_beta, 2), bin1.HMM=rep(nonprom.notDC$bin1.HMM, 2), bin2.HMM=rep(nonprom.notDC$bin2.HMM, 2), pairID=rep(nonprom.notDC$pairID, 2), Nothing=c(nonprom.notDC$Nothing.1, nonprom.notDC$Nothing.2), TssA=c(nonprom.notDC$TssA.1, nonprom.notDC$TssA.2), TssBiv=c(nonprom.notDC$TssBiv.1, nonprom.notDC$TssBiv.2), BivFlnk=c(nonprom.notDC$TssBiv.1, nonprom.notDC$TssBiv.2), EnhBiv=c(nonprom.notDC$EnhBiv.1, nonprom.notDC$EnhBiv.2), ReprPc=c(nonprom.notDC$ReprPC.1, nonprom.notDC$ReprPC.2), ReprPCWk=c(nonprom.notDC$ReprPCWk.1, nonprom.notDC$ReprPCWk.2), Quies=c(nonprom.notDC$Quies.1, nonprom.notDC$Quies.2), TssAFlnk=c(nonprom.notDC$TssAFlnk.1, nonprom.notDC$TssAFlnk.2), TxFlnk=c(nonprom.notDC$TxFlnk.1, nonprom.notDC$TxFlnk.2), Tx=c(nonprom.notDC$Tx.1, nonprom.notDC$Tx.2), TxWk=c(nonprom.notDC$TxWk.1, nonprom.notDC$TxWk.2), EnhG=c(nonprom.notDC$EnhG.1, nonprom.notDC$EnhG.2), Enh=c(nonprom.notDC$Enh.1, nonprom.notDC$Enh.2), ZNF_Rpts=c(nonprom.notDC$`ZNF/Rpts.1`, nonprom.notDC$`ZNF/Rpts.2`), Het=c(nonprom.notDC$Het.1, nonprom.notDC$Het.2), DHSval=c(nonprom.notDC$bin1.DHSval, nonprom.notDC$bin2.DHSval), Hacval=c(nonprom.notDC$bin1.Hacval, nonprom.notDC$bin2.Hacval), Hme1val=c(nonprom.notDC$bin1.Hme1val, nonprom.notDC$bin2.Hme1val), Hme3val=c(nonprom.notDC$bin1.Hme3val, nonprom.notDC$bin2.Hme3val), HARval=c(nonprom.notDC$bin1.HARval, nonprom.notDC$bin2.HARval), DE=rep(nonprom.notDC$DE, 2), DC=rep(nonprom.notDC$DC, 2), differential=rep(nonprom.notDC$differential, 2))
+nonproms.DC.df <- rbind(dubs.nonprom.DC, dubs.nonprom.notDC)
+
+#Prep promoters DC df, DE df, and differential DF. This is definitely redundant code throughout all three chunks here, so eventually fix that!!!
+DC.proms <- filter(promoter.contacts, DC=="yes")
+DC.proms <- DC.proms[!duplicated(DC.proms$H2),]
+nonDC.proms <- filter(promoter.contacts, DC=="no")
+nonDC.proms <- nonDC.proms[!duplicated(nonDC.proms$H2),]
+proms.DC <- rbind(DC.proms, nonDC.proms)
+proms.DC <- proms.DC[order(proms.DC$sp_BH_pval),] #Should be complete!
+
+DE.proms <- filter(promoter.contacts, DE=="yes")
+DE.proms <- DE.proms[!duplicated(DE.proms$H2),]
+nonDE.proms <- filter(promoter.contacts, DE=="no")
+nonDE.proms <- nonDE.proms[!duplicated(nonDE.proms$H2),]
+proms.DE <- rbind(DE.proms, nonDE.proms)
+proms.DE <- proms.DE[order(proms.DE$sp_BH_pval),]
+
+DE.only.proms <- filter(promoter.contacts, differential=="expression")
+DC.only.proms <- filter(promoter.contacts, differential=="contact")
+DEDC.proms <- filter(promoter.contacts, differential=="both")
+neither.proms <- filter(promoter.contacts, differential=="no")
+DE.only.proms <- DE.only.proms[!duplicated(DE.only.proms$H2),]
+DC.only.proms <- DC.only.proms[!duplicated(DC.only.proms$H2),]
+DEDC.proms <- DEDC.proms[!duplicated(DEDC.proms$H2),]
+neither.proms <- neither.proms[!duplicated(neither.proms$H2),]
+proms.differential <- rbind(DE.only.proms, DC.only.proms, DEDC.proms, neither.proms)
+proms.differential <- proms.differential[order(proms.differential$sp_BH_pval),]
+colnames(proms.differential) <- colnames(proms.DE) <- colnames(proms.DC) <- colnames(chrom.annos)[1:29]
+
 
 ##########Now, try to actually plot out overlaps of different chromHMM marks with these two different classes of bins.
-####TSSA!
-TSSA.density <- ggplot(data=chrom.annos) + geom_density(aes(x=TssA, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssA Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and TssA from chromHMM")
-TSSA.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=TssA, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="2 e -5", size=3)
-print(TSSA.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(TSSA.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$TssA, filter(chrom.annos, true.promoter=="no")$TssA)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-TSSA.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=TssA, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssA Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins <= 10% FDR and TssA from chromHMM")
-TSSA.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=TssA, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(TSSA.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(TSSA.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$TssA, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$TssA)
-
-TSSA.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.05)) + geom_density(aes(x=TssA, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssA Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins <= 5% FDR and TssA from chromHMM")
-TSSA.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.05)) + geom_violin(aes(y=TssA, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="3 e -3", size=3)
-print(TSSA.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(TSSA.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.05)$TssA, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.05)$TssA)
-
-TSSA.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.01)) + geom_density(aes(x=TssA, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssA Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins <= 1% FDR and TssA from chromHMM")
-TSSA.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.01)) + geom_violin(aes(y=TssA, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.05", size=3)
-print(TSSA.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(TSSA.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.01)$TssA, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.01)$TssA)
-
-
-###TssBiv!!
-TssBiv.density <- ggplot(data=chrom.annos) + geom_density(aes(x=TssBiv, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssBiv Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and TssBiv from chromHMM")
-TssBiv.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=TssBiv, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.05", size=3)
-print(TssBiv.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(TssBiv.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$TssBiv, filter(chrom.annos, true.promoter=="no")$TssBiv)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-TssBiv.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=TssBiv, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssBiv Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and TssBiv from chromHMM")
-TssBiv.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=TssBiv, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.5", size=3)
-print(TssBiv.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(TssBiv.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$TssBiv, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$TssBiv)
-
-TssBiv.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.05)) + geom_density(aes(x=TssBiv, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssBiv Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 5% FDR and TssBiv from chromHMM")
-TssBiv.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.05)) + geom_violin(aes(y=TssBiv, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.9", size=3)
-print(TssBiv.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(TssBiv.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.05)$TssBiv, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.05)$TssBiv)
-
-chromHMMplot <- function(df, markcol, FDR){
-  density <- ggplot(data=filter(df, sp_BH_pval<=FDR)) + geom_density(aes(x=get(markcol), group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab(paste("Length of overlap b/t bin and", markcol, "Annotation", sep=" ")) + ggtitle(paste("Overlap b/t Hi-C Bins <", FDR*100, "% FDR and", markcol, sep=" ")) + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue"))
+#First, create a function to do the plotting, and to do it with different FDRs. At first was trying to make this work for the individual histone marks as well but those already exist so just format to work with these. Will have to pass in properly formatted dataframes, however.
+chromHMMplot <- function(df, nonprom.df, DC.df, DE.df, differential.df, differential.Ymax, differential.Ystart, diff.lineint, diff.textint, markcol, vpdims=c(0.3, 0.3, 0.5, 0.7), vpdims2=vpdims, vpdims3=vpdims, vpdims4=vpdims, vpdims5=vpdims, FDR=NULL){
+    DEPROMS=FALSE
+    DCPROMS=FALSE
+    NONPROMS=FALSE
+    DIFFERENTIAL=FALSE
+  if(is.numeric(FDR)){
+  density.proms <- ggplot(data=filter(df, sp_BH_pval<=FDR)) + geom_density(aes(x=get(markcol), group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab(paste("Length of overlap b/t bin and", markcol, "Annotation", sep=" ")) + ggtitle(paste("Overlap between Hi-C Bins <=", FDR*100, "% FDR and", markcol, sep=" ")) + scale_colour_manual(name="Promoter Contact?", labels=c("No", "Yes"), values=c("Red", "Blue"))
   mypval <- t.test(filter(df, true.promoter=="yes", sp_BH_pval<=FDR)[,markcol], filter(df, true.promoter=="no", sp_BH_pval<=FDR)[,markcol])$p.value
   mypval <- signif(mypval, 1)
-  violin <- ggplot(data=filter(df, sp_BH_pval<=FDR)) + geom_violin(aes(y=get(markcol), group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)
-  print(density)
-  vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-  print(violin, vp=vp)
+  violin.proms <- ggplot(data=filter(df, sp_BH_pval<=FDR)) + geom_violin(aes(y=get(markcol), group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)
+  
+  if(nrow(filter(nonprom.df, sp_BH_pval<=FDR, DC=="no"))>0){NONPROMS=TRUE
+  density.nonproms <- ggplot(data=filter(nonprom.df, sp_BH_pval<=FDR)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ylab("Density") + xlab(paste("Length of overlap b/t bin and", markcol, "Annotation", sep=" ")) + ggtitle(paste("Overlap between Hi-C Bins <=", FDR*100, "% FDR and", markcol, sep=" ")) + scale_colour_manual(name="Differential Contact?", labels=c("No", "Yes"), values=c("Red", "Blue"))
+  mypval <- t.test(filter(nonprom.df, sp_BH_pval<=FDR, DC=="yes")[,markcol], filter(nonprom.df, sp_BH_pval<=FDR, DC=="no")[,markcol])$p.value
+  mypval <- signif(mypval, 1)
+  violin.nonproms <- ggplot(data=filter(nonprom.df, sp_BH_pval<=FDR)) + geom_violin(aes(y=get(markcol), group=DC, color=DC, x=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Differential Contact?", values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)}
+  
+  if(nrow(filter(DC.df, sp_BH_pval<=FDR, DC=="no"))>0){DCPROMS=TRUE
+  DC.density <- ggplot(data=filter(DC.df, sp_BH_pval<=FDR)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ggtitle(paste("Overlap between Promoter Hi-C Bins<=", FDR*100, "%FDR and", markcol, sep=" ")) + xlab(paste("Length of overlap b/t bin and", markcol, "peak", sep=" ")) + ylab("Density") + scale_color_manual(name="DC?", labels = c("No", "Yes"), values=c("Red", "Blue"))
+  mypval <- t.test(filter(DC.df, sp_BH_pval<=FDR, DC=="yes")[,markcol], filter(DC.df, sp_BH_pval<=FDR, DC=="no")[,markcol])$p.value
+  mypval <- signif(mypval, 1)
+  DC.violin <- ggplot(data=filter(DC.df, sp_BH_pval<=FDR)) + geom_violin(aes(x=DC, y=get(markcol), group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)}
+  
+  if(nrow(filter(DE.df, sp_BH_pval<=FDR, DE=="no"))>0){DEPROMS=TRUE
+  DE.density <- ggplot(data=filter(DE.df, sp_BH_pval<=FDR)) + geom_density(aes(x=get(markcol), group=DE, color=DE, y=..scaled..)) + ggtitle(paste("Overlap between Promoter Hi-C Bins<=", FDR*100, "%FDR and", markcol, sep=" ")) + xlab(paste("Length of overlap b/t bin and", markcol, "peak", sep=" ")) + ylab("Density") + scale_color_manual(name="DE?", labels = c("No", "Yes"), values=c("Red", "Blue"))
+  mypval <- t.test(filter(DE.df, sp_BH_pval<=FDR, DE=="yes")[,markcol], filter(DE.df, sp_BH_pval<=FDR, DE=="no")[,markcol])$p.value
+  mypval <- signif(mypval, 1)
+  DE.violin <- ggplot(data=filter(DE.df, sp_BH_pval<=FDR)) + geom_violin(aes(x=DE, y=get(markcol), group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)}
+  
+  if((nrow(filter(differential.df, sp_BH_pval<=FDR, differential=="both"))>0)&(nrow(filter(differential.df, sp_BH_pval<=FDR, differential=="expression"))>0)&(nrow(filter(differential.df, sp_BH_pval<=FDR, differential=="contact"))>0)&(nrow(filter(differential.df, sp_BH_pval<=FDR, differential=="no"))>0&(nrow(filter(differential.df, sp_BH_pval<=FDR, differential=="expression"))-sum(is.na(filter(differential.df, sp_BH_pval<=FDR, differential=="expression")[,markcol]))>1))){DIFFERENTIAL=TRUE
+  differential.density <- ggplot(data=filter(differential.df, sp_BH_pval<=FDR)) + geom_density(aes(x=get(markcol), group=differential, color=differential, y=..scaled..)) + ggtitle(paste("Overlap between Promoter Hi-C Bins<=", FDR*100, "%FDR and", markcol, sep=" ")) + xlab(paste("Length of overlap b/t bin and", markcol, "peak", sep=" ")) + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"))
+  NEpval <- signif(t.test(filter(differential.df, sp_BH_pval<=FDR, differential=="no")[,markcol], filter(differential.df, sp_BH_pval<=FDR, differential=="expression")[,markcol])$p.value, 1)
+  NCpval <- signif(t.test(filter(differential.df, sp_BH_pval<=FDR, differential=="no")[,markcol], filter(differential.df, sp_BH_pval<=FDR, differential=="contact")[,markcol])$p.value, 1)
+  NBpval <- signif(t.test(filter(differential.df, sp_BH_pval<=FDR, differential=="no")[,markcol], filter(differential.df, sp_BH_pval<=FDR, differential=="both")[,markcol])$p.value, 1)
+  ECpval <- signif(t.test(filter(differential.df, sp_BH_pval<=FDR, differential=="expression")[,markcol], filter(differential.df, sp_BH_pval<=FDR, differential=="contact")[,markcol])$p.value, 1)
+  EBpval <- signif(t.test(filter(differential.df, sp_BH_pval<=FDR, differential=="expression")[,markcol], filter(differential.df, sp_BH_pval<=FDR, differential=="both")[,markcol])$p.value, 1)
+  CBpval <- signif(t.test(filter(differential.df, sp_BH_pval<=FDR, differential=="both")[,markcol], filter(differential.df, sp_BH_pval<=FDR, differential=="contact")[,markcol])$p.value, 1)
+  differential.violin <- ggplot(data=filter(proms.differential, sp_BH_pval<=FDR)) + geom_violin(aes(x=differential, y=get(markcol), group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, differential.Ymax)) + annotate("segment", x=1.1, y=differential.Ystart, xend=1.9, yend=differential.Ystart) + annotate("segment", x=2.1, y=differential.Ystart, xend=2.9, yend=differential.Ystart) + annotate("segment", x=3.1, y=differential.Ystart, xend=3.9, yend=differential.Ystart) + annotate("segment", x=2.1, y=differential.Ystart+diff.lineint, xend=3.9, yend=differential.Ystart+diff.lineint)  + annotate("segment", x=1.1, y=differential.Ystart+(2*diff.lineint), xend=2.9, yend=differential.Ystart+(2*diff.lineint)) + annotate("segment", x=1.1, y=differential.Ystart+(3*diff.lineint), xend=3.9, yend=differential.Ystart+(3*diff.lineint)) + annotate("text", x=3.5, y=differential.Ystart+diff.textint, label=NEpval, size=3) + annotate("text", x=2.5, y=differential.Ystart+diff.textint, label=ECpval, size=3) + annotate("text", x=1.5, y=differential.Ystart+diff.textint, label=CBpval, size=3) + annotate("text", x=3, y=differential.Ystart+diff.lineint+diff.textint, label=NCpval, size=3) + annotate("text", x=2, y=differential.Ystart+(2*diff.lineint)+diff.textint, label=EBpval, size=3) + annotate("text", x=2.5, y=differential.Ystart+(3*diff.lineint)+diff.textint, label=NBpval, size=3)
+  }}
+  else{#The case where we're not doing any FDR filtering.
+    density.proms <- ggplot(data=filter(df)) + geom_density(aes(x=get(markcol), group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab(paste("Length of overlap b/t bin and", markcol, "Annotation", sep=" ")) + ggtitle(paste("Overlap between Hi-C Bins and", markcol, sep=" ")) + scale_colour_manual(name="Promoter Contact?", labels=c("No", "Yes"), values=c("Red", "Blue"))
+  mypval <- t.test(filter(df, true.promoter=="yes")[,markcol], filter(df, true.promoter=="no")[,markcol])$p.value
+  mypval <- signif(mypval, 1)
+  violin.proms <- ggplot(data=filter(df)) + geom_violin(aes(y=get(markcol), group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)
+  
+  density.nonproms <- ggplot(data=filter(nonprom.df)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ylab("Density") + xlab(paste("Length of overlap b/t bin and", markcol, "Annotation", sep=" ")) + ggtitle(paste("Overlap between Hi-C Bins and", markcol, sep=" ")) + scale_colour_manual(name="Differential Contact?", labels=c("No", "Yes"), values=c("Red", "Blue"))
+  mypval <- t.test(filter(nonprom.df, DC=="yes")[,markcol], filter(nonprom.df, DC=="no")[,markcol])$p.value
+  mypval <- signif(mypval, 1)
+  violin.nonproms <- ggplot(data=filter(nonprom.df)) + geom_violin(aes(y=get(markcol), group=DC, color=DC, x=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Differential Contact?", values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)
+  
+  DC.density <- ggplot(data=filter(DC.df)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ggtitle(paste("Overlap between Promoter Hi-C Bins and", markcol, sep=" ")) + xlab(paste("Length of overlap b/t bin and", markcol, "peak", sep=" ")) + ylab("Density") + scale_color_manual(name="DC?", labels = c("No", "Yes"), values=c("Red", "Blue"))
+  mypval <- t.test(filter(DC.df, DC=="yes")[,markcol], filter(DC.df, DC=="no")[,markcol])$p.value
+  mypval <- signif(mypval, 1)
+  DC.violin <- ggplot(data=filter(DC.df)) + geom_violin(aes(x=DC, y=get(markcol), group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)
+  
+  DE.density <- ggplot(data=filter(DE.df)) + geom_density(aes(x=get(markcol), group=DE, color=DE, y=..scaled..)) + ggtitle(paste("Overlap between Promoter Hi-C Bins and", markcol, sep=" ")) + xlab(paste("Length of overlap b/t bin and", markcol, "peak", sep=" ")) + ylab("Density") + scale_color_manual(name="DE?", labels = c("No", "Yes"), values=c("Red", "Blue"))
+  mypval <- t.test(filter(DE.df, DE=="yes")[,markcol], filter(DE.df, DE=="no")[,markcol])$p.value
+  mypval <- signif(mypval, 1)
+  DE.violin <- ggplot(data=filter(DE.df)) + geom_violin(aes(x=DE, y=get(markcol), group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label=mypval, size=3)
+  
+  differential.density <- ggplot(data=filter(differential.df)) + geom_density(aes(x=get(markcol), group=differential, color=differential, y=..scaled..)) + ggtitle(paste("Overlap between Promoter Hi-C Bins and", markcol, sep=" ")) + xlab(paste("Length of overlap b/t bin and", markcol, "peak", sep=" ")) + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"))
+  NEpval <- signif(t.test(filter(differential.df, differential=="no")[,markcol], filter(differential.df, differential=="expression")[,markcol])$p.value, 1)
+  NCpval <- signif(t.test(filter(differential.df, differential=="no")[,markcol], filter(differential.df, differential=="contact")[,markcol])$p.value, 1)
+  NBpval <- signif(t.test(filter(differential.df, differential=="no")[,markcol], filter(differential.df, differential=="both")[,markcol])$p.value, 1)
+  ECpval <- signif(t.test(filter(differential.df, differential=="expression")[,markcol], filter(differential.df, differential=="contact")[,markcol])$p.value, 1)
+  EBpval <- signif(t.test(filter(differential.df, differential=="expression")[,markcol], filter(differential.df, differential=="both")[,markcol])$p.value, 1)
+  CBpval <- signif(t.test(filter(differential.df, differential=="both")[,markcol], filter(differential.df, differential=="contact")[,markcol])$p.value, 1)
+  differential.violin <- ggplot(data=filter(proms.differential)) + geom_violin(aes(x=differential, y=get(markcol), group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, differential.Ymax)) + annotate("segment", x=1.1, y=differential.Ystart, xend=1.9, yend=differential.Ystart) + annotate("segment", x=2.1, y=differential.Ystart, xend=2.9, yend=differential.Ystart) + annotate("segment", x=3.1, y=differential.Ystart, xend=3.9, yend=differential.Ystart) + annotate("segment", x=2.1, y=differential.Ystart+diff.lineint, xend=3.9, yend=differential.Ystart+diff.lineint)  + annotate("segment", x=1.1, y=differential.Ystart+(2*diff.lineint), xend=2.9, yend=differential.Ystart+(2*diff.lineint)) + annotate("segment", x=1.1, y=differential.Ystart+(3*diff.lineint), xend=3.9, yend=differential.Ystart+(3*diff.lineint)) + annotate("text", x=3.5, y=differential.Ystart+diff.textint, label=NEpval, size=3) + annotate("text", x=2.5, y=differential.Ystart+diff.textint, label=ECpval, size=3) + annotate("text", x=1.5, y=differential.Ystart+diff.textint, label=CBpval, size=3) + annotate("text", x=3, y=differential.Ystart+diff.lineint+diff.textint, label=NCpval, size=3) + annotate("text", x=2, y=differential.Ystart+(2*diff.lineint)+diff.textint, label=EBpval, size=3) + annotate("text", x=2.5, y=differential.Ystart+(3*diff.lineint)+diff.textint, label=NBpval, size=3)
+  }
+  print(density.proms)
+  vp <- grid::viewport(width=vpdims[1], height=vpdims[2], x=vpdims[3], y=vpdims[4])
+  print(violin.proms, vp=vp)
+  if(is.null(FDR)|NONPROMS){
+  print(density.nonproms)
+  vp <- grid::viewport(width=vpdims2[1], height=vpdims2[2], x=vpdims2[3], y=vpdims2[4])
+  print(violin.nonproms, vp=vp)}
+  if(is.null(FDR)|DCPROMS){
+  print(DC.density)
+  vp <- grid::viewport(width=vpdims3[1], height=vpdims3[2], x=vpdims3[3], y=vpdims3[4])
+  print(DC.violin, vp=vp)}
+  if(is.null(FDR)|DEPROMS){
+  print(DE.density)
+  vp <- grid::viewport(width=vpdims4[1], height=vpdims4[2], x=vpdims4[3], y=vpdims4[4])
+  print(DE.violin, vp=vp)}
+  if(is.null(FDR)|DIFFERENTIAL){
+  print(differential.density)
+  vp <- grid::viewport(width=vpdims5[1], height=vpdims5[2], x=vpdims5[3], y=vpdims5[4])
+  print(differential.violin, vp=vp)}
 }
 
-chromHMMplot(chrom.annos, "TssBiv", 0.01)
+#First call down there is chrom.annos, second can be nonproms.DC.df, third can be proms.DC, fourth can be proms.DE, fifth should be proms.differential, and the others will need fine tuning!
+####TSSA!
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssA", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssA", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssA", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssA", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
+
+###TssBiv!!
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssBiv", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssBiv", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssBiv", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssBiv", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###BivFlnk!
-BivFlnk.density <- ggplot(data=chrom.annos) + geom_density(aes(x=BivFlnk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and BivFlnk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and BivFlnk from chromHMM")
-BivFlnk.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=BivFlnk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="< 2 e -16", size=3)
-print(BivFlnk.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(BivFlnk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$BivFlnk, filter(chrom.annos, true.promoter=="no")$BivFlnk)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-BivFlnk.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=BivFlnk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and BivFlnk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and BivFlnk from chromHMM")
-BivFlnk.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=BivFlnk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="< 2 e -16", size=3)
-print(BivFlnk.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(BivFlnk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$BivFlnk, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$BivFlnk)
-
-chromHMMplot(chrom.annos, "BivFlnk", 0.05)
-chromHMMplot(chrom.annos, "BivFlnk", 0.01)
-
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "BivFlnk", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "BivFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "BivFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "BivFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###EnhBiv!
-EnhBiv.density <- ggplot(data=chrom.annos) + geom_density(aes(x=EnhBiv, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and EnhBiv Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and EnhBiv from chromHMM")
-EnhBiv.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=EnhBiv, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(EnhBiv.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(EnhBiv.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$EnhBiv, filter(chrom.annos, true.promoter=="no")$EnhBiv)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-EnhBiv.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=EnhBiv, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and EnhBiv Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and EnhBiv from chromHMM")
-EnhBiv.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=EnhBiv, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(EnhBiv.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(EnhBiv.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$EnhBiv, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$EnhBiv)
-
-chromHMMplot(chrom.annos, "EnhBiv", 0.05)
-chromHMMplot(chrom.annos, "EnhBiv", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "EnhBiv", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "EnhBiv", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "EnhBiv", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "EnhBiv", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###ReprPc!
-ReprPc.density <- ggplot(data=chrom.annos) + geom_density(aes(x=ReprPc, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and ReprPc Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and ReprPc from chromHMM")
-ReprPc.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=ReprPc, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(ReprPc.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(ReprPc.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$ReprPc, filter(chrom.annos, true.promoter=="no")$ReprPc)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-ReprPc.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=ReprPc, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and ReprPc Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and ReprPc from chromHMM")
-ReprPc.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=ReprPc, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(ReprPc.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(ReprPc.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$ReprPc, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$ReprPc)
-
-chromHMMplot(chrom.annos, "ReprPc", 0.05)
-chromHMMplot(chrom.annos, "ReprPc", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "ReprPc", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "ReprPc", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "ReprPc", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "ReprPc", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###ReprPCWk!
-ReprPCWk.density <- ggplot(data=chrom.annos) + geom_density(aes(x=ReprPCWk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and ReprPCWk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and ReprPCWk from chromHMM")
-ReprPCWk.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=ReprPCWk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(ReprPCWk.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(ReprPCWk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$ReprPCWk, filter(chrom.annos, true.promoter=="no")$ReprPCWk)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-ReprPCWk.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=ReprPCWk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and ReprPCWk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and ReprPCWk from chromHMM")
-ReprPCWk.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=ReprPCWk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(ReprPCWk.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(ReprPCWk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$ReprPCWk, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$ReprPCWk)
-
-chromHMMplot(chrom.annos, "ReprPCWk", 0.05)
-chromHMMplot(chrom.annos, "ReprPCWk", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, "ReprPCWk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, "ReprPCWk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, "ReprPCWk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, "ReprPCWk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###Quies!
-Quies.density <- ggplot(data=chrom.annos) + geom_density(aes(x=Quies, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and Quies Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and Quies from chromHMM")
-Quies.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=Quies, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(Quies.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(Quies.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$Quies, filter(chrom.annos, true.promoter=="no")$Quies)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-Quies.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=Quies, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and Quies Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and Quies from chromHMM")
-Quies.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=Quies, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(Quies.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(Quies.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$Quies, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$Quies)
-
-chromHMMplot(chrom.annos, "Quies", 0.05)
-chromHMMplot(chrom.annos, "Quies", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, "Quies", vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, "Quies", vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, "Quies", vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, "Quies", vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.01) #At 1% FDR
 
 ###TssAFlnk!
-TssAFlnk.density <- ggplot(data=chrom.annos) + geom_density(aes(x=TssAFlnk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssAFlnk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and TssAFlnk from chromHMM")
-TssAFlnk.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=TssAFlnk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(TssAFlnk.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(TssAFlnk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$TssAFlnk, filter(chrom.annos, true.promoter=="no")$TssAFlnk)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-TssAFlnk.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=TssAFlnk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TssAFlnk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and TssAFlnk from chromHMM")
-TssAFlnk.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=TssAFlnk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(TssAFlnk.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(TssAFlnk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$TssAFlnk, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$TssAFlnk)
-
-chromHMMplot(chrom.annos, "TssAFlnk", 0.05)
-chromHMMplot(chrom.annos, "TssAFlnk", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssAFlnk", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssAFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssAFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TssAFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###TxFlnk!
-TxFlnk.density <- ggplot(data=chrom.annos) + geom_density(aes(x=TxFlnk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TxFlnk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and TxFlnk from chromHMM")
-TxFlnk.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=TxFlnk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(TxFlnk.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(TxFlnk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$TxFlnk, filter(chrom.annos, true.promoter=="no")$TxFlnk)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-TxFlnk.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=TxFlnk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TxFlnk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and TxFlnk from chromHMM")
-TxFlnk.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=TxFlnk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(TxFlnk.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(TxFlnk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$TxFlnk, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$TxFlnk)
-
-chromHMMplot(chrom.annos, "TxFlnk", 0.05)
-chromHMMplot(chrom.annos, "TxFlnk", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TxFlnk", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TxFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TxFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "TxFlnk", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###Tx!
-Tx.density <- ggplot(data=chrom.annos) + geom_density(aes(x=Tx, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and Tx Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and Tx from chromHMM")
-Tx.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=Tx, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(Tx.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(Tx.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$Tx, filter(chrom.annos, true.promoter=="no")$Tx)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-Tx.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=Tx, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and Tx Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and Tx from chromHMM")
-Tx.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=Tx, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(Tx.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(Tx.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$Tx, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$Tx)
-
-chromHMMplot(chrom.annos, "Tx", 0.05)
-chromHMMplot(chrom.annos, "Tx", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, "Tx", vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, "Tx", vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, "Tx", vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, "Tx", vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.01) #At 1% FDR
 
 ###TxWk!
-TxWk.density <- ggplot(data=chrom.annos) + geom_density(aes(x=TxWk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TxWk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and TxWk from chromHMM")
-TxWk.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=TxWk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(TxWk.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(TxWk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$TxWk, filter(chrom.annos, true.promoter=="no")$TxWk)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-TxWk.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=TxWk, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and TxWk Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and TxWk from chromHMM")
-TxWk.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=TxWk, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(TxWk.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(TxWk.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$TxWk, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$TxWk)
-
-chromHMMplot(chrom.annos, "TxWk", 0.05)
-chromHMMplot(chrom.annos, "TxWk", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, "TxWk", vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, "TxWk", vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, "TxWk", vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, "TxWk", vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.01) #At 1% FDR
 
 ###EnhG!
-EnhG.density <- ggplot(data=chrom.annos) + geom_density(aes(x=EnhG, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and EnhG Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and EnhG from chromHMM")
-EnhG.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=EnhG, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(EnhG.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(EnhG.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$EnhG, filter(chrom.annos, true.promoter=="no")$EnhG)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-EnhG.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=EnhG, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and EnhG Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and EnhG from chromHMM")
-EnhG.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=EnhG, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(EnhG.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(EnhG.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$EnhG, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$EnhG)
-
-chromHMMplot(chrom.annos, "EnhG", 0.05)
-chromHMMplot(chrom.annos, "EnhG", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "EnhG", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "EnhG", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "EnhG", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "EnhG", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###Enh!
-Enh.density <- ggplot(data=chrom.annos) + geom_density(aes(x=Enh, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and Enh Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and Enh from chromHMM")
-Enh.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=Enh, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(Enh.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(Enh.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$Enh, filter(chrom.annos, true.promoter=="no")$Enh)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-Enh.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=Enh, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and Enh Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and Enh from chromHMM")
-Enh.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=Enh, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(Enh.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(Enh.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$Enh, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$Enh)
-
-chromHMMplot(chrom.annos, "Enh", 0.05)
-chromHMMplot(chrom.annos, "Enh", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "Enh", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "Enh", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "Enh", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "Enh", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###ZNF_Rpts!
-ZNF_Rpts.density <- ggplot(data=chrom.annos) + geom_density(aes(x=ZNF_Rpts, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and ZNF_Rpts Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and ZNF_Rpts from chromHMM")
-ZNF_Rpts.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=ZNF_Rpts, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(ZNF_Rpts.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(ZNF_Rpts.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$ZNF_Rpts, filter(chrom.annos, true.promoter=="no")$ZNF_Rpts)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-ZNF_Rpts.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=ZNF_Rpts, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and ZNF_Rpts Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and ZNF_Rpts from chromHMM")
-ZNF_Rpts.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=ZNF_Rpts, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(ZNF_Rpts.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(ZNF_Rpts.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$ZNF_Rpts, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$ZNF_Rpts)
-
-chromHMMplot(chrom.annos, "ZNF_Rpts", 0.05)
-chromHMMplot(chrom.annos, "ZNF_Rpts", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "ZNF_Rpts", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "ZNF_Rpts", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "ZNF_Rpts", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, "ZNF_Rpts", vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 
 ###Het!
-Het.density <- ggplot(data=chrom.annos) + geom_density(aes(x=Het, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and Het Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap between Hi-C Bins and Het from chromHMM")
-Het.box <- ggplot(data=chrom.annos) + geom_violin(aes(y=Het, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="6 e -4", size=3)
-print(Het.density)
-vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-print(Het.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes")$Het, filter(chrom.annos, true.promoter=="no")$Het)
-
-#And what if we do the same thing but at a particular FDR? Say, 10%?
-Het.density <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_density(aes(x=Het, group=true.promoter, color=true.promoter, y=..scaled..)) + ylab("Density") + xlab("Length of overlap b/t bin and Het Annotation") + scale_colour_manual(name="Contacts a Promoter?", labels=c("No", "Yes"), values=c("Red", "Blue")) + ggtitle("Overlap b/t Hi-C Bins < 10% FDR and Het from chromHMM")
-Het.box <- ggplot(data=filter(chrom.annos, sp_BH_pval<=0.1)) + geom_violin(aes(y=Het, group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=3000, label="0.01", size=3)
-print(Het.density)
-vp <- grid::viewport(width=0.3, height=0.3, x=0.5, y=0.7)
-print(Het.box, vp=vp)
-t.test(filter(chrom.annos, true.promoter=="yes", sp_BH_pval<=0.1)$Het, filter(chrom.annos, true.promoter=="no", sp_BH_pval<=0.1)$Het)
-
-chromHMMplot(chrom.annos, "Het", 0.05)
-chromHMMplot(chrom.annos, "Het", 0.01)
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, "Het", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, "Het", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, "Het", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, "Het", vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR
 ```
 
 
@@ -762,7 +733,7 @@ colnames(proms.differential) <- colnames(proms.DE) <- colnames(proms.DC) <- coln
 #Old way of obtaining these, without removing duplicates, without focusing only on the contacts that hit promoters--very naive.
 #dub.anno <- data.frame(H1=c(full.annotations$H1, full.annotations$H2), sp_BH_pval=rep(full.annotations$sp_BH_pval, 2), sp_beta=rep(full.annotations$sp_beta, 2), HMM=c(as.character(full.annotations$bin1.HMM), as.character(full.annotations$bin2.HMM)), DHS=c(full.annotations$bin1.DHSval, full.annotations$bin2.DHSval), Hac=c(full.annotations$bin1.Hacval, full.annotations$bin2.Hacval), Hme1=c(full.annotations$bin1.Hme1val, full.annotations$bin2.Hme1val), Hme3=c(full.annotations$bin1.Hme3val, full.annotations$bin2.Hme3val), HAR=c(full.annotations$bin1.HARval, full.annotations$bin2.HARval), pairID=rep(full.annotations$pairID, 2), CTCF.interrupt=rep(full.annotations$CTCF.interrupt, 2), DC=rep(full.annotations$DC, 2), DE=rep(full.annotations$DE, 2), true.promoter=rep(full.annotations$true.promoter, 2), differential=rep(full.annotations$differential, 2))
 
-###############################Plots of enrichment for different classes of hits and different marks.
+###############################Plots of enrichment for different classes of hits and different marks. Seems like it would be nice to create a function for these but really it'll lead to a huge hassle with having to specify different x and y-axis limits for different marks in different sets, and drawing the segments...since I've already done it out this way, might as well keep it.
 ##########DHS plots!!!
 all.DHS <- ggplot(data=chrom.annos) + geom_density(aes(x=DHSval, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle("Enrichment of DHS Overlapping Hi-C Bins") + xlab("Length of overlap b/t bin and DHS peak") + ylab("Density") + scale_color_manual(name="Promoter Contact?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 1000))
 box.all.DHS <- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=DHSval, group=true.promoter, color=true.promoter), draw_quantiles =c(0.25, 0.5, 0.75) ) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 500)) + annotate("text", x=1.5, y=300, label="< 2 e -16", size=3) + annotate("segment", x=1.1, xend=1.9, y=270, yend=270)
