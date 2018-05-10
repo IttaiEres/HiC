@@ -318,7 +318,7 @@ shared across the workflowr files. -->
 <p><strong>Last updated:</strong> 2018-05-10</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> e81cf9e</p>
+<p><strong>Code version:</strong> efa8479</p>
 <!-- Add your analysis here -->
 <div id="reading-in-the-data-reformatting-for-enrichment-analyses" class="section level3">
 <h3>Reading in the data, reformatting for enrichment analyses</h3>
@@ -595,10 +595,10 @@ ggprom &lt;- melt(prom.props[1:10000,], id=&quot;bin&quot;)
 ggnoprom &lt;- melt(nonprom.props[1:10000,], id=&quot;bin&quot;) #Only take the first ~50k rows of this because it takes FOREVER otherwise and there are only ~36k promoters anyway.
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;Proportion of chromHMM Annotations, Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + theme(plot.title=element_text(hjust=11)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
 <pre><code>Warning: Removed 4017 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;Proportion of chromHMM Annotations, non-Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
+<pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, non-Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
 <pre><code>Warning: Removed 27119 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-2.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#Maybe only the first 1000 are actually interesting...
@@ -606,10 +606,10 @@ ggprom &lt;- melt(prom.props[1:1000,], id=&quot;bin&quot;)
 ggnoprom &lt;- melt(nonprom.props[1:1000,], id=&quot;bin&quot;) #Only take the first ~50k rows of this because it takes FOREVER otherwise and there are only ~36k promoters anyway.
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;Proportion of chromHMM Annotations, Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
 <pre><code>Warning: Removed 3725 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-3.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;Proportion of chromHMM Annotations, non-Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
+<pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, non-Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
 <pre><code>Warning: Removed 8099 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-4.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>##Mabe it&#39;s even less than 1000 actually. Do it entirely by FDR instead? Reload and reformat the dfs to see pvals again.
@@ -629,10 +629,10 @@ ggprom &lt;- melt(prom.props[1:250,], id=&quot;bin&quot;)
 ggnoprom &lt;- melt(nonprom.props[1:250,], id=&quot;bin&quot;)
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;Proportion of chromHMM Annotations, Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + theme(plot.title=element_text(hjust=11)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
 <pre><code>Warning: Removed 1942 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-5.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;Proportion of chromHMM Annotations, non-Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
+<pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, non-Promoter Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of hits&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) +  scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)</code></pre>
 <pre><code>Warning: Removed 2149 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-6.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#These aren&#39;t great right now because the colors don&#39;t even match for the annotations between the two...highly annoying, useless.
