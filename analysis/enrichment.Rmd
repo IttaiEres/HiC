@@ -319,16 +319,16 @@ ggprom <- melt(prom.props[1:10000,], id="bin")
 ggnoprom <- melt(nonprom.props[1:10000,], id="bin") #Only take the first ~50k rows of this because it takes FOREVER otherwise and there are only ~36k promoters anyway.
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=11)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
-ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 #Maybe only the first 1000 are actually interesting...
 ggprom <- melt(prom.props[1:1000,], id="bin")
 ggnoprom <- melt(nonprom.props[1:1000,], id="bin") #Only take the first ~50k rows of this because it takes FOREVER otherwise and there are only ~36k promoters anyway.
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
-ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 ##Mabe it's even less than 1000 actually. Do it entirely by FDR instead? Reload and reformat the dfs to see pvals again.
 prom.props <- readRDS("~/Desktop/enrichdfs/newresults/full.promoters.RDS.result.RDS")
@@ -345,8 +345,8 @@ ggprom <- melt(prom.props[1:250,], id="bin")
 ggnoprom <- melt(nonprom.props[1:250,], id="bin")
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
-ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=11)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
-ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("Proportion of chromHMM Annotations, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + theme(plot.title=element_text(hjust=1)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
+ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) +  scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 #These aren't great right now because the colors don't even match for the annotations between the two...highly annoying, useless.
 
 #Read in, format properly, and visualize these same dynamics for promoter bins, split between those that were or were not DE/DC.
