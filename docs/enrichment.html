@@ -315,10 +315,10 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-05-15</p>
+<p><strong>Last updated:</strong> 2018-05-16</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> ebe054f</p>
+<p><strong>Code version:</strong> f62fb49</p>
 <!-- Add your analysis here -->
 <div id="reading-in-the-data-reformatting-for-enrichment-analyses" class="section level3">
 <h3>Reading in the data, reformatting for enrichment analyses</h3>
@@ -810,7 +810,7 @@ head(mates.proms.full) #Created before, full set of promoter-contacting bins min
 19100         5076         5242               no               no  no yes
 3                0            0               no               no  no yes
 19101            0            0               no               no yes yes
-19102            0         1012              yes              yes  no yes
+19102            0         1012              yes               no  no yes
       differential
 1          contact
 2             both
@@ -870,7 +870,7 @@ colnames(proms.differential) &lt;- colnames(proms.DE) &lt;- colnames(proms.DC) &
 
 ##########Now, try to actually plot out overlaps of different chromHMM marks with these two different classes of bins.
 #First, create a function to do the plotting, and to do it with different FDRs. At first was trying to make this work for the individual histone marks as well but those already exist so just format to work with these. Will have to pass in properly formatted dataframes, however.
-chromHMMplot &lt;- function(df, nonprom.df, DC.df, DE.df, differential.df, differential.Ymax, differential.Ystart, diff.lineint, diff.textint, markcol, vpdims=c(0.3, 0.3, 0.5, 0.7), vpdims2=vpdims, vpdims3=vpdims, vpdims4=vpdims, vpdims5=vpdims, FDR=NULL){
+chromHMMplot &lt;- function(df, nonprom.df, DC.df, DE.df, differential.df, differential.Ymax, differential.Ystart, diff.lineint, diff.textint, markcol, vpdims=c(0.3, 0.3, 0.5, 0.7), vpdims2=vpdims, vpdims3=vpdims, vpdims4=vpdims, vpdims5=vpdims, FDR=NULL, ypval=3000){
     DEPROMS=FALSE
     DCPROMS=FALSE
     NONPROMS=FALSE
@@ -879,25 +879,25 @@ chromHMMplot &lt;- function(df, nonprom.df, DC.df, DE.df, differential.df, diffe
   density.proms &lt;- ggplot(data=filter(df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=true.promoter, color=true.promoter, y=..scaled..)) + ylab(&quot;Density&quot;) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;Annotation&quot;, sep=&quot; &quot;)) + ggtitle(paste(&quot;Overlap between Hi-C Bins &lt;=&quot;, FDR*100, &quot;% FDR and&quot;, markcol, sep=&quot; &quot;)) + scale_colour_manual(name=&quot;Promoter Contact?&quot;, labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(df, true.promoter==&quot;yes&quot;, sp_BH_pval&lt;=FDR)[,markcol], filter(df, true.promoter==&quot;no&quot;, sp_BH_pval&lt;=FDR)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
-  violin.proms &lt;- ggplot(data=filter(df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(y=get(markcol), group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)
+  violin.proms &lt;- ggplot(data=filter(df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(y=get(markcol), group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=ypval, label=mypval, size=3)
   
   if(nrow(filter(nonprom.df, sp_BH_pval&lt;=FDR, DC==&quot;no&quot;))&gt;0){NONPROMS=TRUE
   density.nonproms &lt;- ggplot(data=filter(nonprom.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ylab(&quot;Density&quot;) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;Annotation&quot;, sep=&quot; &quot;)) + ggtitle(paste(&quot;Overlap between Hi-C Bins &lt;=&quot;, FDR*100, &quot;% FDR and&quot;, markcol, sep=&quot; &quot;)) + scale_colour_manual(name=&quot;Differential Contact?&quot;, labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(nonprom.df, sp_BH_pval&lt;=FDR, DC==&quot;yes&quot;)[,markcol], filter(nonprom.df, sp_BH_pval&lt;=FDR, DC==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
-  violin.nonproms &lt;- ggplot(data=filter(nonprom.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(y=get(markcol), group=DC, color=DC, x=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Differential Contact?&quot;, values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)}
+  violin.nonproms &lt;- ggplot(data=filter(nonprom.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(y=get(markcol), group=DC, color=DC, x=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Differential Contact?&quot;, values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=ypval, label=mypval, size=3)}
   
   if(nrow(filter(DC.df, sp_BH_pval&lt;=FDR, DC==&quot;no&quot;))&gt;0){DCPROMS=TRUE
   DC.density &lt;- ggplot(data=filter(DC.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;% FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(DC.df, sp_BH_pval&lt;=FDR, DC==&quot;yes&quot;)[,markcol], filter(DC.df, sp_BH_pval&lt;=FDR, DC==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
-  DC.violin &lt;- ggplot(data=filter(DC.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(x=DC, y=get(markcol), group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)}
+  DC.violin &lt;- ggplot(data=filter(DC.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(x=DC, y=get(markcol), group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=ypval, label=mypval, size=3)}
   
   if(nrow(filter(DE.df, sp_BH_pval&lt;=FDR, DE==&quot;no&quot;))&gt;0){DEPROMS=TRUE
   DE.density &lt;- ggplot(data=filter(DE.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=DE, color=DE, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;% FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(DE.df, sp_BH_pval&lt;=FDR, DE==&quot;yes&quot;)[,markcol], filter(DE.df, sp_BH_pval&lt;=FDR, DE==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
-  DE.violin &lt;- ggplot(data=filter(DE.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(x=DE, y=get(markcol), group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)}
+  DE.violin &lt;- ggplot(data=filter(DE.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(x=DE, y=get(markcol), group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=ypval, label=mypval, size=3)}
   
   if((nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;both&quot;))&gt;0)&amp;(nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;expression&quot;))&gt;0)&amp;(nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;contact&quot;))&gt;0)&amp;(nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;no&quot;))&gt;0&amp;(nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;expression&quot;))-sum(is.na(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;expression&quot;)[,markcol]))&gt;1))){DIFFERENTIAL=TRUE
   differential.density &lt;- ggplot(data=filter(differential.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=differential, color=differential, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;% FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;))
@@ -913,22 +913,22 @@ chromHMMplot &lt;- function(df, nonprom.df, DC.df, DE.df, differential.df, diffe
     density.proms &lt;- ggplot(data=filter(df)) + geom_density(aes(x=get(markcol), group=true.promoter, color=true.promoter, y=..scaled..)) + ylab(&quot;Density&quot;) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;Annotation&quot;, sep=&quot; &quot;)) + ggtitle(paste(&quot;Overlap between Hi-C Bins and&quot;, markcol, sep=&quot; &quot;)) + scale_colour_manual(name=&quot;Promoter Contact?&quot;, labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(df, true.promoter==&quot;yes&quot;)[,markcol], filter(df, true.promoter==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
-  violin.proms &lt;- ggplot(data=filter(df)) + geom_violin(aes(y=get(markcol), group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)
+  violin.proms &lt;- ggplot(data=filter(df)) + geom_violin(aes(y=get(markcol), group=true.promoter, color=true.promoter, x=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=ypval, label=mypval, size=3)
   
   density.nonproms &lt;- ggplot(data=filter(nonprom.df)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ylab(&quot;Density&quot;) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;Annotation&quot;, sep=&quot; &quot;)) + ggtitle(paste(&quot;Overlap between Hi-C Bins and&quot;, markcol, sep=&quot; &quot;)) + scale_colour_manual(name=&quot;Differential Contact?&quot;, labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(nonprom.df, DC==&quot;yes&quot;)[,markcol], filter(nonprom.df, DC==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
-  violin.nonproms &lt;- ggplot(data=filter(nonprom.df)) + geom_violin(aes(y=get(markcol), group=DC, color=DC, x=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Differential Contact?&quot;, values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)
+  violin.nonproms &lt;- ggplot(data=filter(nonprom.df)) + geom_violin(aes(y=get(markcol), group=DC, color=DC, x=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Differential Contact?&quot;, values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=ypval, label=mypval, size=3)
   
   DC.density &lt;- ggplot(data=filter(DC.df)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(DC.df, DC==&quot;yes&quot;)[,markcol], filter(DC.df, DC==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
-  DC.violin &lt;- ggplot(data=filter(DC.df)) + geom_violin(aes(x=DC, y=get(markcol), group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)
+  DC.violin &lt;- ggplot(data=filter(DC.df)) + geom_violin(aes(x=DC, y=get(markcol), group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=ypval, label=mypval, size=3)
   
   DE.density &lt;- ggplot(data=filter(DE.df)) + geom_density(aes(x=get(markcol), group=DE, color=DE, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(DE.df, DE==&quot;yes&quot;)[,markcol], filter(DE.df, DE==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
-  DE.violin &lt;- ggplot(data=filter(DE.df)) + geom_violin(aes(x=DE, y=get(markcol), group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)
+  DE.violin &lt;- ggplot(data=filter(DE.df)) + geom_violin(aes(x=DE, y=get(markcol), group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=ypval, label=mypval, size=3)
   
   differential.density &lt;- ggplot(data=filter(differential.df)) + geom_density(aes(x=get(markcol), group=differential, color=differential, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;))
   NEpval &lt;- signif(t.test(filter(differential.df, differential==&quot;no&quot;)[,markcol], filter(differential.df, differential==&quot;expression&quot;)[,markcol])$p.value, 1)
@@ -962,7 +962,7 @@ chromHMMplot &lt;- function(df, nonprom.df, DC.df, DE.df, differential.df, diffe
 
 #First call down there is chrom.annos, second can be nonproms.DC.df, third can be proms.DC, fourth can be proms.DE, fifth should be proms.differential, and the others will need fine tuning!
 ####TSSA!
-chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;TssA&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))</code></pre>
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;TssA&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.52, 0.7))</code></pre>
 <pre><code>Warning: Removed 527862 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 527862 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-20.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1150,7 +1150,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 621 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-75.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>###ReprPc!
-chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;ReprPc&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))</code></pre>
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;ReprPc&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), ypval=5000)</code></pre>
 <pre><code>Warning: Removed 528518 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 528518 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-76.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1166,7 +1166,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 27125 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 27125 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-80.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;ReprPc&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;ReprPc&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1, ypval=5000) #At 10% FDR</code></pre>
 <pre><code>Warning: Removed 23932 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 23932 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-81.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1182,14 +1182,14 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 1543 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 1543 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-85.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;ReprPc&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;ReprPc&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05, ypval=5000) #At 5% FDR</code></pre>
 <pre><code>Warning: Removed 17050 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 17050 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-86.png" width="672" style="display: block; margin: auto;" /></p>
 <pre><code>Warning: Removed 1013 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 1013 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-87.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;ReprPc&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;ReprPc&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01, ypval=5000) #At 1% FDR</code></pre>
 <pre><code>Warning: Removed 10816 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 10816 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-88.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1197,7 +1197,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 579 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-89.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>###ReprPCWk!
-chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;ReprPCWk&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))</code></pre>
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;ReprPCWk&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), ypval=5000)</code></pre>
 <pre><code>Warning: Removed 522576 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 522576 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-90.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1213,7 +1213,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 25457 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 25457 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-94.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;ReprPCWk&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;ReprPCWk&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1, ypval=5000) #At 10% FDR</code></pre>
 <pre><code>Warning: Removed 23261 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 23261 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-95.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1229,14 +1229,14 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 1445 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 1445 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-99.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;ReprPCWk&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;ReprPCWk&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05, ypval=5000) #At 5% FDR</code></pre>
 <pre><code>Warning: Removed 16636 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 16636 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-100.png" width="672" style="display: block; margin: auto;" /></p>
 <pre><code>Warning: Removed 947 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 947 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-101.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;ReprPCWk&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;ReprPCWk&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01, ypval=5000) #At 1% FDR</code></pre>
 <pre><code>Warning: Removed 10594 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 10594 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-102.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1244,7 +1244,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 539 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-103.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>###Quies!
-chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, &quot;Quies&quot;, vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7))</code></pre>
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, &quot;Quies&quot;, vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), ypval=5000)</code></pre>
 <pre><code>Warning: Removed 437657 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 437657 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-104.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1260,7 +1260,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 10695 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 10695 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-108.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, &quot;Quies&quot;, vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.1) #At 10% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, &quot;Quies&quot;, vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.1, ypval=5000) #At 10% FDR</code></pre>
 <pre><code>Warning: Removed 14099 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 14099 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-109.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1276,14 +1276,14 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 710 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 710 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-113.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, &quot;Quies&quot;, vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.05) #At 5% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, &quot;Quies&quot;, vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.05, ypval=5000) #At 5% FDR</code></pre>
 <pre><code>Warning: Removed 11002 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 11002 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-114.png" width="672" style="display: block; margin: auto;" /></p>
 <pre><code>Warning: Removed 484 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 484 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-115.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, &quot;Quies&quot;, vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.01) #At 1% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 1000, 1500, 600, &quot;Quies&quot;, vpdims=c(0.4, 0.4, 0.4, 0.7), vpdims2=c(0.4, 0.4, 0.4, 0.7), vpdims3=c(0.3, 0.3, 0.4, 0.7), vpdims4=c(0.3, 0.3, 0.4, 0.7), vpdims5=c(0.3, 0.3, 0.4, 0.7), FDR = 0.01, ypval=5000) #At 1% FDR</code></pre>
 <pre><code>Warning: Removed 7695 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 7695 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-116.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1382,7 +1382,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 646 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-144.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>###Tx!
-chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;Tx&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3))</code></pre>
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;Tx&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), ypval=5000)</code></pre>
 <pre><code>Warning: Removed 519622 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 519622 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-145.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1398,7 +1398,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 23738 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 23738 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-149.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;Tx&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.1) #At 10% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;Tx&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.1, ypval=5000) #At 10% FDR</code></pre>
 <pre><code>Warning: Removed 22941 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 22941 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-150.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1414,14 +1414,14 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 1284 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 1284 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-154.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;Tx&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.05) #At 5% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;Tx&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.05, ypval=5000) #At 5% FDR</code></pre>
 <pre><code>Warning: Removed 16333 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 16333 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-155.png" width="672" style="display: block; margin: auto;" /></p>
 <pre><code>Warning: Removed 836 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 836 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-156.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;Tx&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.01) #At 1% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;Tx&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.01, ypval=5000) #At 1% FDR</code></pre>
 <pre><code>Warning: Removed 10431 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 10431 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-157.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1429,7 +1429,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 471 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-158.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>###TxWk!
-chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;TxWk&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3))</code></pre>
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;TxWk&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), ypval=5000)</code></pre>
 <pre><code>Warning: Removed 495231 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 495231 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-159.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1445,7 +1445,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 17847 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 17847 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-163.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;TxWk&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.1) #At 10% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;TxWk&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.1, ypval=5000) #At 10% FDR</code></pre>
 <pre><code>Warning: Removed 20190 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 20190 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-164.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1461,14 +1461,14 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 944 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 944 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-168.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;TxWk&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.05) #At 5% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;TxWk&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.05, ypval=5000) #At 5% FDR</code></pre>
 <pre><code>Warning: Removed 14596 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 14596 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-169.png" width="672" style="display: block; margin: auto;" /></p>
 <pre><code>Warning: Removed 605 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 605 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-170.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;TxWk&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.01) #At 1% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2000, 2000, 600, &quot;TxWk&quot;, vpdims=c(0.3, 0.3, 0.3, 0.3), vpdims2=c(0.3, 0.3, 0.3, 0.3), vpdims3=c(0.3, 0.3, 0.3, 0.3), vpdims4=c(0.3, 0.3, 0.3, 0.3), vpdims5=c(0.3, 0.3, 0.3, 0.3), FDR = 0.01, ypval=5000) #At 1% FDR</code></pre>
 <pre><code>Warning: Removed 9483 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 9483 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-171.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1492,7 +1492,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 29328 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 29328 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-177.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;EnhG&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;EnhG&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1, ypval=2000) #At 10% FDR</code></pre>
 <pre><code>Warning: Removed 24898 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 24898 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-178.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1508,14 +1508,14 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 1680 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 1680 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-182.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;EnhG&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;EnhG&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05, ypval=2000) #At 5% FDR</code></pre>
 <pre><code>Warning: Removed 17687 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 17687 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-183.png" width="672" style="display: block; margin: auto;" /></p>
 <pre><code>Warning: Removed 1098 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 1098 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-184.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;EnhG&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 6200, 2500, 1000, 400, &quot;EnhG&quot;, vpdims=c(0.3, 0.3, 0.52, 0.7), vpdims2=c(0.3, 0.3, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01, ypval=2000) #At 1% FDR</code></pre>
 <pre><code>Warning: Removed 11234 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 11234 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-185.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1617,7 +1617,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 644 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-214.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>###Het!
-chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;Het&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7))</code></pre>
+chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;Het&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), ypval=5000)</code></pre>
 <pre><code>Warning: Removed 524373 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 524373 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-215.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1633,7 +1633,7 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 27370 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 27370 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-219.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;Het&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1) #At 10% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;Het&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.1, ypval=5000) #At 10% FDR</code></pre>
 <pre><code>Warning: Removed 23493 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 23493 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-220.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1649,14 +1649,14 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <pre><code>Warning: Removed 1600 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 1600 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-224.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;Het&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05) #At 5% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;Het&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.05, ypval=5000) #At 5% FDR</code></pre>
 <pre><code>Warning: Removed 16757 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 16757 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-225.png" width="672" style="display: block; margin: auto;" /></p>
 <pre><code>Warning: Removed 1051 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 1051 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-226.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;Het&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01) #At 1% FDR</code></pre>
+<pre class="r"><code>chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential, 10000, 2500, 1500, 600, &quot;Het&quot;, vpdims=c(0.4, 0.4, 0.52, 0.7), vpdims2=c(0.4, 0.4, 0.5, 0.7), vpdims3=c(0.3, 0.3, 0.7, 0.7), vpdims4=c(0.3, 0.3, 0.7, 0.7), vpdims5=c(0.3, 0.3, 0.5, 0.7), FDR = 0.01, ypval=5000) #At 1% FDR</code></pre>
 <pre><code>Warning: Removed 10692 rows containing non-finite values (stat_density).</code></pre>
 <pre><code>Warning: Removed 10692 rows containing non-finite values (stat_ydensity).</code></pre>
 <p><img src="figure/enrichment.Rmd/chromHMM%20Visualization-227.png" width="672" style="display: block; margin: auto;" /></p>
@@ -1672,58 +1672,58 @@ full.annotations$CTCF.different &lt;- ifelse(full.annotations$H.CTCF.interrupt==
 table(full.annotations$CTCF.different, full.annotations$true.promoter, dnn = c(&quot;Species diff. CTCF Interruption?&quot; , &quot;Promoter?&quot;))</code></pre>
 <pre><code>                                Promoter?
 Species diff. CTCF Interruption?     no    yes
-                             no  244364  34522
-                             yes  11612   1572</code></pre>
+                             no  184773  27424
+                             yes  71203   8670</code></pre>
 <pre class="r"><code>chisq.test(table(full.annotations$CTCF.different, full.annotations$true.promoter, dnn = c(&quot;Species diff. CTCF Interruption?&quot; , &quot;Promoter?&quot;)))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table(full.annotations$CTCF.different, full.annotations$true.promoter,     dnn = c(&quot;Species diff. CTCF Interruption?&quot;, &quot;Promoter?&quot;))
-X-squared = 2.3644, df = 1, p-value = 0.1241</code></pre>
+X-squared = 229.19, df = 1, p-value &lt; 2.2e-16</code></pre>
 <pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;no&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;no&quot;)$DC, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DC?&quot;))</code></pre>
 <pre><code>                                DC?
 Species diff. CTCF Interruption?     no    yes
-                             no  236287   8077
-                             yes  11269    343</code></pre>
+                             no  178340   6433
+                             yes  69216   1987</code></pre>
 <pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;no&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;no&quot;)$DC))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table(filter(full.annotations, true.promoter == &quot;no&quot;)$CTCF.different,     filter(full.annotations, true.promoter == &quot;no&quot;)$DC)
-X-squared = 4.1949, df = 1, p-value = 0.04054</code></pre>
+X-squared = 76.918, df = 1, p-value &lt; 2.2e-16</code></pre>
 <pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$DC, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DC?&quot;))</code></pre>
 <pre><code>                                DC?
 Species diff. CTCF Interruption?    no   yes
-                             no  33321  1201
-                             yes  1532    40</code></pre>
+                             no  26420  1004
+                             yes  8433   237</code></pre>
 <pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$DC))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.different,     filter(full.annotations, true.promoter == &quot;yes&quot;)$DC)
-X-squared = 3.6777, df = 1, p-value = 0.05515</code></pre>
+X-squared = 16.789, df = 1, p-value = 4.177e-05</code></pre>
 <pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DE?&quot;))</code></pre>
 <pre><code>                                DE?
 Species diff. CTCF Interruption?    no   yes
-                             no  26867  7655
-                             yes  1212   360</code></pre>
+                             no  21297  6127
+                             yes  6782  1888</code></pre>
 <pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DE?&quot;)))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.different,     filter(full.annotations, true.promoter == &quot;yes&quot;)$DE, dnn = c(&quot;Species diff. CTCF Interruption?&quot;,         &quot;DE?&quot;))
-X-squared = 0.41828, df = 1, p-value = 0.5178</code></pre>
+X-squared = 1.187, df = 1, p-value = 0.2759</code></pre>
 <pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$differential==&quot;both&quot;, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DC &amp; DE?&quot;))</code></pre>
 <pre><code>                                DC &amp; DE?
 Species diff. CTCF Interruption? FALSE  TRUE
-                             no  34267   255
-                             yes  1562    10</code></pre>
+                             no  27205   219
+                             yes  8624    46</code></pre>
 <pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$differential==&quot;both&quot;, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DE?&quot;)))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.different,     filter(full.annotations, true.promoter == &quot;yes&quot;)$differential ==         &quot;both&quot;, dnn = c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DE?&quot;))
-X-squared = 0.098997, df = 1, p-value = 0.753</code></pre>
+X-squared = 6.1297, df = 1, p-value = 0.01329</code></pre>
 <pre class="r"><code>#######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
 
 #First the non-promoter DF, looking at DC/not DC. Remember the promoter/not promoter was created in the first chunk (chrom.annos).
