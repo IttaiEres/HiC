@@ -315,10 +315,10 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-05-10</p>
+<p><strong>Last updated:</strong> 2018-05-15</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> efa8479</p>
+<p><strong>Code version:</strong> ebe054f</p>
 <!-- Add your analysis here -->
 <div id="reading-in-the-data-reformatting-for-enrichment-analyses" class="section level3">
 <h3>Reading in the data, reformatting for enrichment analyses</h3>
@@ -328,7 +328,8 @@ data.filtered &lt;- fread(&quot;~/Desktop/Hi-C/data.4.filtered.txt&quot;, header
 #meta.data &lt;- data.frame(&quot;SP&quot;=c(&quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;, &quot;H&quot;, &quot;H&quot;, &quot;C&quot;, &quot;C&quot;), &quot;SX&quot;=c(&quot;F&quot;, &quot;M&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;, &quot;M&quot;, &quot;F&quot;), &quot;Batch&quot;=c(1, 1, 1, 1, 2, 2, 2, 2))
 
 #Now, prepare a bedPE file from my filtered data! Here I construct a function to do this in case I ever want to do it again. The H1 and H2 columns are good to use for this.
-bedpe.prep &lt;- function(homersigdf, res){ #Also is the BEDPE format!
+bedpe.prep &lt;- function(homersigdf, res, species){ #Also is the BEDPE format!
+  if(species==&quot;human&quot;){
   H1 &lt;- homersigdf$H1
   H2 &lt;- homersigdf$H2
   H1_coords &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, H1))
@@ -337,12 +338,26 @@ bedpe.prep &lt;- function(homersigdf, res){ #Also is the BEDPE format!
   H2_chrs &lt;- gsub(&quot;-.*&quot;, &quot;&quot;, H2)
   H1_first &lt;- ifelse(H1_coords&lt;H2_coords, H1_coords, H2_coords)
   H2_second &lt;- ifelse(H1_coords&lt;H2_coords, H2_coords, H1_coords)
-  result &lt;- data.frame(chr.1 = H1_chrs, start.1 = H1_first, end.1 = H1_first+res, chr.2 = H2_chrs, start.2 = H2_second, end.2 = H2_second+res)
+  result &lt;- data.frame(chr.1 = H1_chrs, start.1 = H1_first, end.1 = H1_first+res, chr.2 = H2_chrs, start.2 = H2_second, end.2 = H2_second+res)}
+  if(species==&quot;chimp&quot;){
+  H1 &lt;- homersigdf$C1
+  H2 &lt;- homersigdf$C2
+  H1_coords &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, H1))
+  H2_coords &lt;- as.numeric(gsub(&quot;.*-&quot;, &quot;&quot;, H2))
+  H1_chrs &lt;- gsub(&quot;-.*&quot;, &quot;&quot;, H1)
+  H2_chrs &lt;- gsub(&quot;-.*&quot;, &quot;&quot;, H2)
+  H1_first &lt;- ifelse(H1_coords&lt;H2_coords, H1_coords, H2_coords)
+  H2_second &lt;- ifelse(H1_coords&lt;H2_coords, H2_coords, H1_coords)
+  result &lt;- data.frame(chr.1 = H1_chrs, start.1 = H1_first, end.1 = H1_first+res, chr.2 = H2_chrs, start.2 = H2_second, end.2 = H2_second+res)}
   return(result)
 }
-test &lt;- bedpe.prep(data.filtered, 10000)
-test &lt;- format(test, scientific=FALSE)
-fwrite(test, &quot;~/Desktop/pgltoolswork/new_updated/filt.bins.bedPE&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = TRUE, row.names=FALSE)</code></pre>
+
+humpairs &lt;- bedpe.prep(data.filtered, 10000 ,&quot;human&quot;)
+humpairs &lt;- format(humpairs, scientific=FALSE)
+chimpairs &lt;- bedpe.prep(data.filtered, 10000, &quot;chimp&quot;)
+chimpairs &lt;- format(chimpairs, scientific=FALSE)
+fwrite(humpairs, &quot;~/Desktop/pgltoolswork/new_updated/filt.bins.humans.bedPE&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = TRUE, row.names=FALSE)
+fwrite(chimpairs, &quot;~/Desktop/pgltoolswork/new_updated/filt.bins.chimps.bedPE&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = TRUE, row.names=FALSE)</code></pre>
 </div>
 <div id="functional-enrichments-read-in-of-files-and-creation-of-comprehensive-dataframe." class="section level3">
 <h3>Functional enrichments: read-in of files and creation of comprehensive dataframe.</h3>
@@ -370,22 +385,26 @@ colnames(bin1.HMMs) &lt;- c(&quot;H1&quot;, &quot;Nothing&quot;, &quot;TssA&quot
 colnames(bin2.HMMs) &lt;- c(&quot;H2&quot;, &quot;Nothing&quot;, &quot;TssA&quot;, &quot;TssBiv&quot;, &quot;BivFlnk&quot;, &quot;EnhBiv&quot;, &quot;ReprPC&quot;, &quot;ReprPCWk&quot;, &quot;Quies&quot;, &quot;TssAFlnk&quot;, &quot;TxFlnk&quot;, &quot;Tx&quot;, &quot;TxWk&quot;, &quot;EnhG&quot;, &quot;Enh&quot;, &quot;ZNF/Rpts&quot;, &quot;Het&quot;)
 
 #Add in linear modeling information from the data.filtered df of my homer hits. Combine data frames here for analysis of the overall proportions by assigning each bin to a given chromHMM annotation; as well as for quantitatively assessing differences in the overlaps of these elements at particular FDRs.
-chromenrich &lt;- select(data.filtered, H1, H2, sp_BH_pval, sp_beta)
+chromenrich &lt;- select(data.filtered, H1, H2, C1, C2, sp_BH_pval, sp_beta)
 chromrich &lt;- left_join(chromenrich, bin1.HMM.anno, by=&quot;H1&quot;)
 chromrich &lt;- left_join(chromrich, bin2.HMM.anno, by=&quot;H2&quot;)
 chromrich &lt;- chromrich[order(chromrich$sp_BH_pval),] #Order by FDR. Provides a df of the Hi-C bin hits and their chromHMM annotations.
 HMM.quant &lt;- left_join(chromenrich, bin1.HMMs, by=&quot;H1&quot;)
 HMM.quant &lt;- left_join(HMM.quant, bin2.HMMs, by=&quot;H2&quot;, suffix=c(&quot;.1&quot;, &quot;.2&quot;))
-chromrich$pairID &lt;- paste(chromrich$H1, chromrich$H2, sep=&quot;_&quot;)
-HMM.quant$pairID &lt;- paste(HMM.quant$H1, HMM.quant$H2, sep=&quot;_&quot;)
-chromrich &lt;- left_join(chromrich, HMM.quant[,c(-1:-4)], by=&quot;pairID&quot;)
+HMM.quant &lt;- HMM.quant[,c(-5:-6)]
+chromrich$HpairID &lt;- paste(chromrich$H1, chromrich$H2, sep=&quot;_&quot;)
+chromrich$CpairID &lt;- paste(chromrich$C1, chromrich$C2, sep=&quot;_&quot;)
+HMM.quant$HpairID &lt;- paste(HMM.quant$H1, HMM.quant$H2, sep=&quot;_&quot;)
+chromrich &lt;- left_join(chromrich, HMM.quant[,c(-1:-4)], by=&quot;HpairID&quot;)
 
 ####Now, add in other chromatin mark peak files and info about their overlap with Hi-C bins:
-#####################CTCF Enrichments. Also works for other quantitative enrichments that just look at overlapping bases.
-CTCF.info &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/CTCF_not_ispan.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
-CTCF.info$pairID &lt;- paste(paste(CTCF.info$V1, CTCF.info$V2, sep=&quot;-&quot;), paste(CTCF.info$V4, CTCF.info$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+#####################CTCF Enrichments. Also works for other quantitative enrichments that just look at overlapping bases. These were made with bedtools pairtobed -type notispan -a filt.bins.bedPE -b iPSC_CTCF.bed
+CTCF.humans &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/hg38.CTCF.notispan.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+CTCF.chimps &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/pt5.CTCF.notispan.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+CTCF.humans$HpairID &lt;- paste(paste(CTCF.humans$V1, CTCF.humans$V2, sep=&quot;-&quot;), paste(CTCF.humans$V4, CTCF.humans$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+CTCF.chimps$CpairID &lt;- paste(paste(CTCF.chimps$V1, CTCF.chimps$V2, sep=&quot;-&quot;), paste(CTCF.chimps$V4, CTCF.chimps$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
 
-######Start of other quantitative enrichments.
+######Start of other quantitative enrichments. These were all called with bedtools intersect -wao using the nodup file of each set of bins individually.
 DHS.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/DHS_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
 DHS.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/DHS_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
 Hac.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K27ac_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
@@ -394,8 +413,10 @@ Hme1.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K
 Hme1.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K4me1_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
 Hme3.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K4me3_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
 Hme3.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K4me3_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
-HAR.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/HAR_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
-HAR.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/HAR_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+HK27.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K27me3_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+HK27.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/H3K27me3_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+#HAR.bin1 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/HAR_bin1.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
+#HAR.bin2 &lt;- read.csv(&quot;~/Desktop/pgltoolswork/new_updated/intersects/HAR_bin2.bed&quot;, sep=&quot;\t&quot;, header=FALSE)
 
 DHS.bin1$HID &lt;- paste(DHS.bin1$V1, DHS.bin1$V2, sep=&quot;-&quot;)
 DHS.bin2$HID &lt;- paste(DHS.bin2$V1, DHS.bin2$V2, sep=&quot;-&quot;)
@@ -417,18 +438,23 @@ Hme3.bin2$HID &lt;- paste(Hme3.bin2$V1, Hme3.bin2$V2, sep=&quot;-&quot;)
 group_by(Hme3.bin1, HID) %&gt;% summarise(bin1.Hme3val=sum(V14)) -&gt; bin1.Hme3
 group_by(Hme3.bin2, HID) %&gt;% summarise(bin2.Hme3val=sum(V14)) -&gt; bin2.Hme3
 
-HAR.bin1$HID &lt;- paste(HAR.bin1$V1, HAR.bin1$V2, sep=&quot;-&quot;)
-HAR.bin2$HID &lt;- paste(HAR.bin2$V1, HAR.bin2$V2, sep=&quot;-&quot;)
-group_by(HAR.bin1, HID) %&gt;% summarise(bin1.HARval=sum(V7)) -&gt; bin1.HAR
-group_by(HAR.bin2, HID) %&gt;% summarise(bin2.HARval=sum(V7)) -&gt; bin2.HAR
+HK27.bin1$HID &lt;- paste(HK27.bin1$V1, HK27.bin1$V2, sep=&quot;-&quot;)
+HK27.bin2$HID &lt;- paste(HK27.bin2$V1, HK27.bin2$V2, sep=&quot;-&quot;)
+group_by(HK27.bin1, HID) %&gt;% summarise(bin1.HK27val=sum(V14)) -&gt; bin1.HK27
+group_by(HK27.bin2, HID) %&gt;% summarise(bin2.HK27val=sum(V14)) -&gt; bin2.HK27
+#HAR.bin1$HID &lt;- paste(HAR.bin1$V1, HAR.bin1$V2, sep=&quot;-&quot;) #HAR analysis was ugly, consider this stupid and deprecated.
+#HAR.bin2$HID &lt;- paste(HAR.bin2$V1, HAR.bin2$V2, sep=&quot;-&quot;)
+#group_by(HAR.bin1, HID) %&gt;% summarise(bin1.HARval=sum(V7)) -&gt; bin1.HAR
+#group_by(HAR.bin2, HID) %&gt;% summarise(bin2.HARval=sum(V7)) -&gt; bin2.HAR
 
-colnames(bin1.DHS)[1] &lt;- colnames(bin1.Hac)[1] &lt;- colnames(bin1.Hme1)[1] &lt;- colnames(bin1.Hme3)[1] &lt;- colnames(bin1.HAR)[1] &lt;- &quot;H1&quot;
-colnames(bin2.DHS)[1] &lt;- colnames(bin2.Hac)[1] &lt;- colnames(bin2.Hme1)[1] &lt;- colnames(bin2.Hme3)[1] &lt;- colnames(bin2.HAR)[1] &lt;- &quot;H2&quot;
+colnames(bin1.DHS)[1] &lt;- colnames(bin1.Hac)[1] &lt;- colnames(bin1.Hme1)[1] &lt;- colnames(bin1.Hme3)[1] &lt;- colnames(bin1.HK27)[1] &lt;- &quot;H1&quot;
+colnames(bin2.DHS)[1] &lt;- colnames(bin2.Hac)[1] &lt;- colnames(bin2.Hme1)[1] &lt;- colnames(bin2.Hme3)[1] &lt;- colnames(bin2.HK27)[1] &lt;- &quot;H2&quot;
 
 #Sequential left joins to make huge table on paired data!
-left_join(chromrich, bin1.DHS, by = &quot;H1&quot;) %&gt;% left_join(., bin2.DHS, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hac, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hac, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hme1, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hme1, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hme3, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hme3, by=&quot;H2&quot;) %&gt;% left_join(., bin1.HAR, by=&quot;H1&quot;) %&gt;% left_join(., bin2.HAR, by=&quot;H2&quot;) -&gt; full.annotations
+left_join(chromrich, bin1.DHS, by = &quot;H1&quot;) %&gt;% left_join(., bin2.DHS, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hac, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hac, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hme1, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hme1, by=&quot;H2&quot;) %&gt;% left_join(., bin1.Hme3, by=&quot;H1&quot;) %&gt;% left_join(., bin2.Hme3, by=&quot;H2&quot;) %&gt;% left_join(., bin1.HK27, by=&quot;H1&quot;) %&gt;% left_join(., bin2.HK27, by=&quot;H2&quot;) -&gt; full.annotations
 
-full.annotations$CTCF.interrupt &lt;- ifelse(full.annotations$pairID %in% CTCF.info$pairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$H.CTCF.interrupt &lt;- ifelse(full.annotations$HpairID %in% CTCF.humans$HpairID, &quot;no&quot;, &quot;yes&quot;) #Since I did notispan, if it&#39;s in that file, it did NOT have a CTCF interruption--if it isn&#39;t, it did.
+full.annotations$C.CTCF.interrupt &lt;- ifelse(full.annotations$CpairID %in% CTCF.chimps$CpairID, &quot;no&quot;, &quot;yes&quot;)
 
 #Add a column to the df indicating which interactions include a promoter and which don&#39;t. Here I am defining a promoter based off the meta ortho exon trios file (true.promoter). I used to secondarily look at chromHMM promoters (promoter) but there&#39;s not much to be gleaned there.
 promoter.IDs &lt;- gene.hic$HID
@@ -469,8 +495,8 @@ deduplicator &lt;- function(df){
   bin2.dups &lt;- repeats[which(repeats%%2==0)] #Pull out bin 2 duplicates, based on even row identity.
   dup1.indices &lt;- duplicators[bin1.dups, 2] #Pull out the original row indices for bin1 dups.
   dup2.indices &lt;- duplicators[bin2.dups, 2] #Pull out the original row indices for bin2 dups.
-  df[dup1.indices, c(5, 8:23, 40, 42, 44, 46, 48)] &lt;- NA #Set duplicated bin1 values to NA (aside from bin identity, already checked this function works as desired).
-  df[dup2.indices, c(6, 24:39, 41, 43, 45, 47, 49)] &lt;- NA #Set duplicated bin2 values to NA (aside from bin identity).
+  df[dup1.indices, c(7, 11:26, 43, 45, 47, 49, 51)] &lt;- NA #Set duplicated bin1 values to NA (aside from bin identity, already checked this function works as desired).
+  df[dup2.indices, c(8, 27:42, 44, 46, 48, 50, 52)] &lt;- NA #Set duplicated bin2 values to NA (aside from bin identity).
   return(df) #Return the cleaned df!
 }
 
@@ -511,8 +537,8 @@ saveRDS(proms.both.only, file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/proms
 saveRDS(proms.neither, file=&quot;~/Desktop/enrichdfs/metaproms/justmeta/proms.neither.only.RDS&quot;)
 
 #Last thing I am interested in also writing out and working with is a df that only takes the bins making contact with promoter bins (not the promoters themselves). Construct that here:
-prom.1s &lt;- filter(full.annotations, promoter.bin1==&quot;yes&quot;) %&gt;% select(., H2, sp_BH_pval, sp_beta, bin2.HMM, pairID, Nothing.2, TssA.2, TssBiv.2, BivFlnk.2, EnhBiv.2, ReprPC.2, ReprPCWk.2, Quies.2, TssAFlnk.2, TxFlnk.2, Tx.2, TxWk.2, EnhG.2, Enh.2, &quot;ZNF/Rpts.2&quot;, Het.2, bin2.DHSval, bin2.Hacval, bin2.Hme1val, bin2.Hme3val, bin2.HARval, DE, DC, differential)
-prom.2s &lt;- filter(full.annotations, promoter.bin2==&quot;yes&quot;) %&gt;% select(., H1, sp_BH_pval, sp_beta, bin1.HMM, pairID, Nothing.1, TssA.1, TssBiv.1, BivFlnk.1, EnhBiv.1, ReprPC.1, ReprPCWk.1, Quies.1, TssAFlnk.1, TxFlnk.1, Tx.1, TxWk.1, EnhG.1, Enh.1, &quot;ZNF/Rpts.1&quot;, Het.1, bin1.DHSval, bin1.Hacval, bin1.Hme1val, bin1.Hme3val, bin1.HARval, DE, DC, differential)
+prom.1s &lt;- filter(full.annotations, promoter.bin1==&quot;yes&quot;) %&gt;% select(., H2, sp_BH_pval, sp_beta, bin2.HMM, HpairID, Nothing.2, TssA.2, TssBiv.2, BivFlnk.2, EnhBiv.2, ReprPC.2, ReprPCWk.2, Quies.2, TssAFlnk.2, TxFlnk.2, Tx.2, TxWk.2, EnhG.2, Enh.2, &quot;ZNF/Rpts.2&quot;, Het.2, bin2.DHSval, bin2.Hacval, bin2.Hme1val, bin2.Hme3val, bin2.HK27val, H.CTCF.interrupt, C.CTCF.interrupt, DE, DC, differential)
+prom.2s &lt;- filter(full.annotations, promoter.bin2==&quot;yes&quot;) %&gt;% select(., H1, sp_BH_pval, sp_beta, bin1.HMM, HpairID, Nothing.1, TssA.1, TssBiv.1, BivFlnk.1, EnhBiv.1, ReprPC.1, ReprPCWk.1, Quies.1, TssAFlnk.1, TxFlnk.1, Tx.1, TxWk.1, EnhG.1, Enh.1, &quot;ZNF/Rpts.1&quot;, Het.1, bin1.DHSval, bin1.Hacval, bin1.Hme1val, bin1.Hme3val, bin1.HK27val, H.CTCF.interrupt, C.CTCF.interrupt, DE, DC, differential)
 
 #Combine them into one df for running analyses on!
 colnames(prom.2s) &lt;- colnames(prom.1s)
@@ -757,7 +783,7 @@ head(mates.proms.full) #Created before, full set of promoter-contacting bins min
 3      chr7-43940000 1.360426e-04 -4.735619   5_TxWk
 19101 chr1-109770000 1.580912e-04  2.461795     4_Tx
 19102  chr11-2430000 1.756877e-04 -2.594482 15_Quies
-                             pairID Nothing.2 TssA.2 TssBiv.2 BivFlnk.2
+                            HpairID Nothing.2 TssA.2 TssBiv.2 BivFlnk.2
 1       chr7-39620000_chr7-43900000        NA   1400       NA        NA
 2     chr13-45330000_chr13-46400000        NA     NA       NA        NA
 19100 chr9-129170000_chr9-129600000        NA     NA       NA        NA
@@ -778,15 +804,22 @@ head(mates.proms.full) #Created before, full set of promoter-contacting bins min
 3         NA   600         NA    NA           0           0            0
 19101   1200  1400         NA    NA         300           0            0
 19102     NA    NA         NA    NA           0           0            0
-      bin2.Hme3val bin2.HARval  DE  DC differential
-1             2163           0  no yes      contact
-2                0           0 yes yes         both
-19100         5076           0  no yes      contact
-3                0           0  no yes      contact
-19101            0           0 yes yes         both
-19102            0           0  no yes      contact</code></pre>
+      bin2.Hme3val bin2.HK27val H.CTCF.interrupt C.CTCF.interrupt  DE  DC
+1             2163            0               no               no  no yes
+2                0            0               no               no yes yes
+19100         5076         5242               no               no  no yes
+3                0            0               no               no  no yes
+19101            0            0               no               no yes yes
+19102            0         1012              yes              yes  no yes
+      differential
+1          contact
+2             both
+19100      contact
+3          contact
+19101         both
+19102      contact</code></pre>
 <pre class="r"><code>nonprom.annos &lt;- filter(full.annotations, true.promoter==&quot;no&quot;) %&gt;% deduplicator(.)
-dubs.nonprom &lt;- data.frame(H1=rep(nonprom.annos$H1, 2), H2=rep(nonprom.annos$H2, 2), sp_BH_pval=rep(nonprom.annos$sp_BH_pval, 2), sp_beta=rep(nonprom.annos$sp_beta, 2), bin1.HMM=rep(nonprom.annos$bin1.HMM, 2), bin2.HMM=rep(nonprom.annos$bin2.HMM, 2), pairID=rep(nonprom.annos$pairID, 2), Nothing=c(nonprom.annos$Nothing.1, nonprom.annos$Nothing.2), TssA=c(nonprom.annos$TssA.1, nonprom.annos$TssA.2), TssBiv=c(nonprom.annos$TssBiv.1, nonprom.annos$TssBiv.2), BivFlnk=c(nonprom.annos$TssBiv.1, nonprom.annos$TssBiv.2), EnhBiv=c(nonprom.annos$EnhBiv.1, nonprom.annos$EnhBiv.2), ReprPc=c(nonprom.annos$ReprPC.1, nonprom.annos$ReprPC.2), ReprPCWk=c(nonprom.annos$ReprPCWk.1, nonprom.annos$ReprPCWk.2), Quies=c(nonprom.annos$Quies.1, nonprom.annos$Quies.2), TssAFlnk=c(nonprom.annos$TssAFlnk.1, nonprom.annos$TssAFlnk.2), TxFlnk=c(nonprom.annos$TxFlnk.1, nonprom.annos$TxFlnk.2), Tx=c(nonprom.annos$Tx.1, nonprom.annos$Tx.2), TxWk=c(nonprom.annos$TxWk.1, nonprom.annos$TxWk.2), EnhG=c(nonprom.annos$EnhG.1, nonprom.annos$EnhG.2), Enh=c(nonprom.annos$Enh.1, nonprom.annos$Enh.2), ZNF_Rpts=c(nonprom.annos$`ZNF/Rpts.1`, nonprom.annos$`ZNF/Rpts.2`), Het=c(nonprom.annos$Het.1, nonprom.annos$Het.2), DHSval=c(nonprom.annos$bin1.DHSval, nonprom.annos$bin2.DHSval), Hacval=c(nonprom.annos$bin1.Hacval, nonprom.annos$bin2.Hacval), Hme1val=c(nonprom.annos$bin1.Hme1val, nonprom.annos$bin2.Hme1val), Hme3val=c(nonprom.annos$bin1.Hme3val, nonprom.annos$bin2.Hme3val), HARval=c(nonprom.annos$bin1.HARval, nonprom.annos$bin2.HARval), DE=rep(nonprom.annos$DE, 2), DC=rep(nonprom.annos$DC, 2), differential=rep(nonprom.annos$differential, 2))#, CTCF.interrupt=rep(nonprom.annos$CTCF.interrupt, 2), true.promoter=rep(nonprom.annos$true.promoter, 2), promoter.bin1=rep(nonprom.annos$promoter.bin1, 2), promoter.bin2=rep(nonprom.annos$promoter.bin2, 2))
+dubs.nonprom &lt;- data.frame(H1=rep(nonprom.annos$H1, 2), H2=rep(nonprom.annos$H2, 2), sp_BH_pval=rep(nonprom.annos$sp_BH_pval, 2), sp_beta=rep(nonprom.annos$sp_beta, 2), bin1.HMM=rep(nonprom.annos$bin1.HMM, 2), bin2.HMM=rep(nonprom.annos$bin2.HMM, 2), pairID=rep(nonprom.annos$HpairID, 2), Nothing=c(nonprom.annos$Nothing.1, nonprom.annos$Nothing.2), TssA=c(nonprom.annos$TssA.1, nonprom.annos$TssA.2), TssBiv=c(nonprom.annos$TssBiv.1, nonprom.annos$TssBiv.2), BivFlnk=c(nonprom.annos$TssBiv.1, nonprom.annos$TssBiv.2), EnhBiv=c(nonprom.annos$EnhBiv.1, nonprom.annos$EnhBiv.2), ReprPc=c(nonprom.annos$ReprPC.1, nonprom.annos$ReprPC.2), ReprPCWk=c(nonprom.annos$ReprPCWk.1, nonprom.annos$ReprPCWk.2), Quies=c(nonprom.annos$Quies.1, nonprom.annos$Quies.2), TssAFlnk=c(nonprom.annos$TssAFlnk.1, nonprom.annos$TssAFlnk.2), TxFlnk=c(nonprom.annos$TxFlnk.1, nonprom.annos$TxFlnk.2), Tx=c(nonprom.annos$Tx.1, nonprom.annos$Tx.2), TxWk=c(nonprom.annos$TxWk.1, nonprom.annos$TxWk.2), EnhG=c(nonprom.annos$EnhG.1, nonprom.annos$EnhG.2), Enh=c(nonprom.annos$Enh.1, nonprom.annos$Enh.2), ZNF_Rpts=c(nonprom.annos$`ZNF/Rpts.1`, nonprom.annos$`ZNF/Rpts.2`), Het=c(nonprom.annos$Het.1, nonprom.annos$Het.2), DHSval=c(nonprom.annos$bin1.DHSval, nonprom.annos$bin2.DHSval), Hacval=c(nonprom.annos$bin1.Hacval, nonprom.annos$bin2.Hacval), Hme1val=c(nonprom.annos$bin1.Hme1val, nonprom.annos$bin2.Hme1val), Hme3val=c(nonprom.annos$bin1.Hme3val, nonprom.annos$bin2.Hme3val), HK27val=c(nonprom.annos$bin1.HK27val, nonprom.annos$bin2.HK27val), H.CTCF.interrupt=rep(nonprom.annos$H.CTCF.interrupt, 2), C.CTCF.interrupt=rep(nonprom.annos$C.CTCF.interrupt, 2), DE=rep(nonprom.annos$DE, 2), DC=rep(nonprom.annos$DC, 2), differential=rep(nonprom.annos$differential, 2))#, CTCF.interrupt=rep(nonprom.annos$CTCF.interrupt, 2), true.promoter=rep(nonprom.annos$true.promoter, 2), promoter.bin1=rep(nonprom.annos$promoter.bin1, 2), promoter.bin2=rep(nonprom.annos$promoter.bin2, 2))
 dubs.nonprom &lt;- dubs.nonprom[,c(-1, -5)]
 colnames(mates.proms.full) &lt;- colnames(dubs.nonprom)
 mates.proms.full$true.promoter &lt;-  &quot;yes&quot; #Create a variable to separate them before combining
@@ -803,8 +836,8 @@ sum(chrom.annos$true.promoter==&quot;yes&quot;)</code></pre>
 #Also do exclusive sets for differential status on the promoter bins:
 nonprom.DC &lt;- filter(full.annotations, true.promoter==&quot;no&quot;, DC==&quot;yes&quot;) %&gt;% deduplicator(.)
 nonprom.notDC &lt;- filter(full.annotations, true.promoter==&quot;no&quot;, DC==&quot;no&quot;) %&gt;% deduplicator(.)
-dubs.nonprom.DC &lt;- data.frame(H1=rep(nonprom.DC$H1, 2), H2=rep(nonprom.DC$H2, 2), sp_BH_pval=rep(nonprom.DC$sp_BH_pval, 2), sp_beta=rep(nonprom.DC$sp_beta, 2), bin1.HMM=rep(nonprom.DC$bin1.HMM, 2), bin2.HMM=rep(nonprom.DC$bin2.HMM, 2), pairID=rep(nonprom.DC$pairID, 2), Nothing=c(nonprom.DC$Nothing.1, nonprom.DC$Nothing.2), TssA=c(nonprom.DC$TssA.1, nonprom.DC$TssA.2), TssBiv=c(nonprom.DC$TssBiv.1, nonprom.DC$TssBiv.2), BivFlnk=c(nonprom.DC$TssBiv.1, nonprom.DC$TssBiv.2), EnhBiv=c(nonprom.DC$EnhBiv.1, nonprom.DC$EnhBiv.2), ReprPc=c(nonprom.DC$ReprPC.1, nonprom.DC$ReprPC.2), ReprPCWk=c(nonprom.DC$ReprPCWk.1, nonprom.DC$ReprPCWk.2), Quies=c(nonprom.DC$Quies.1, nonprom.DC$Quies.2), TssAFlnk=c(nonprom.DC$TssAFlnk.1, nonprom.DC$TssAFlnk.2), TxFlnk=c(nonprom.DC$TxFlnk.1, nonprom.DC$TxFlnk.2), Tx=c(nonprom.DC$Tx.1, nonprom.DC$Tx.2), TxWk=c(nonprom.DC$TxWk.1, nonprom.DC$TxWk.2), EnhG=c(nonprom.DC$EnhG.1, nonprom.DC$EnhG.2), Enh=c(nonprom.DC$Enh.1, nonprom.DC$Enh.2), ZNF_Rpts=c(nonprom.DC$`ZNF/Rpts.1`, nonprom.DC$`ZNF/Rpts.2`), Het=c(nonprom.DC$Het.1, nonprom.DC$Het.2), DHSval=c(nonprom.DC$bin1.DHSval, nonprom.DC$bin2.DHSval), Hacval=c(nonprom.DC$bin1.Hacval, nonprom.DC$bin2.Hacval), Hme1val=c(nonprom.DC$bin1.Hme1val, nonprom.DC$bin2.Hme1val), Hme3val=c(nonprom.DC$bin1.Hme3val, nonprom.DC$bin2.Hme3val), HARval=c(nonprom.DC$bin1.HARval, nonprom.DC$bin2.HARval), DE=rep(nonprom.DC$DE, 2), DC=rep(nonprom.DC$DC, 2), differential=rep(nonprom.DC$differential, 2))
-dubs.nonprom.notDC &lt;- data.frame(H1=rep(nonprom.notDC$H1, 2), H2=rep(nonprom.notDC$H2, 2), sp_BH_pval=rep(nonprom.notDC$sp_BH_pval, 2), sp_beta=rep(nonprom.notDC$sp_beta, 2), bin1.HMM=rep(nonprom.notDC$bin1.HMM, 2), bin2.HMM=rep(nonprom.notDC$bin2.HMM, 2), pairID=rep(nonprom.notDC$pairID, 2), Nothing=c(nonprom.notDC$Nothing.1, nonprom.notDC$Nothing.2), TssA=c(nonprom.notDC$TssA.1, nonprom.notDC$TssA.2), TssBiv=c(nonprom.notDC$TssBiv.1, nonprom.notDC$TssBiv.2), BivFlnk=c(nonprom.notDC$TssBiv.1, nonprom.notDC$TssBiv.2), EnhBiv=c(nonprom.notDC$EnhBiv.1, nonprom.notDC$EnhBiv.2), ReprPc=c(nonprom.notDC$ReprPC.1, nonprom.notDC$ReprPC.2), ReprPCWk=c(nonprom.notDC$ReprPCWk.1, nonprom.notDC$ReprPCWk.2), Quies=c(nonprom.notDC$Quies.1, nonprom.notDC$Quies.2), TssAFlnk=c(nonprom.notDC$TssAFlnk.1, nonprom.notDC$TssAFlnk.2), TxFlnk=c(nonprom.notDC$TxFlnk.1, nonprom.notDC$TxFlnk.2), Tx=c(nonprom.notDC$Tx.1, nonprom.notDC$Tx.2), TxWk=c(nonprom.notDC$TxWk.1, nonprom.notDC$TxWk.2), EnhG=c(nonprom.notDC$EnhG.1, nonprom.notDC$EnhG.2), Enh=c(nonprom.notDC$Enh.1, nonprom.notDC$Enh.2), ZNF_Rpts=c(nonprom.notDC$`ZNF/Rpts.1`, nonprom.notDC$`ZNF/Rpts.2`), Het=c(nonprom.notDC$Het.1, nonprom.notDC$Het.2), DHSval=c(nonprom.notDC$bin1.DHSval, nonprom.notDC$bin2.DHSval), Hacval=c(nonprom.notDC$bin1.Hacval, nonprom.notDC$bin2.Hacval), Hme1val=c(nonprom.notDC$bin1.Hme1val, nonprom.notDC$bin2.Hme1val), Hme3val=c(nonprom.notDC$bin1.Hme3val, nonprom.notDC$bin2.Hme3val), HARval=c(nonprom.notDC$bin1.HARval, nonprom.notDC$bin2.HARval), DE=rep(nonprom.notDC$DE, 2), DC=rep(nonprom.notDC$DC, 2), differential=rep(nonprom.notDC$differential, 2))
+dubs.nonprom.DC &lt;- data.frame(H1=rep(nonprom.DC$H1, 2), H2=rep(nonprom.DC$H2, 2), sp_BH_pval=rep(nonprom.DC$sp_BH_pval, 2), sp_beta=rep(nonprom.DC$sp_beta, 2), bin1.HMM=rep(nonprom.DC$bin1.HMM, 2), bin2.HMM=rep(nonprom.DC$bin2.HMM, 2), pairID=rep(nonprom.DC$HpairID, 2), Nothing=c(nonprom.DC$Nothing.1, nonprom.DC$Nothing.2), TssA=c(nonprom.DC$TssA.1, nonprom.DC$TssA.2), TssBiv=c(nonprom.DC$TssBiv.1, nonprom.DC$TssBiv.2), BivFlnk=c(nonprom.DC$TssBiv.1, nonprom.DC$TssBiv.2), EnhBiv=c(nonprom.DC$EnhBiv.1, nonprom.DC$EnhBiv.2), ReprPc=c(nonprom.DC$ReprPC.1, nonprom.DC$ReprPC.2), ReprPCWk=c(nonprom.DC$ReprPCWk.1, nonprom.DC$ReprPCWk.2), Quies=c(nonprom.DC$Quies.1, nonprom.DC$Quies.2), TssAFlnk=c(nonprom.DC$TssAFlnk.1, nonprom.DC$TssAFlnk.2), TxFlnk=c(nonprom.DC$TxFlnk.1, nonprom.DC$TxFlnk.2), Tx=c(nonprom.DC$Tx.1, nonprom.DC$Tx.2), TxWk=c(nonprom.DC$TxWk.1, nonprom.DC$TxWk.2), EnhG=c(nonprom.DC$EnhG.1, nonprom.DC$EnhG.2), Enh=c(nonprom.DC$Enh.1, nonprom.DC$Enh.2), ZNF_Rpts=c(nonprom.DC$`ZNF/Rpts.1`, nonprom.DC$`ZNF/Rpts.2`), Het=c(nonprom.DC$Het.1, nonprom.DC$Het.2), DHSval=c(nonprom.DC$bin1.DHSval, nonprom.DC$bin2.DHSval), Hacval=c(nonprom.DC$bin1.Hacval, nonprom.DC$bin2.Hacval), Hme1val=c(nonprom.DC$bin1.Hme1val, nonprom.DC$bin2.Hme1val), Hme3val=c(nonprom.DC$bin1.Hme3val, nonprom.DC$bin2.Hme3val), HK27val=c(nonprom.DC$bin1.HK27val, nonprom.DC$bin2.HK27val), H.CTCF.interrupt=rep(nonprom.DC$H.CTCF.interrupt, 2), C.CTCF.interrupt=rep(nonprom.DC$C.CTCF.interrupt, 2), DE=rep(nonprom.DC$DE, 2), DC=rep(nonprom.DC$DC, 2), differential=rep(nonprom.DC$differential, 2))
+dubs.nonprom.notDC &lt;- data.frame(H1=rep(nonprom.notDC$H1, 2), H2=rep(nonprom.notDC$H2, 2), sp_BH_pval=rep(nonprom.notDC$sp_BH_pval, 2), sp_beta=rep(nonprom.notDC$sp_beta, 2), bin1.HMM=rep(nonprom.notDC$bin1.HMM, 2), bin2.HMM=rep(nonprom.notDC$bin2.HMM, 2), pairID=rep(nonprom.notDC$HpairID, 2), Nothing=c(nonprom.notDC$Nothing.1, nonprom.notDC$Nothing.2), TssA=c(nonprom.notDC$TssA.1, nonprom.notDC$TssA.2), TssBiv=c(nonprom.notDC$TssBiv.1, nonprom.notDC$TssBiv.2), BivFlnk=c(nonprom.notDC$TssBiv.1, nonprom.notDC$TssBiv.2), EnhBiv=c(nonprom.notDC$EnhBiv.1, nonprom.notDC$EnhBiv.2), ReprPc=c(nonprom.notDC$ReprPC.1, nonprom.notDC$ReprPC.2), ReprPCWk=c(nonprom.notDC$ReprPCWk.1, nonprom.notDC$ReprPCWk.2), Quies=c(nonprom.notDC$Quies.1, nonprom.notDC$Quies.2), TssAFlnk=c(nonprom.notDC$TssAFlnk.1, nonprom.notDC$TssAFlnk.2), TxFlnk=c(nonprom.notDC$TxFlnk.1, nonprom.notDC$TxFlnk.2), Tx=c(nonprom.notDC$Tx.1, nonprom.notDC$Tx.2), TxWk=c(nonprom.notDC$TxWk.1, nonprom.notDC$TxWk.2), EnhG=c(nonprom.notDC$EnhG.1, nonprom.notDC$EnhG.2), Enh=c(nonprom.notDC$Enh.1, nonprom.notDC$Enh.2), ZNF_Rpts=c(nonprom.notDC$`ZNF/Rpts.1`, nonprom.notDC$`ZNF/Rpts.2`), Het=c(nonprom.notDC$Het.1, nonprom.notDC$Het.2), DHSval=c(nonprom.notDC$bin1.DHSval, nonprom.notDC$bin2.DHSval), Hacval=c(nonprom.notDC$bin1.Hacval, nonprom.notDC$bin2.Hacval), Hme1val=c(nonprom.notDC$bin1.Hme1val, nonprom.notDC$bin2.Hme1val), Hme3val=c(nonprom.notDC$bin1.Hme3val, nonprom.notDC$bin2.Hme3val), HK27val=c(nonprom.notDC$bin1.HK27val, nonprom.notDC$bin2.HK27val), H.CTCF.interrupt=rep(nonprom.notDC$H.CTCF.interrupt, 2), C.CTCF.interrupt=rep(nonprom.notDC$C.CTCF.interrupt, 2), DE=rep(nonprom.notDC$DE, 2), DC=rep(nonprom.notDC$DC, 2), differential=rep(nonprom.notDC$differential, 2))
 nonproms.DC.df &lt;- rbind(dubs.nonprom.DC, dubs.nonprom.notDC)
 
 #Prep promoters DC df, DE df, and differential DF. This is definitely redundant code throughout all three chunks here, so eventually fix that!!!
@@ -832,7 +865,7 @@ DEDC.proms &lt;- DEDC.proms[!duplicated(DEDC.proms$H2),]
 neither.proms &lt;- neither.proms[!duplicated(neither.proms$H2),]
 proms.differential &lt;- rbind(DE.only.proms, DC.only.proms, DEDC.proms, neither.proms)
 proms.differential &lt;- proms.differential[order(proms.differential$sp_BH_pval),]
-colnames(proms.differential) &lt;- colnames(proms.DE) &lt;- colnames(proms.DC) &lt;- colnames(chrom.annos)[1:29]
+colnames(proms.differential) &lt;- colnames(proms.DE) &lt;- colnames(proms.DC) &lt;- colnames(chrom.annos)[1:31]
 
 
 ##########Now, try to actually plot out overlaps of different chromHMM marks with these two different classes of bins.
@@ -855,19 +888,19 @@ chromHMMplot &lt;- function(df, nonprom.df, DC.df, DE.df, differential.df, diffe
   violin.nonproms &lt;- ggplot(data=filter(nonprom.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(y=get(markcol), group=DC, color=DC, x=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Differential Contact?&quot;, values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)}
   
   if(nrow(filter(DC.df, sp_BH_pval&lt;=FDR, DC==&quot;no&quot;))&gt;0){DCPROMS=TRUE
-  DC.density &lt;- ggplot(data=filter(DC.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;%FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
+  DC.density &lt;- ggplot(data=filter(DC.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=DC, color=DC, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;% FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(DC.df, sp_BH_pval&lt;=FDR, DC==&quot;yes&quot;)[,markcol], filter(DC.df, sp_BH_pval&lt;=FDR, DC==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
   DC.violin &lt;- ggplot(data=filter(DC.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(x=DC, y=get(markcol), group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)}
   
   if(nrow(filter(DE.df, sp_BH_pval&lt;=FDR, DE==&quot;no&quot;))&gt;0){DEPROMS=TRUE
-  DE.density &lt;- ggplot(data=filter(DE.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=DE, color=DE, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;%FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
+  DE.density &lt;- ggplot(data=filter(DE.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=DE, color=DE, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;% FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;))
   mypval &lt;- t.test(filter(DE.df, sp_BH_pval&lt;=FDR, DE==&quot;yes&quot;)[,markcol], filter(DE.df, sp_BH_pval&lt;=FDR, DE==&quot;no&quot;)[,markcol])$p.value
   mypval &lt;- signif(mypval, 1)
   DE.violin &lt;- ggplot(data=filter(DE.df, sp_BH_pval&lt;=FDR)) + geom_violin(aes(x=DE, y=get(markcol), group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=3000, label=mypval, size=3)}
   
   if((nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;both&quot;))&gt;0)&amp;(nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;expression&quot;))&gt;0)&amp;(nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;contact&quot;))&gt;0)&amp;(nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;no&quot;))&gt;0&amp;(nrow(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;expression&quot;))-sum(is.na(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;expression&quot;)[,markcol]))&gt;1))){DIFFERENTIAL=TRUE
-  differential.density &lt;- ggplot(data=filter(differential.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=differential, color=differential, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;%FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;))
+  differential.density &lt;- ggplot(data=filter(differential.df, sp_BH_pval&lt;=FDR)) + geom_density(aes(x=get(markcol), group=differential, color=differential, y=..scaled..)) + ggtitle(paste(&quot;Overlap between Promoter Hi-C Bins&lt;=&quot;, FDR*100, &quot;% FDR and&quot;, markcol, sep=&quot; &quot;)) + xlab(paste(&quot;Length of overlap b/t bin and&quot;, markcol, &quot;peak&quot;, sep=&quot; &quot;)) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;))
   NEpval &lt;- signif(t.test(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;no&quot;)[,markcol], filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;expression&quot;)[,markcol])$p.value, 1)
   NCpval &lt;- signif(t.test(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;no&quot;)[,markcol], filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;contact&quot;)[,markcol])$p.value, 1)
   NBpval &lt;- signif(t.test(filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;no&quot;)[,markcol], filter(differential.df, sp_BH_pval&lt;=FDR, differential==&quot;both&quot;)[,markcol])$p.value, 1)
@@ -1634,62 +1667,63 @@ chromHMMplot(chrom.annos, nonproms.DC.df, proms.DC, proms.DE, proms.differential
 <div id="quantitative-histone-mark-enrichments" class="section level3">
 <h3>Quantitative histone mark enrichments</h3>
 <p>Now, I look at the quantitative enrichment of histone mark peaks from other studies on iPSCs, examining the overlap of these peaks with different classes of Hi-C significant bins.</p>
-<pre class="r"><code>#####Examination of CTCF interruptions, 2x2 tables!
-table(full.annotations$CTCF.interrupt, full.annotations$true.promoter, dnn = c(&quot;CTCF Interruption?&quot; , &quot;Promoter?&quot;))</code></pre>
-<pre><code>                  Promoter?
-CTCF Interruption?     no    yes
-               no   46040  10099
-               yes 209936  25995</code></pre>
-<pre class="r"><code>chisq.test(table(full.annotations$CTCF.interrupt, full.annotations$true.promoter, dnn = c(&quot;CTCF Interruption?&quot; , &quot;Promoter?&quot;)))</code></pre>
+<pre class="r"><code>#####Examination of CTCF interruptions.
+full.annotations$CTCF.different &lt;- ifelse(full.annotations$H.CTCF.interrupt==full.annotations$C.CTCF.interrupt, &quot;no&quot;, &quot;yes&quot;)
+table(full.annotations$CTCF.different, full.annotations$true.promoter, dnn = c(&quot;Species diff. CTCF Interruption?&quot; , &quot;Promoter?&quot;))</code></pre>
+<pre><code>                                Promoter?
+Species diff. CTCF Interruption?     no    yes
+                             no  244364  34522
+                             yes  11612   1572</code></pre>
+<pre class="r"><code>chisq.test(table(full.annotations$CTCF.different, full.annotations$true.promoter, dnn = c(&quot;Species diff. CTCF Interruption?&quot; , &quot;Promoter?&quot;)))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
-data:  table(full.annotations$CTCF.interrupt, full.annotations$true.promoter,     dnn = c(&quot;CTCF Interruption?&quot;, &quot;Promoter?&quot;))
-X-squared = 2034.2, df = 1, p-value &lt; 2.2e-16</code></pre>
-<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;no&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;no&quot;)$DC, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DC?&quot;))</code></pre>
-<pre><code>                  DC?
-CTCF Interruption?     no    yes
-               no   44275   1765
-               yes 203281   6655</code></pre>
-<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;no&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;no&quot;)$DC))</code></pre>
+data:  table(full.annotations$CTCF.different, full.annotations$true.promoter,     dnn = c(&quot;Species diff. CTCF Interruption?&quot;, &quot;Promoter?&quot;))
+X-squared = 2.3644, df = 1, p-value = 0.1241</code></pre>
+<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;no&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;no&quot;)$DC, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DC?&quot;))</code></pre>
+<pre><code>                                DC?
+Species diff. CTCF Interruption?     no    yes
+                             no  236287   8077
+                             yes  11269    343</code></pre>
+<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;no&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;no&quot;)$DC))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
-data:  table(filter(full.annotations, true.promoter == &quot;no&quot;)$CTCF.interrupt,     filter(full.annotations, true.promoter == &quot;no&quot;)$DC)
-X-squared = 52.063, df = 1, p-value = 5.376e-13</code></pre>
-<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$DC, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DC?&quot;))</code></pre>
-<pre><code>                  DC?
-CTCF Interruption?    no   yes
-               no   9747   352
-               yes 25106   889</code></pre>
-<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$DC))</code></pre>
+data:  table(filter(full.annotations, true.promoter == &quot;no&quot;)$CTCF.different,     filter(full.annotations, true.promoter == &quot;no&quot;)$DC)
+X-squared = 4.1949, df = 1, p-value = 0.04054</code></pre>
+<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$DC, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DC?&quot;))</code></pre>
+<pre><code>                                DC?
+Species diff. CTCF Interruption?    no   yes
+                             no  33321  1201
+                             yes  1532    40</code></pre>
+<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$DC))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
-data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.interrupt,     filter(full.annotations, true.promoter == &quot;yes&quot;)$DC)
-X-squared = 0.075565, df = 1, p-value = 0.7834</code></pre>
-<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DE?&quot;))</code></pre>
-<pre><code>                  DE?
-CTCF Interruption?    no   yes
-               no   7940  2159
-               yes 20139  5856</code></pre>
-<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DE?&quot;)))</code></pre>
+data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.different,     filter(full.annotations, true.promoter == &quot;yes&quot;)$DC)
+X-squared = 3.6777, df = 1, p-value = 0.05515</code></pre>
+<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DE?&quot;))</code></pre>
+<pre><code>                                DE?
+Species diff. CTCF Interruption?    no   yes
+                             no  26867  7655
+                             yes  1212   360</code></pre>
+<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DE?&quot;)))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
-data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.interrupt,     filter(full.annotations, true.promoter == &quot;yes&quot;)$DE, dnn = c(&quot;CTCF Interruption?&quot;,         &quot;DE?&quot;))
-X-squared = 5.4927, df = 1, p-value = 0.0191</code></pre>
-<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$differential==&quot;both&quot;, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DC &amp; DE?&quot;))</code></pre>
-<pre><code>                  DC &amp; DE?
-CTCF Interruption? FALSE  TRUE
-               no  10031    68
-               yes 25798   197</code></pre>
-<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.interrupt, filter(full.annotations, true.promoter==&quot;yes&quot;)$differential==&quot;both&quot;, dnn=c(&quot;CTCF Interruption?&quot;, &quot;DE?&quot;)))</code></pre>
+data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.different,     filter(full.annotations, true.promoter == &quot;yes&quot;)$DE, dnn = c(&quot;Species diff. CTCF Interruption?&quot;,         &quot;DE?&quot;))
+X-squared = 0.41828, df = 1, p-value = 0.5178</code></pre>
+<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$differential==&quot;both&quot;, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DC &amp; DE?&quot;))</code></pre>
+<pre><code>                                DC &amp; DE?
+Species diff. CTCF Interruption? FALSE  TRUE
+                             no  34267   255
+                             yes  1562    10</code></pre>
+<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$CTCF.different, filter(full.annotations, true.promoter==&quot;yes&quot;)$differential==&quot;both&quot;, dnn=c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DE?&quot;)))</code></pre>
 <pre><code>
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
-data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.interrupt,     filter(full.annotations, true.promoter == &quot;yes&quot;)$differential ==         &quot;both&quot;, dnn = c(&quot;CTCF Interruption?&quot;, &quot;DE?&quot;))
-X-squared = 0.60142, df = 1, p-value = 0.438</code></pre>
+data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$CTCF.different,     filter(full.annotations, true.promoter == &quot;yes&quot;)$differential ==         &quot;both&quot;, dnn = c(&quot;Species diff. CTCF Interruption?&quot;, &quot;DE?&quot;))
+X-squared = 0.098997, df = 1, p-value = 0.753</code></pre>
 <pre class="r"><code>#######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
 
 #First the non-promoter DF, looking at DC/not DC. Remember the promoter/not promoter was created in the first chunk (chrom.annos).
@@ -1697,7 +1731,7 @@ DC.non.proms &lt;- filter(full.annotations, true.promoter==&quot;no&quot;, DC==&
 non.DC.non.proms &lt;- filter(full.annotations, true.promoter==&quot;no&quot;, DC==&quot;no&quot;) %&gt;% deduplicator(.)
 
 #After deduplicating, combine so that there&#39;s one column per histone mark I&#39;m interested in, and a column showing DC status.
-nonproms &lt;- data.frame(H1=c(DC.non.proms$H1, DC.non.proms$H2, non.DC.non.proms$H1, non.DC.non.proms$H2), sp_BH_pval=c(rep(DC.non.proms$sp_BH_pval, 2), rep(non.DC.non.proms$sp_BH_pval, 2)), sp_beta=c(rep(DC.non.proms$sp_beta, 2), rep(non.DC.non.proms$sp_beta, 2)), HMM=c(as.character(DC.non.proms$bin1.HMM), as.character(DC.non.proms$bin2.HMM), as.character(non.DC.non.proms$bin1.HMM), as.character(non.DC.non.proms$bin2.HMM)), DHS=c(DC.non.proms$bin1.DHSval, DC.non.proms$bin2.DHSval, non.DC.non.proms$bin1.DHSval, non.DC.non.proms$bin2.DHSval), Hac=c(DC.non.proms$bin1.Hacval, DC.non.proms$bin2.Hacval, non.DC.non.proms$bin1.Hacval, non.DC.non.proms$bin2.Hacval), Hme1=c(DC.non.proms$bin1.Hme1val, DC.non.proms$bin2.Hme1val, non.DC.non.proms$bin1.Hme1val, non.DC.non.proms$bin2.Hme1val), Hme3=c(DC.non.proms$bin1.Hme3val, DC.non.proms$bin2.Hme3val, non.DC.non.proms$bin1.Hme3val, non.DC.non.proms$bin2.Hme3val), HAR=c(DC.non.proms$bin1.HARval, DC.non.proms$bin2.HARval, non.DC.non.proms$bin1.HARval, non.DC.non.proms$bin2.HARval), DC=c(rep(DC.non.proms$DC, 2), rep(non.DC.non.proms$DC, 2)))
+nonproms &lt;- data.frame(H1=c(DC.non.proms$H1, DC.non.proms$H2, non.DC.non.proms$H1, non.DC.non.proms$H2), sp_BH_pval=c(rep(DC.non.proms$sp_BH_pval, 2), rep(non.DC.non.proms$sp_BH_pval, 2)), sp_beta=c(rep(DC.non.proms$sp_beta, 2), rep(non.DC.non.proms$sp_beta, 2)), HMM=c(as.character(DC.non.proms$bin1.HMM), as.character(DC.non.proms$bin2.HMM), as.character(non.DC.non.proms$bin1.HMM), as.character(non.DC.non.proms$bin2.HMM)), DHS=c(DC.non.proms$bin1.DHSval, DC.non.proms$bin2.DHSval, non.DC.non.proms$bin1.DHSval, non.DC.non.proms$bin2.DHSval), Hac=c(DC.non.proms$bin1.Hacval, DC.non.proms$bin2.Hacval, non.DC.non.proms$bin1.Hacval, non.DC.non.proms$bin2.Hacval), Hme1=c(DC.non.proms$bin1.Hme1val, DC.non.proms$bin2.Hme1val, non.DC.non.proms$bin1.Hme1val, non.DC.non.proms$bin2.Hme1val), Hme3=c(DC.non.proms$bin1.Hme3val, DC.non.proms$bin2.Hme3val, non.DC.non.proms$bin1.Hme3val, non.DC.non.proms$bin2.Hme3val), HK27=c(DC.non.proms$bin1.HK27val, DC.non.proms$bin2.HK27val, non.DC.non.proms$bin1.HK27val, non.DC.non.proms$bin2.HK27val), DC=c(rep(DC.non.proms$DC, 2), rep(non.DC.non.proms$DC, 2)))
 
 #Now, looking within promoter-contacting Hi-C bins, at which are DC and which are not. Should be fairly simple, and in these analyses, we are focusing on the bins making contact with a promoter (promoter.contacts df has excluded the promoters themselves here). In these cases, after the deduplication is done, it&#39;s as simple as rbinding the two filtered dfs, since they have the same number of columns and only a single value for each mark. Dedup function doesn&#39;t work here beacause only a single column; simpler case.
 DC.proms &lt;- filter(promoter.contacts, DC==&quot;yes&quot;)
@@ -1724,7 +1758,7 @@ DEDC.proms &lt;- DEDC.proms[!duplicated(DEDC.proms$H2),]
 neither.proms &lt;- neither.proms[!duplicated(neither.proms$H2),]
 proms.differential &lt;- rbind(DE.only.proms, DC.only.proms, DEDC.proms, neither.proms)
 proms.differential &lt;- proms.differential[order(proms.differential$sp_BH_pval),]
-colnames(proms.differential) &lt;- colnames(proms.DE) &lt;- colnames(proms.DC) &lt;- colnames(chrom.annos)[1:29]
+colnames(proms.differential) &lt;- colnames(proms.DE) &lt;- colnames(proms.DC) &lt;- colnames(chrom.annos)[1:31]
 
 #Old way of obtaining these, without removing duplicates, without focusing only on the contacts that hit promoters--very naive.
 #dub.anno &lt;- data.frame(H1=c(full.annotations$H1, full.annotations$H2), sp_BH_pval=rep(full.annotations$sp_BH_pval, 2), sp_beta=rep(full.annotations$sp_beta, 2), HMM=c(as.character(full.annotations$bin1.HMM), as.character(full.annotations$bin2.HMM)), DHS=c(full.annotations$bin1.DHSval, full.annotations$bin2.DHSval), Hac=c(full.annotations$bin1.Hacval, full.annotations$bin2.Hacval), Hme1=c(full.annotations$bin1.Hme1val, full.annotations$bin2.Hme1val), Hme3=c(full.annotations$bin1.Hme3val, full.annotations$bin2.Hme3val), HAR=c(full.annotations$bin1.HARval, full.annotations$bin2.HARval), pairID=rep(full.annotations$pairID, 2), CTCF.interrupt=rep(full.annotations$CTCF.interrupt, 2), DC=rep(full.annotations$DC, 2), DE=rep(full.annotations$DE, 2), true.promoter=rep(full.annotations$true.promoter, 2), differential=rep(full.annotations$differential, 2))
@@ -2098,6 +2132,98 @@ alternative hypothesis: true difference in means is not equal to 0
 sample estimates:
 mean of x mean of y 
  773.6531  524.3900 </code></pre>
+<pre class="r"><code>####H3K27me3 plots!!!
+all.HK27 &lt;- ggplot(data=chrom.annos) + geom_density(aes(x=HK27val, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 2500))
+box.all.HK27 &lt;- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=HK27val, group=true.promoter, color=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=700, yend=700) + annotate(&quot;text&quot;, label=&quot;1 e -14&quot;, x=1.5, y=760, size=3)
+print(all.HK27)</code></pre>
+<pre><code>Warning: Removed 403531 rows containing non-finite values (stat_density).</code></pre>
+<pre class="r"><code>print(box.all.HK27, vp=vp)</code></pre>
+<pre><code>Warning: Removed 403531 rows containing non-finite values (stat_ydensity).</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-21.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(chrom.annos, true.promoter==&quot;yes&quot;)$HK27val, filter(chrom.annos, true.promoter==&quot;no&quot;)$HK27val)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(chrom.annos, true.promoter == &quot;yes&quot;)$HK27val and filter(chrom.annos, true.promoter == &quot;no&quot;)$HK27val
+t = 7.704, df = 38997, p-value = 1.35e-14
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 36.26883 61.02109
+sample estimates:
+mean of x mean of y 
+ 211.0244  162.3794 </code></pre>
+<pre class="r"><code>prom.HK27 &lt;- ggplot(data=proms.differential) + geom_density(aes(x=HK27val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian((xlim=c(0, 5000)))
+box.prom.HK27 &lt;- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=HK27val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=1000, yend=1000) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=1250, yend=1250) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;text&quot;, x=1.5, y=840, size=3, label=&quot;0.3&quot;) + annotate(&quot;text&quot;, x=2.5, y=840, size=3, label=&quot;0.2&quot;) + annotate(&quot;text&quot;, x=3.5, y=840, size=3, label=&quot;0.6&quot;) + annotate(&quot;text&quot;, x=3, y=1090, size=3, label=&quot;0.2&quot;) + annotate(&quot;text&quot;, x=2.7, y=1590, size=3, label=&quot;0.7&quot;) + annotate(&quot;text&quot;, x=2, y=1340, size=3, label=&quot;0.8&quot;)
+print(prom.HK27)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(box.prom.HK27, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-22.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(proms.differential, differential==&quot;expression&quot;)$HK27val, filter(proms.differential, differential==&quot;both&quot;)$HK27val)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(proms.differential, differential == &quot;expression&quot;)$HK27val and filter(proms.differential, differential == &quot;both&quot;)$HK27val
+t = 0.2487, df = 311.25, p-value = 0.8038
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -96.58487 124.53341
+sample estimates:
+mean of x mean of y 
+ 210.6959  196.7216 </code></pre>
+<pre class="r"><code>noprom.HK27 &lt;- ggplot(data=nonproms) + geom_density(aes(x=HK27, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
+box.noprom.HK27 &lt;- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=HK27, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=250, yend=250) + annotate(&quot;text&quot;, x=1.5, y=300, size=3, label=&quot;4 e -12&quot;)
+print(noprom.HK27)</code></pre>
+<pre><code>Warning: Removed 398499 rows containing non-finite values (stat_density).</code></pre>
+<pre class="r"><code>print(box.noprom.HK27, vp=vp)</code></pre>
+<pre><code>Warning: Removed 398499 rows containing non-finite values (stat_ydensity).</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-23.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(nonproms, DC==&quot;no&quot;)$HK27, filter(nonproms, DC==&quot;yes&quot;)$HK27)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(nonproms, DC == &quot;no&quot;)$HK27 and filter(nonproms, DC == &quot;yes&quot;)$HK27
+t = -6.9625, df = 9387.2, p-value = 3.567e-12
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -116.92467  -65.55079
+sample estimates:
+mean of x mean of y 
+ 160.6983  251.9360 </code></pre>
+<pre class="r"><code>DE.HK27 &lt;- ggplot(data=proms.DE) + geom_density(aes(x=HK27val, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
+boxDE.HK27 &lt;- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=HK27val, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=500, yend=500) + annotate(&quot;text&quot;, x=1.5, y=550, size=3, label=&quot;0.6&quot;)
+print(DE.HK27)
+print(boxDE.HK27, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-24.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(proms.DE, DE==&quot;yes&quot;)$HK27val, filter(proms.DE, DE==&quot;no&quot;)$HK27val)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(proms.DE, DE == &quot;yes&quot;)$HK27val and filter(proms.DE, DE == &quot;no&quot;)$HK27val
+t = -0.59506, df = 14461, p-value = 0.5518
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -31.13655  16.63415
+sample estimates:
+mean of x mean of y 
+ 210.5092  217.7604 </code></pre>
+<pre class="r"><code>DC.HK27 &lt;- ggplot(data=proms.DC) + geom_density(aes(x=HK27val, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
+boxDC.HK27 &lt;- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=HK27val, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 2000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1000, yend=1000) + annotate(&quot;text&quot;, x=1.5, y=1090, size=3, label=&quot;0.3&quot;)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.6)
+print(DC.HK27)
+print(boxDC.HK27, vp=vp)</code></pre>
+<p><img src="figure/enrichment.Rmd/Other%20quantitative%20enrichments-25.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(proms.DC, DC==&quot;yes&quot;)$HK27val, filter(proms.DC, DC==&quot;no&quot;)$HK27val)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(proms.DC, DC == &quot;yes&quot;)$HK27val and filter(proms.DC, DC == &quot;no&quot;)$HK27val
+t = 0.94027, df = 1162.9, p-value = 0.3473
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -31.79358  90.31133
+sample estimates:
+mean of x mean of y 
+ 238.9806  209.7218 </code></pre>
 <pre class="r"><code>#######HAR Annotations! Seem fairly worthless but keep here in case I want to fux with them later (limits of 50 seem best for axes?)
 # all.HAR &lt;- ggplot(data=dub.anno) + geom_density(aes(x=HAR, group=promoter, color=promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of HAR Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and HAR peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) #+ coord_cartesian(xlim=c(0, 6000))
 # box.all.HAR &lt;- ggplot(data=dub.anno) + geom_boxplot(aes(x=promoter, y=HAR, group=promoter, color=promoter)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) #+ coord_cartesian(ylim=c(0, 6000)) #+ geom_text(aes(x=1.5, y=3000, label=&quot;&lt;2.2 e -16&quot;), show.legend=FALSE, size=3)
