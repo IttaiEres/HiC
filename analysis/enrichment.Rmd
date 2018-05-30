@@ -83,8 +83,8 @@ humpairs <- bedpe.prep(data.filtered, 10000 ,"human")
 humpairs <- format(humpairs, scientific=FALSE)
 chimpairs <- bedpe.prep(data.filtered, 10000, "chimp")
 chimpairs <- format(chimpairs, scientific=FALSE)
-fwrite(humpairs, "~/Desktop/pgltoolswork/new_updated/filt.bins.humans.bedPE", quote = FALSE, sep = "\t", col.names = TRUE, row.names=FALSE)
-fwrite(chimpairs, "~/Desktop/pgltoolswork/new_updated/filt.bins.chimps.bedPE", quote = FALSE, sep = "\t", col.names = TRUE, row.names=FALSE)
+fwrite(humpairs, "~/Desktop/Hi-C/pgltoolswork/new_updated/filt.bins.humans.bedPE", quote = FALSE, sep = "\t", col.names = TRUE, row.names=FALSE)
+fwrite(chimpairs, "~/Desktop/Hi-C/pgltoolswork/new_updated/filt.bins.chimps.bedPE", quote = FALSE, sep = "\t", col.names = TRUE, row.names=FALSE)
 ```
 
 ###Functional enrichments: read-in of files and creation of comprehensive dataframe.
@@ -94,8 +94,8 @@ Looking at functional categories enriched in my specific bins. Here I pull out s
 gene.hic <- readRDS("~/Desktop/Hi-C/gene.hic.filt.RDS")
 
 ###################ChromHMM Enrichments: I obtain the chromHMM bin annotations.
-HMM.info.1 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/chromHMM_bin1.bed", sep="\t", header=FALSE)
-HMM.info.2 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/chromHMM_bin2.bed", sep="\t", header=FALSE)
+HMM.info.1 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/chromHMM_bin1.bed", sep="\t", header=FALSE)
+HMM.info.2 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/chromHMM_bin2.bed", sep="\t", header=FALSE)
 
 #Fix things up, obtain single identifications for each bin based on highest abundance of annotations.
 HMM.info.1$HID <- paste(HMM.info.1$V1, HMM.info.1$V2, sep="-")
@@ -112,6 +112,7 @@ bin2.HMMs <- spread(bin2.HMM.overlaps, V7, overlap)
 colnames(bin1.HMMs) <- c("H1", "Nothing", "TssA", "TssBiv", "BivFlnk", "EnhBiv", "ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het")
 colnames(bin2.HMMs) <- c("H2", "Nothing", "TssA", "TssBiv", "BivFlnk", "EnhBiv", "ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het")
 
+
 #Add in linear modeling information from the data.filtered df of my homer hits. Combine data frames here for analysis of the overall proportions by assigning each bin to a given chromHMM annotation; as well as for quantitatively assessing differences in the overlaps of these elements at particular FDRs.
 chromenrich <- select(data.filtered, H1, H2, C1, C2, sp_BH_pval, sp_beta)
 chromrich <- left_join(chromenrich, bin1.HMM.anno, by="H1")
@@ -127,24 +128,24 @@ chromrich <- left_join(chromrich, HMM.quant[,c(-1:-4)], by="HpairID")
 
 ####Now, add in other chromatin mark peak files and info about their overlap with Hi-C bins:
 #####################CTCF Enrichments. Also works for other quantitative enrichments that just look at overlapping bases. These were made with bedtools pairtobed -type notispan -a filt.bins.bedPE -b iPSC_CTCF.bed
-CTCF.humans <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/hg38.CTCF.notispan.bed", sep="\t", header=FALSE)
-CTCF.chimps <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/pt5.CTCF.notispan.bed", sep="\t", header=FALSE)
+CTCF.humans <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/hg38.CTCF.notispan.bed", sep="\t", header=FALSE)
+CTCF.chimps <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/pt5.CTCF.notispan.bed", sep="\t", header=FALSE)
 CTCF.humans$HpairID <- paste(paste(CTCF.humans$V1, CTCF.humans$V2, sep="-"), paste(CTCF.humans$V4, CTCF.humans$V5, sep="-"), sep="_")
 CTCF.chimps$CpairID <- paste(paste(CTCF.chimps$V1, CTCF.chimps$V2, sep="-"), paste(CTCF.chimps$V4, CTCF.chimps$V5, sep="-"), sep="_")
 
 ######Start of other quantitative enrichments. These were all called with bedtools intersect -wao using the nodup file of each set of bins individually.
-DHS.bin1 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/DHS_bin1.bed", sep="\t", header=FALSE)
-DHS.bin2 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/DHS_bin2.bed", sep="\t", header=FALSE)
-Hac.bin1 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/H3K27ac_bin1.bed", sep="\t", header=FALSE)
-Hac.bin2 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/H3K27ac_bin2.bed", sep="\t", header=FALSE)
-Hme1.bin1 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/H3K4me1_bin1.bed", sep="\t", header=FALSE)
-Hme1.bin2 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/H3K4me1_bin2.bed", sep="\t", header=FALSE)
-Hme3.bin1 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/H3K4me3_bin1.bed", sep="\t", header=FALSE)
-Hme3.bin2 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/H3K4me3_bin2.bed", sep="\t", header=FALSE)
-HK27.bin1 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/H3K27me3_bin1.bed", sep="\t", header=FALSE)
-HK27.bin2 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/H3K27me3_bin2.bed", sep="\t", header=FALSE)
-#HAR.bin1 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/HAR_bin1.bed", sep="\t", header=FALSE)
-#HAR.bin2 <- read.csv("~/Desktop/pgltoolswork/new_updated/intersects/HAR_bin2.bed", sep="\t", header=FALSE)
+DHS.bin1 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/DHS_bin1.bed", sep="\t", header=FALSE)
+DHS.bin2 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/DHS_bin2.bed", sep="\t", header=FALSE)
+Hac.bin1 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/H3K27ac_bin1.bed", sep="\t", header=FALSE)
+Hac.bin2 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/H3K27ac_bin2.bed", sep="\t", header=FALSE)
+Hme1.bin1 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/H3K4me1_bin1.bed", sep="\t", header=FALSE)
+Hme1.bin2 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/H3K4me1_bin2.bed", sep="\t", header=FALSE)
+Hme3.bin1 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/H3K4me3_bin1.bed", sep="\t", header=FALSE)
+Hme3.bin2 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/H3K4me3_bin2.bed", sep="\t", header=FALSE)
+HK27.bin1 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/H3K27me3_bin1.bed", sep="\t", header=FALSE)
+HK27.bin2 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/H3K27me3_bin2.bed", sep="\t", header=FALSE)
+#HAR.bin1 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/HAR_bin1.bed", sep="\t", header=FALSE)
+#HAR.bin2 <- read.csv("~/Desktop/Hi-C/pgltoolswork/new_updated/intersects/HAR_bin2.bed", sep="\t", header=FALSE)
 
 DHS.bin1$HID <- paste(DHS.bin1$V1, DHS.bin1$V2, sep="-")
 DHS.bin2$HID <- paste(DHS.bin2$V1, DHS.bin2$V2, sep="-")
@@ -244,21 +245,21 @@ no.proms.DC <- filter(full.annotations, true.promoter=="no", DC=="yes") %>% dedu
 no.proms.not.DC <- filter(full.annotations, true.promoter=="no", DC=="no") %>% deduplicator
 
 #Now, write these files out.
-saveRDS(full.proms, file="~/Desktop/enrichdfs/metaproms/justmeta/full.promoters.RDS")
-saveRDS(proms.DE, file="~/Desktop/enrichdfs/metaproms/justmeta/promoters.DE.RDS")
-saveRDS(proms.not.DE, file="~/Desktop/enrichdfs/metaproms/justmeta/promoters.not.DE.RDS")
-saveRDS(proms.DC, file="~/Desktop/enrichdfs/metaproms/justmeta/promoters.DC.RDS")
-saveRDS(proms.not.DC, file="~/Desktop/enrichdfs/metaproms/justmeta/promoters.not.DC.RDS")
-saveRDS(proms.neither, file="~/Desktop/enrichdfs/metaproms/justmeta/promoters.neither.RDS")
+saveRDS(full.proms, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/full.promoters.RDS")
+saveRDS(proms.DE, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/promoters.DE.RDS")
+saveRDS(proms.not.DE, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/promoters.not.DE.RDS")
+saveRDS(proms.DC, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/promoters.DC.RDS")
+saveRDS(proms.not.DC, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/promoters.not.DC.RDS")
+saveRDS(proms.neither, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/promoters.neither.RDS")
 
-saveRDS(full.no.proms, file="~/Desktop/enrichdfs/metaproms/justmeta/full.no.promoters.RDS")
-saveRDS(no.proms.DC, file="~/Desktop/enrichdfs/metaproms/justmeta/no.promoters.DC.RDS")
-saveRDS(no.proms.not.DC, file="~/Desktop/enrichdfs/metaproms/justmeta/no.promoters.not.DC.RDS")
+saveRDS(full.no.proms, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/full.no.promoters.RDS")
+saveRDS(no.proms.DC, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/no.promoters.DC.RDS")
+saveRDS(no.proms.not.DC, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/no.promoters.not.DC.RDS")
 
-saveRDS(proms.DE.only, file="~/Desktop/enrichdfs/metaproms/justmeta/proms.DE.only.RDS")
-saveRDS(proms.DC.only, file="~/Desktop/enrichdfs/metaproms/justmeta/proms.DC.only.RDS")
-saveRDS(proms.both.only, file="~/Desktop/enrichdfs/metaproms/justmeta/proms.both.only.RDS")
-saveRDS(proms.neither, file="~/Desktop/enrichdfs/metaproms/justmeta/proms.neither.only.RDS")
+saveRDS(proms.DE.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/proms.DE.only.RDS")
+saveRDS(proms.DC.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/proms.DC.only.RDS")
+saveRDS(proms.both.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/proms.both.only.RDS")
+saveRDS(proms.neither, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/proms.neither.only.RDS")
 
 #Last thing I am interested in also writing out and working with is a df that only takes the bins making contact with promoter bins (not the promoters themselves). Construct that here:
 prom.1s <- filter(full.annotations, promoter.bin1=="yes") %>% select(., H2, sp_BH_pval, sp_beta, bin2.HMM, HpairID, Nothing.2, TssA.2, TssBiv.2, BivFlnk.2, EnhBiv.2, ReprPC.2, ReprPCWk.2, Quies.2, TssAFlnk.2, TxFlnk.2, Tx.2, TxWk.2, EnhG.2, Enh.2, "ZNF/Rpts.2", Het.2, bin2.DHSval, bin2.Hacval, bin2.Hme1val, bin2.Hme3val, bin2.HK27val, H.CTCF.interrupt, C.CTCF.interrupt, DE, DC, differential)
@@ -292,16 +293,159 @@ mates.proms.neither.only <- filter(promoter.contacts, differential=="no")
 mates.proms.neither.only <- mates.proms.neither.only[!duplicated(mates.proms.neither.only$H2),]
 
 #Now, write these files out! Note that chromHMM tabulator function will have to be adjusted for these.
-saveRDS(mates.proms.full, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.full.RDS")
-saveRDS(mates.proms.DE, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.DE.RDS")
-saveRDS(mates.proms.not.DE, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.not.DE.RDS")
-saveRDS(mates.proms.DC, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.DC.RDS")
-saveRDS(mates.proms.not.DC, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.not.DC.RDS")
-saveRDS(mates.proms.DE.only, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.DE.only.RDS")
-saveRDS(mates.proms.DC.only, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.DC.only.RDS")
-saveRDS(mates.proms.DCDE.only, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.DCDE.only.RDS")
-saveRDS(mates.proms.neither.only, file="~/Desktop/enrichdfs/metaproms/justmeta/mates.proms.neither.only.RDS")
+saveRDS(mates.proms.full, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.full.RDS")
+saveRDS(mates.proms.DE, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.DE.RDS")
+saveRDS(mates.proms.not.DE, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.not.DE.RDS")
+saveRDS(mates.proms.DC, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.DC.RDS")
+saveRDS(mates.proms.not.DC, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.not.DC.RDS")
+saveRDS(mates.proms.DE.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.DE.only.RDS")
+saveRDS(mates.proms.DC.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.DC.only.RDS")
+saveRDS(mates.proms.DCDE.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.DCDE.only.RDS")
+saveRDS(mates.proms.neither.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.neither.only.RDS")
 ```
+###Promoter vs non-promoter contacts distance analysis
+```{r}
+#After adding in promoters could also be interested in what distances look like for promoter vs non-promoter contacts:
+H2s <- as.numeric(gsub(".*-", "", full.annotations$H2))
+H1s <- as.numeric(gsub(".*-", "", full.annotations$H1))
+diffs <- H2s-H1s
+proms.dist <- data.frame(distance=diffs, promoter=full.annotations$true.promoter)
+ggplot(data=proms.dist) + geom_violin(aes(x=promoter, group=promoter, color=promoter, y=distance), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle("Distance Between Mates of a Pair | Promoter-Contact Status") + xlab("Does Contact Involve a Promoter?") + ylab("Distance b/t Mates") + guides(color=guide_legend(title="Promoter-Contact?")) + annotate("text", x=1.5, y=3000000, label="< 2.2 e -16")
+t.test(filter(proms.dist, promoter=="no")$distance, filter(proms.dist, promoter=="yes")$distance)
+#Dope, very big difference, clear that promoter-involving contacts are a little more physically constrained.
+```
+
+###ChromHMM Mark Length Analysis and Normalization
+```{r}
+###WEIGHTS SECTION
+#Below this I have the analysis I originally did; here I have one where I am weighting chromHMM annotations by the inverse of their mean overlap with the bins. Seb has also suggested looking at it in terms of # of peaks which I can try if this doesn't look good.
+colnames(bin1.HMMs) <- c("HID", ".", "1_TssA", "10_TssBiv", "11_BivFlnk", "12_EnhBiv", "13_ReprPC", "14_ReprPCWk", "15_Quies", "2_TssAFlnk", "3_TxFlnk", "4_Tx", "5_TxWk", "6_EnhG", "7_Enh", "8_ZNF/Rpts", "9_Het")
+colnames(bin2.HMMs) <- c("HID", ".", "1_TssA", "10_TssBiv", "11_BivFlnk", "12_EnhBiv", "13_ReprPC", "14_ReprPCWk", "15_Quies", "2_TssAFlnk", "3_TxFlnk", "4_Tx", "5_TxWk", "6_EnhG", "7_Enh", "8_ZNF/Rpts", "9_Het")
+weighter <- rbind(bin1.HMMs, bin2.HMMs)
+colnames(bin1.HMMs)[1] <- "H1"
+colnames(bin2.HMMs)[1] <- "H2"
+weighter <- weighter[!duplicated(weighter),]
+weighter <- as.data.frame(weighter)
+for(col in 2:ncol(weighter)){
+  weighter[,col] <- weighter[,col]*(1/mean(weighter[,col], na.rm=TRUE))
+}
+#Now that I have the weighted values input, assign individual bins to particular annotations!
+weighter$chromstate <- NA
+weighter$.[which(weighter$.=="NaN")] <- 1
+for(row in 1:nrow(weighter)){
+  weighter$chromstate[row] <- colnames(weighter)[which.max(weighter[row,])]
+}
+weighter$chromstate <- as.factor(weighter$chromstate)
+levels(weighter$chromstate)
+#Just look to see if these new annotations are even a different distribution than the original. Note that I have to run some code below this to have access to chromrich:
+#Getting rid of bin assignment duplicates in chromrich:
+myrich <- select(chromrich, H1, H2, bin1.HMM, bin2.HMM)
+colnames(myrich) <- c("H1", "H1", "chromstate", "chromstate")
+myrich <- rbind(myrich[, c(1, 3)], myrich[,c(2, 4)])
+myrich <- myrich[!duplicated(myrich),]
+#myrich <- filter(myrich, chromstate!=".")
+ggplot(data=myrich) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 80000)) + ggtitle("Basal chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins")
+ggplot(data=weighter) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 80000)) + scale_x_discrete(drop=FALSE) + ggtitle("Weighted chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins")
+#Looks much better, try running enrichment analyses on this now? Can match H1s and H2s from chromrich with this, add in the sp_BH_pval to keep the Hi-C FDR up in there, and run on midway.
+weightrich <- select(chromrich, H1, H2, sp_BH_pval)
+colnames(weightrich) <- c("HID", "HID", "sp_BH_pval")
+weightrich <- rbind(weightrich[,-2], weightrich[,-1])
+left_join(weightrich, weighter[,c(1, 18)], by="HID") -> weightrich
+weightrich <- data.frame(H1=weightrich$HID[1:292070], H2=weightrich$HID[292071:584140], sp_BH_pval=weightrich$sp_BH_pval[1:292070], bin1.HMM=weightrich$chromstate[1:292070], bin2.HMM=weightrich$chromstate[292071:584140])
+chromwtrich <- full.annotations
+chromwtrich$bin1.HMM <- weightrich$bin1.HMM
+chromwtrich$bin2.HMM <- weightrich$bin2.HMM
+###WEIGHTS SECTION
+
+###Filtering and saving RDS objects for running out on midway.
+#Promoter annotations, DE/DC or not.
+wt.full.proms <- filter(chromwtrich, true.promoter=="yes") %>% deduplicator(.)
+wt.proms.DE <- filter(chromwtrich, true.promoter=="yes", DE=="yes") %>% deduplicator(.)
+wt.proms.not.DE <- filter(chromwtrich, true.promoter=="yes", DE=="no") %>% deduplicator(.)
+
+#Also do exclusive sets for differential status on the promoter bins:
+wt.proms.DE.only <- filter(chromwtrich, true.promoter=="yes", differential=="expression") %>% deduplicator(.)
+wt.proms.DC.only <- filter(chromwtrich, true.promoter=="yes", differential=="contact") %>% deduplicator(.)
+wt.proms.both.only <- filter(chromwtrich, true.promoter=="yes", differential=="both") %>% deduplicator(.)
+wt.proms.neither <- filter(chromwtrich, true.promoter=="yes", differential=="no") %>% deduplicator(.)
+
+#Non promoter annotations, DE/DC or not. Note that there are no DE non-promoters, DUH, meaning there are none that fall into the "both" differential category. Also means full set of non-promoters qualifies as not DE.
+wt.full.no.proms <- filter(chromwtrich, true.promoter=="no") %>% deduplicator(.)
+
+#Now, write these files out.
+saveRDS(chromwtrich, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/full.RDS")
+saveRDS(wt.full.proms, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/full.promoters.RDS")
+saveRDS(wt.proms.DE, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/promoters.DE.RDS")
+saveRDS(wt.proms.not.DE, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/promoters.not.DE.RDS")
+
+saveRDS(wt.full.no.proms, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/full.no.promoters.RDS")
+
+saveRDS(wt.proms.DE.only, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/proms.DE.only.RDS")
+saveRDS(wt.proms.DC.only, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/proms.DC.only.RDS")
+saveRDS(wt.proms.both.only, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/proms.both.only.RDS")
+saveRDS(wt.proms.neither, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/proms.neither.only.RDS")
+
+#Last thing I am interested in also writing out and working with is a df that only takes the bins making contact with promoter bins (not the promoters themselves). Construct that here:
+wt.prom.1s <- filter(chromwtrich, promoter.bin1=="yes") %>% select(., H2, sp_BH_pval, sp_beta, bin2.HMM, HpairID, Nothing.2, TssA.2, TssBiv.2, BivFlnk.2, EnhBiv.2, ReprPC.2, ReprPCWk.2, Quies.2, TssAFlnk.2, TxFlnk.2, Tx.2, TxWk.2, EnhG.2, Enh.2, "ZNF/Rpts.2", Het.2, bin2.DHSval, bin2.Hacval, bin2.Hme1val, bin2.Hme3val, bin2.HK27val, H.CTCF.interrupt, C.CTCF.interrupt, DE, DC, differential)
+wt.prom.2s <- filter(chromwtrich, promoter.bin2=="yes") %>% select(., H1, sp_BH_pval, sp_beta, bin1.HMM, HpairID, Nothing.1, TssA.1, TssBiv.1, BivFlnk.1, EnhBiv.1, ReprPC.1, ReprPCWk.1, Quies.1, TssAFlnk.1, TxFlnk.1, Tx.1, TxWk.1, EnhG.1, Enh.1, "ZNF/Rpts.1", Het.1, bin1.DHSval, bin1.Hacval, bin1.Hme1val, bin1.Hme3val, bin1.HK27val, H.CTCF.interrupt, C.CTCF.interrupt, DE, DC, differential)
+
+#Combine them into one df for running analyses on!
+colnames(wt.prom.2s) <- colnames(wt.prom.1s)
+wt.promoter.contacts <- rbind(wt.prom.1s, wt.prom.2s)
+
+#Prepare separate dfs of the different classes for running tabulations on. This initial df (promoter.contacts) is also the one I should use for running a number of downstream histone mark analyses and asking targeted questions about the bins making contacts with promoters...
+wt.promoter.contacts <- wt.promoter.contacts[order(wt.promoter.contacts$sp_BH_pval),] #Order by FDR here, then wait to remove duplicates until differential filtering is done.
+
+wt.mates.proms.full <- wt.promoter.contacts[!duplicated(wt.promoter.contacts$H2),] #Prep full promoter file, minus duplicate bins.
+wt.mates.proms.DE <- filter(wt.promoter.contacts, DE=="yes")
+wt.mates.proms.DE <- wt.mates.proms.DE[!duplicated(mates.proms.DE$H2),] #DE file, minus duplicates
+wt.mates.proms.not.DE <- filter(wt.promoter.contacts, DE=="no")
+wt.mates.proms.not.DE <- wt.mates.proms.not.DE[!duplicated(mates.proms.not.DE$H2),] #notDE file, minus duplicates
+wt.mates.proms.DC <- filter(wt.promoter.contacts, DC=="yes")
+wt.mates.proms.DC <- wt.mates.proms.DC[!duplicated(mates.proms.DC$H2),] #DC file minus dups
+wt.mates.proms.not.DC <- filter(wt.promoter.contacts, DC=="no")
+wt.mates.proms.not.DC <- wt.mates.proms.not.DC[!duplicated(mates.proms.not.DC$H2),] #notDC file, minus dups
+
+#Classes with exclusive differential identifications.
+wt.mates.proms.DE.only <- filter(wt.promoter.contacts, differential=="expression")
+wt.mates.proms.DE.only <- wt.mates.proms.DE.only[!duplicated(mates.proms.DE.only$H2),]
+wt.mates.proms.DC.only <- filter(wt.promoter.contacts, differential=="contact")
+wt.mates.proms.DC.only <- wt.mates.proms.DC.only[!duplicated(mates.proms.DC.only$H2),]
+wt.mates.proms.DCDE.only <- filter(wt.promoter.contacts, differential=="both")
+wt.mates.proms.DCDE.only <- wt.mates.proms.DCDE.only[!duplicated(mates.proms.DCDE.only$H2),]
+wt.mates.proms.neither.only <- filter(wt.promoter.contacts, differential=="no")
+wt.mates.proms.neither.only <- wt.mates.proms.neither.only[!duplicated(mates.proms.neither.only$H2),]
+
+#Now, write these files out! Note that chromHMM tabulator function will have to be adjusted for these.
+saveRDS(wt.mates.proms.full, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.full.RDS")
+saveRDS(wt.mates.proms.DE, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.DE.RDS")
+saveRDS(wt.mates.proms.not.DE, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.not.DE.RDS")
+saveRDS(wt.mates.proms.DC, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.DC.RDS")
+saveRDS(wt.mates.proms.not.DC, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.not.DC.RDS")
+saveRDS(wt.mates.proms.DE.only, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.DE.only.RDS")
+saveRDS(wt.mates.proms.DC.only, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.DC.only.RDS")
+saveRDS(wt.mates.proms.DCDE.only, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.DCDE.only.RDS")
+saveRDS(wt.mates.proms.neither.only, file="~/Desktop/Hi-C/enrichdfs/newresults/weights/mates.proms.neither.only.RDS")
+
+###Initial silly exploration.
+chromHMM <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/iPSC_chromHMM.15state.bed", sep="\t")
+chromHMM <- select(chromHMM, V4, V2, V3)
+chromHMM$size <- chromHMM$V3-chromHMM$V2
+chromHMM <- select(chromHMM, V4, size)
+colnames(chromHMM) <- c("State", "Size")
+chromHMM$State <- as.factor(chromHMM$State)
+levels(chromHMM$State) <- c("TssA", "TssBiv", "BivFlnk", "EnhBiv","ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het")
+ggplot(data=chromHMM) + geom_violin(aes(group=State, y=Size, color=State, x=State)) + coord_cartesian(ylim=c(190, 10000)) + theme(axis.text.x=element_blank()) + ggtitle("ChromHMM Peak Sizes, Genome-Wide")
+
+#This was genome-wide, now look amongst just my bins
+colnames(bin2.HMMs) <- colnames(bin1.HMMs)
+colnames(bin1.HMMs)[1] <- colnames(bin2.HMMs)[1] <- "HID"
+myHMMs <- rbind(bin1.HMMs, bin2.HMMs)
+myHMMs <- myHMMs[,-2]
+myHMMs <- melt(myHMMs, by="HID")
+ggplot(data=myHMMs) + geom_violin(aes(group=variable, y=value, color=variable, x=variable)) + coord_cartesian(ylim=c(190, 10000)) + theme(axis.text.x=element_blank()) + ggtitle("ChromHMM Peak Sizes, Significant Hi-C Bins") + xlab("State") + ylab("Size") + guides(color=guide_legend(title="State"))
+```
+
 
 ###ChromHMM Visualization
 Now, I load in the chromHMM proportion tables from midway2, and visualize them to examine differences in dynamics of regulatory regions for promoter and non-promoter contacts.
@@ -327,9 +471,9 @@ anno.prop.calc <- function(df, col1, col2, startbin, pval.col){
 HMM.marks <- c("Nothing", "TssA", "TssBiv", "BivFlnk", "EnhBiv","ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het")
 HMM.colors <- c(rgb(0, 0, 0, maxColorValue = 255), rgb(255, 0, 0, maxColorValue = 255), rgb(205, 92, 92, maxColorValue = 255),   rgb(233, 150, 122, maxColorValue = 255), rgb(189, 183, 107, maxColorValue = 255), rgb(128, 128, 128, maxColorValue = 255), rgb(192, 192, 192, maxColorValue = 255), rgb(255, 255, 255, maxColorValue = 255), rgb(255, 69, 0, maxColorValue = 255), rgb(50, 205, 50, maxColorValue = 255), rgb(0, 128, 0, maxColorValue = 255), rgb(0, 100, 0, maxColorValue = 255), rgb(194, 225, 5, maxColorValue = 255), rgb(255, 255, 0, maxColorValue = 255), rgb(102, 205, 170, maxColorValue = 255), rgb(138, 145, 208, maxColorValue = 255))
 
-#######Read in proportion tables from running on midway2! First I'll do this on the full set of pairs that contain a promoter bin, and then on just the set of bins that are themselves contacting a promoter (and not the promoters themselves).
-prom.props <- readRDS("~/Desktop/enrichdfs/newresults/full.promoters.RDS.result.RDS")
-nonprom.props <- readRDS("~/Desktop/enrichdfs/newresults/full.no.promoters.RDS.result.RDS")
+#######Read in proportion tables from running on midway2! First I'll do this on the full set of pairs that contain a promoter bin, and then on just the set of bins that are themselves contacting a promoter (and not the promoters themselves). Note that I have now changed this to the weighted version of these chromHMM annotation calls; if we wanted the unweighted we could CTRL+F and replace the directory structure of files being read-in here to go back to just /newresults (before /weights/newresults)
+prom.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/full.promoters.RDS.result.RDS")
+nonprom.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/full.no.promoters.RDS.result.RDS")
 
 colnames(nonprom.props) <- colnames(prom.props) <- c("Nothing", "TssA", "TssBiv", "BivFlnk", "EnhBiv", "ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het", "pval")
 
@@ -357,8 +501,8 @@ ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(po
 ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, non-Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 ##Mabe it's even less than 1000 actually. Do it entirely by FDR instead? Reload and reformat the dfs to see pvals again.
-prom.props <- readRDS("~/Desktop/enrichdfs/newresults/full.promoters.RDS.result.RDS")
-nonprom.props <- readRDS("~/Desktop/enrichdfs/newresults/full.no.promoters.RDS.result.RDS")
+prom.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/full.promoters.RDS.result.RDS")
+nonprom.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/full.no.promoters.RDS.result.RDS")
 colnames(nonprom.props) <- colnames(prom.props) <- c("Nothing", "TssA", "TssBiv", "BivFlnk", "EnhBiv", "ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het", "pval")
 prom.props$pval[100]
 nonprom.props$pval[100]
@@ -376,27 +520,16 @@ ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(
 #These aren't great right now because the colors don't even match for the annotations between the two...highly annoying, useless.
 
 #Read in, format properly, and visualize these same dynamics for promoter bins, split between those that were or were not DE/DC.
-prom.DC.props <- readRDS("~/Desktop/enrichdfs/newresults/promoters.DC.RDS.result.RDS")
-prom.DE.props <- readRDS("~/Desktop/enrichdfs/newresults/promoters.DE.RDS.result.RDS")
-prom.noDE <- readRDS("~/Desktop/enrichdfs/newresults/promoters.not.DE.RDS.result.RDS")
-prom.noDC <- readRDS("~/Desktop/enrichdfs/newresults/promoters.not.DC.RDS.result.RDS")
+prom.DE.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/promoters.DE.RDS.result.RDS")
+prom.noDE <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/promoters.not.DE.RDS.result.RDS")
 
-prom.DC.props$bin <- 1:nrow(prom.DC.props)
 prom.DE.props$bin <- 1:nrow(prom.DE.props)
 prom.noDE$bin <- 1:nrow(prom.noDE)
-prom.noDC$bin <- 1:nrow(prom.noDC)
-prom.DC.props <- prom.DC.props[,-17]
 prom.DE.props <- prom.DE.props[,-17]
 prom.noDE <- prom.noDE[,-17]
-prom.noDC <- prom.noDC[,-17]
 
-ggpromDC <- melt(prom.DC.props, id="bin")
 ggpromDE <- melt(prom.DE.props[1:4000,], id="bin")
 ggprom.noDE <- melt(prom.noDE[1:4000,], id="bin")
-ggprom.noDC <- melt(prom.noDC[1:1250,], id="bin")
-
-ggplot(data=ggpromDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, DC Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
-ggplot(data=ggprom.noDC, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, non-DC Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 ggplot(data=ggpromDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, DE Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM Annotations, non-DE Promoter Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
@@ -406,11 +539,11 @@ ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_c
 
 #####Repeat of what I just did, but now on only promoter-contacting bins (and not the promoters themselves).
 #First, make plot of the full range of dynamics, then separated out by differential status, and then by DC and DE statuses.
-prom.props <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.full.RDS.result.RDS")
-both.props <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DCDE.only.RDS.result.RDS")
-neither.props <-  readRDS("~/Desktop/enrichdfs/newresults/mates.proms.neither.only.RDS.result.RDS")
-expression.props <-  readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DE.only.RDS.result.RDS")
-contact.props <-  readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DC.only.RDS.result.RDS")
+prom.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.full.RDS.result.RDS")
+both.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.DCDE.only.RDS.result.RDS")
+neither.props <-  readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.neither.only.RDS.result.RDS")
+expression.props <-  readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.DE.only.RDS.result.RDS")
+contact.props <-  readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.DC.only.RDS.result.RDS")
 
 colnames(prom.props) <- colnames(both.props) <- colnames(neither.props) <- colnames(expression.props) <- colnames(contact.props) <- c("Nothing", "TssA", "TssBiv", "BivFlnk", "EnhBiv", "ReprPC", "ReprPCWk", "Quies", "TssAFlnk", "TxFlnk", "Tx", "TxWk", "EnhG", "Enh", "ZNF/Rpts", "Het", "pval")
 
@@ -427,9 +560,9 @@ expression.props <- expression.props[,-17]
 contact.props <- contact.props[,-17]
 
 ggprom <- melt(prom.props[1:10000,], id="bin")
-ggneither <- melt(neither.props[1:8000,], id="bin")
+ggneither <- melt(neither.props[1:1000,], id="bin")
 ggboth <- melt(both.props, id="bin")
-ggexpression <- melt(expression.props, id="bin")
+ggexpression <- melt(expression.props[1:1000,], id="bin")
 ggcontact <- melt(contact.props, id="bin")
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins, and then by differential status.
@@ -440,10 +573,10 @@ ggplot(data=ggcontact, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col
 ggplot(data=ggneither, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position="fill") + ggtitle("chromHMM, non-DC/DE Promoter-Contacting Bins") + xlab("Decreasing Significance from Hi-C LM") + ylab("Proportion of hits") + guides(fill=guide_legend(title="Annotations")) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE)
 
 ###Now, read in, format properly, and visualize these same dynamics for promoter bins, split between those that were or were not DE/DC.
-prom.DC.props <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DC.RDS.result.RDS")
-prom.DE.props <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.DE.RDS.result.RDS")
-prom.noDE <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.not.DE.RDS.result.RDS")
-prom.noDC <- readRDS("~/Desktop/enrichdfs/newresults/mates.proms.not.DC.RDS.result.RDS")
+prom.DC.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.DC.RDS.result.RDS")
+prom.DE.props <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.DE.RDS.result.RDS")
+prom.noDE <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.not.DE.RDS.result.RDS")
+prom.noDC <- readRDS("~/Desktop/Hi-C/enrichdfs/newresults/weights/results/mates.proms.not.DC.RDS.result.RDS")
 
 prom.DC.props$bin <- 1:nrow(prom.DC.props)
 prom.DE.props$bin <- 1:nrow(prom.DE.props)
@@ -721,6 +854,8 @@ chisq.test(table(filter(full.annotations, true.promoter=="yes")$CTCF.different, 
 table(filter(full.annotations, true.promoter=="yes")$CTCF.different, filter(full.annotations, true.promoter=="yes")$differential=="both", dnn=c("Species diff. CTCF Interruption?", "DC & DE?"))
 chisq.test(table(filter(full.annotations, true.promoter=="yes")$CTCF.different, filter(full.annotations, true.promoter=="yes")$differential=="both", dnn=c("Species diff. CTCF Interruption?", "DE?")))
 
+saveRDS(full.annotations, "~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS")
+
 #######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
 
 #First the non-promoter DF, looking at DC/not DC. Remember the promoter/not promoter was created in the first chunk (chrom.annos).
@@ -898,6 +1033,7 @@ t.test(filter(proms.DC, DC=="yes")$Hme3val, filter(proms.DC, DC=="no")$Hme3val)
 ####H3K27me3 plots!!!
 all.HK27 <- ggplot(data=chrom.annos) + geom_density(aes(x=HK27val, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle("Enrichment of H3K27me3 Overlapping Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27me3 peak") + ylab("Density") + scale_color_manual(name="Promoter Contact?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 2500))
 box.all.HK27 <- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=HK27val, group=true.promoter, color=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate("segment", x=1.1, xend=1.9, y=700, yend=700) + annotate("text", label="1 e -14", x=1.5, y=760, size=3)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.6)
 print(all.HK27)
 print(box.all.HK27, vp=vp)
 t.test(filter(chrom.annos, true.promoter=="yes")$HK27val, filter(chrom.annos, true.promoter=="no")$HK27val)
