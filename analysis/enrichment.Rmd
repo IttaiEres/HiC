@@ -303,16 +303,90 @@ saveRDS(mates.proms.DC.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/m
 saveRDS(mates.proms.DCDE.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.DCDE.only.RDS")
 saveRDS(mates.proms.neither.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.neither.only.RDS")
 ```
-###Promoter vs non-promoter contacts distance analysis
+###WIDE VARIETY OF DISTANCE ANALYSES!!!!
 ```{r}
 #After adding in promoters could also be interested in what distances look like for promoter vs non-promoter contacts:
 H2s <- as.numeric(gsub(".*-", "", full.annotations$H2))
 H1s <- as.numeric(gsub(".*-", "", full.annotations$H1))
-diffs <- H2s-H1s
-proms.dist <- data.frame(distance=diffs, promoter=full.annotations$true.promoter)
-ggplot(data=proms.dist) + geom_violin(aes(x=promoter, group=promoter, color=promoter, y=distance), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle("Distance Between Mates of a Pair | Promoter-Contact Status") + xlab("Does Contact Involve a Promoter?") + ylab("Distance b/t Mates") + guides(color=guide_legend(title="Promoter-Contact?")) + annotate("text", x=1.5, y=3000000, label="< 2.2 e -16")
-t.test(filter(proms.dist, promoter=="no")$distance, filter(proms.dist, promoter=="yes")$distance)
-#Dope, very big difference, clear that promoter-involving contacts are a little more physically constrained.
+Hdiffs <- H2s-H1s
+C2s <- as.numeric(gsub(".*-", "", full.annotations$C2))
+C1s <- as.numeric(gsub(".*-", "", full.annotations$C1))
+Cdiffs <- C2s-C1s
+proms.dist <- data.frame(hdist=Hdiffs, cdist=Cdiffs, promoter=full.annotations$true.promoter, DE=full.annotations$DE, DC=full.annotations$DC)
+
+#Now t-test a variety of these distributions before visualizing.
+t.test(filter(proms.dist, promoter=="no")$hdist, filter(proms.dist, promoter=="yes")$hdist) #Prom/not in humans
+t.test(filter(proms.dist, promoter=="no")$cdist, filter(proms.dist, promoter=="yes")$cdist) #Prom/not in chimps
+t.test(filter(proms.dist, promoter=="yes")$cdist, filter(proms.dist, promoter=="yes")$hdist) #Promoter contacts in both species
+t.test(filter(proms.dist, promoter=="no")$cdist, filter(proms.dist, promoter=="no")$hdist) #Non promoter contacts in both species
+t.test(filter(proms.dist, promoter=="yes", DE=="yes")$hdist, filter(proms.dist, promoter=="yes", DE=="no")$hdist) #DE/not DE contact distance amongst promoters, humans. Significant!
+t.test(filter(proms.dist, promoter=="yes", DE=="yes")$cdist, filter(proms.dist, promoter=="yes", DE=="no")$cdist) #DE/not DE contact distance amongst promoters, chimps. Significant!
+t.test(filter(proms.dist, promoter=="yes", DE=="yes")$hdist, filter(proms.dist, promoter=="yes", DE=="yes")$cdist) #No difference in DE genes' distances b/t species! Insignificant.
+t.test(filter(proms.dist, promoter=="yes", DE=="no")$hdist, filter(proms.dist, promoter=="yes", DE=="no")$cdist) #Same for non-DE promoter contacts. Insignificant.
+t.test(filter(proms.dist, promoter=="yes", DC=="yes")$hdist, filter(proms.dist, promoter=="yes", DC=="no")$hdist) #DC/not DC contact distance amongst promoters, humans. Insignificant.
+t.test(filter(proms.dist, promoter=="yes", DC=="yes")$cdist, filter(proms.dist, promoter=="yes", DC=="no")$cdist) #DC/not DC contact distance amongst promoters, chimps. Insignificant.
+t.test(filter(proms.dist, promoter=="yes", DC=="yes")$hdist, filter(proms.dist, promoter=="yes", DC=="yes")$cdist) #No difference in DC loci's distances b/t species! Insignificant.
+t.test(filter(proms.dist, promoter=="yes", DC=="no")$hdist, filter(proms.dist, promoter=="yes", DC=="no")$cdist) #Same for non-DC promoter contacts. Insignificant.
+
+#If you're willing to look at all hits, and not just promoter-involved contacts, DC/non difference becomes significant:
+t.test(filter(proms.dist,  DC=="yes")$hdist, filter(proms.dist,  DC=="no")$hdist) #DC/not DC contact distance amongst all hits, humans. Significant!
+t.test(filter(proms.dist,  DC=="yes")$cdist, filter(proms.dist,  DC=="no")$cdist) #DC/not DC contact distance amongst all hits, chimps. Significant!
+t.test(filter(proms.dist,  DC=="yes")$hdist, filter(proms.dist,  DC=="yes")$cdist) #No difference in DC loci's distances b/t species!
+t.test(filter(proms.dist,  DC=="no")$hdist, filter(proms.dist,  DC=="no")$cdist) #Significant difference in distances of non-DC contacts agnostic of promoter status.
+
+#Now need to do this by expression quantiles, and then will be done with this (After visualizing)
+
+####Now visualize!
+#Promoter/non
+ggplot(data=proms.dist) + geom_violin(aes(x=promoter, group=promoter, color=promoter, y=hdist), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle("Distance Between Mates of a Pair | Promoter-Contact Status") + xlab("Does Contact Involve a Promoter?") + ylab("Distance b/t Mates") + guides(color=guide_legend(title="Promoter-Contact?")) + annotate("text", x=1.5, y=3000000, label="< 2.2 e -16") #Could repeat this for chimp but it looks literally identical (I've done it before). Dope result though, very big difference, clear that promoter-involving contacts are a little more physically constrained.
+
+#DE/non
+ggplot(data=filter(proms.dist, promoter=="yes")) + geom_violin(aes(x=DE, group=DE, color=DE, y=hdist), draw_quantiles=c(0.25, 0.5, 0.75)) + ggtitle("Distance Between Mates of a Pair | DE Status") + xlab("Does Promoter-Overlapping Contact Show Species DE?") + ylab("Distance b/t Mates") + guides(color=guide_legend(title="DE?")) + annotate("text", x=1.5, y=2000000, label="0.02") #Note that once again, I have done this for chimp distances and it looks nearly identical. Since this p-val was 0.015 and chimps was 0.017, just round to 0.02.
+
+#DC/non, ONLY PROMOTER-INVOLVING hits
+ggplot(data=filter(proms.dist, promoter=="yes")) + geom_violin(aes(x=DC, group=DC, color=DC, y=hdist), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle("Distance Between Mates of a Pair | DC Status") + xlab("Does Promoter-Overlapping Contact Show Species DC?") + ylab("Distance b/t Mates") + guides(color=guide_legend(title="DC?")) + annotate("text", x=1.5, y=2000000, label="0.1") #Once again, extremely similar to chimp case, no need to re-visualize.
+
+#DC/non, ALL hits!
+ggplot(data=proms.dist) + geom_violin(aes(x=DC, group=DC, color=DC, y=cdist), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle("Distance Between Mates of a Pair | DC Status") + xlab("Does Contact Show Species DC?") + ylab("Distance b/t Mates") + guides(color=guide_legend(title="DC?")) + annotate("text", x=1.5, y=2000000, label="< 2.2 e -16") #As before, chimp version is nearly identical
+
+#Non-DCs between species--the only interspecies comparison that showed up as significant. Have to make a separate DF for this :|
+inter.dc <- data.frame(distance=c(filter(proms.dist, DC=="no")$hdist, filter(proms.dist, DC=="no")$cdist), type=c(rep("Human", 282409), rep("Chimpanzee", 282409)))
+ggplot(data=inter.dc) + geom_violin(aes(x=type, group=type, y=distance), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle("Distance Between non-DC Mates of a Pair by Species") + xlab("Species") + ylab("Distance") + annotate("text", x=1.5, y=2000000, label="5 e -3")# + guides(color=guide_legend(title="Species"))  #Is this information overload? Do we really even need the color?
+
+
+####DISTANCE BY DC STATUS AND BETA!!!!
+ggplot(data=data.filtered) + geom_line(aes(x=sp_BH_pval, y=Hdist, color=sp_beta))
+dis <- ifelse(data.filtered$sp_beta<0, "Chimp", "Human")
+ggplot(data=data.filtered) + geom_line(aes(x=sp_BH_pval, y=Hdist, color=dis)) + coord_cartesian(xlim=c(0, 0.05))# + scale_color_manual(values=c("red", "blue"), labels=c("human", "chimp"))
+#Humans have lost several VERY STRONG long-range contacts relative to chimps?!?!?!
+nrow(filter(data.filtered, sp_BH_pval<=0.05, sp_beta>0, Hdist>2000000)) #There are only 9 contacts stronger in humans than chimps at greater than 2 MB distance. Goes down to 0 at 3 MB.
+nrow(filter(data.filtered, sp_BH_pval<=0.05, sp_beta<0, Hdist>2000000)) #There are 67 contacts stronger in chimps than humans at greater than 2 MB distance. Only goes down to 57 at 3 MB...
+
+#Even if you don't filter by DC status, many more strong long-distance contacts in chimps!
+nrow(filter(data.filtered, sp_beta<0, Hdist>2000000)) #713 stronger in chimps @ 2 MB. At 3 MB, it's 72.
+nrow(filter(data.filtered, sp_beta>0, Hdist>2000000)) #384 stronger in humans @ 2 MB. At 3 MB, it's 17.
+
+#Are the magnitudes of these particular differences significantly different?
+t.test(abs(filter(data.filtered, sp_beta<0, Hdist>2000000)$sp_beta), abs(filter(data.filtered, sp_beta>0, Hdist>2000000)$sp_beta))
+t.test(abs(filter(data.filtered, sp_beta<0, sp_BH_pval<=0.05, Hdist>2000000)$sp_beta), abs(filter(data.filtered, sp_beta>0, sp_BH_pval<=0.05, Hdist>2000000)$sp_beta))
+
+#Significance testing for Hdistance based on species of greater contact strength, both w/ and w/out FDR filtering.
+t.test(filter(data.filtered, sp_BH_pval<=0.05, sp_beta>0)$Hdist, filter(data.filtered, sp_BH_pval<=0.05, sp_beta<0)$Hdist)
+t.test(filter(data.filtered, sp_beta>0)$Hdist, filter(data.filtered, sp_beta<0)$Hdist) #Both significant in both species.
+
+#Prepare a DF for visualization.
+ggdist <- data.frame(distance=c(data.filtered$Hdist, data.filtered$Cdist), FDR=rep(data.filtered$sp_BH_pval, 2), beta=rep(data.filtered$sp_beta, 2), type=c(rep("Human", 292070), rep("Chimp", 292070)))
+ggdist$sp.contact <- ifelse(ggdist$beta<0, "Chimp", "Human")
+
+#Distances visualization based on binary of contact strength across species.
+ggplot(data=filter(ggdist, type=="Human")) + geom_violin(aes(y=distance, x=sp.contact, group=sp.contact), draw_quantiles=c(0.25, 0.5, 0.75)) + ggtitle("Contact Distances | Species of Greater Contact Strength") + xlab("Species with stronger contact") + ylab("Distance between mates of a pair") + annotate("text", x=1.5, y=2000000, label="< 2.2 e -16")
+ggplot(data=filter(ggdist, type=="Human", FDR<=0.05)) + geom_violin(aes(y=distance, x=sp.contact, group=sp.contact), draw_quantiles=c(0.25, 0.5, 0.75)) + ggtitle("DC Contact Distances | Species of Greater Contact Strength") + xlab("Species with stronger contact") + ylab("Distance between mates of a DC pair") + annotate("text", x=1.5, y=2000000, label="1 e -3")
+
+#Magnitude differences visualization. First across all, then only in DC!
+ggplot(data=filter(ggdist, type=="Human", distance>2000000)) + geom_violin(aes(y=abs(beta), x=sp.contact, group=sp.contact, color=sp.contact), draw_quantiles = c(0.25, 0.5, 0.75)) + xlab("Species with stronger contact") + ylab("|Species Effect Size|") + ggtitle("Species Betas for Long-Range (>2MB) Contacts") + annotate("text", x=1.5, y=3, label="< 2.2 e -16")#This is a comparison of 713 in chimps to 384 in humans.
+ggplot(data=filter(ggdist, type=="Human", distance>2000000, FDR<=0.05)) + geom_violin(aes(y=abs(beta), x=sp.contact, group=sp.contact, color=sp.contact), draw_quantiles = c(0.25, 0.5, 0.75)) + xlab("Species with stronger contact") + ylab("|Species Effect Size|") + ggtitle("Species Betas for DC Long-Range (>2MB) Contacts") + annotate("text", x=1.5, y=3, label="4.1 e -5") #This is a comparison of 67 in chimps to 9 in humans.
+
+#Time to actually evaluate what these strange chimp hits actually are...would be very exciting if any of them are gene contacts!
 ```
 
 ###ChromHMM Mark Length Analysis and Normalization
@@ -853,6 +927,7 @@ chisq.test(table(filter(full.annotations, true.promoter=="yes")$CTCF.different, 
 
 table(filter(full.annotations, true.promoter=="yes")$CTCF.different, filter(full.annotations, true.promoter=="yes")$differential=="both", dnn=c("Species diff. CTCF Interruption?", "DC & DE?"))
 chisq.test(table(filter(full.annotations, true.promoter=="yes")$CTCF.different, filter(full.annotations, true.promoter=="yes")$differential=="both", dnn=c("Species diff. CTCF Interruption?", "DE?")))
+#These results are pretty much garbage as the effects we see are the opposite of what we're hoping for.
 
 saveRDS(full.annotations, "~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS")
 
