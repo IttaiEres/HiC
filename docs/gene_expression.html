@@ -315,10 +315,10 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-05-30</p>
+<p><strong>Last updated:</strong> 2018-06-06</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 3da8acf</p>
+<p><strong>Code version:</strong> 506df20</p>
 <!-- Add your analysis here -->
 <div id="preparing-the-gene-expression-data" class="section level3">
 <h3>Preparing the gene expression data</h3>
@@ -987,6 +987,12 @@ DEexprs &lt;- hminDE[,69:76]
 nonDEcontacts &lt;- hmin_noDE[,61:68]
 nonDEexprs &lt;- hmin_noDE[,69:76]
 
+#Extract contacts and expression stratified by mean interspecies expression quantiles.
+quant1contactexpr &lt;- filter(hmin, AveExpr&lt;=quantile(hmin$AveExpr)[2]) %&gt;% select(., A_21792_HIC, B_28126_HIC, C_3649_HIC, D_40300_HIC, E_28815_HIC, F_28834_HIC, G_3624_HIC, H_3651_HIC, &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)
+quant2contactexpr &lt;- filter(hmin, AveExpr&gt;quantile(hmin$AveExpr)[2]&amp;AveExpr&lt;=quantile(hmin$AveExpr)[3]) %&gt;% select(., A_21792_HIC, B_28126_HIC, C_3649_HIC, D_40300_HIC, E_28815_HIC, F_28834_HIC, G_3624_HIC, H_3651_HIC, &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)
+quant3contactexpr &lt;- filter(hmin, AveExpr&gt;quantile(hmin$AveExpr)[3]&amp;AveExpr&lt;=quantile(hmin$AveExpr)[4]) %&gt;% select(., A_21792_HIC, B_28126_HIC, C_3649_HIC, D_40300_HIC, E_28815_HIC, F_28834_HIC, G_3624_HIC, H_3651_HIC, &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)
+quant4contactexpr &lt;- filter(hmin, AveExpr&gt;quantile(hmin$AveExpr)[4]&amp;AveExpr&lt;=quantile(hmin$AveExpr)[5]) %&gt;% select(., A_21792_HIC, B_28126_HIC, C_3649_HIC, D_40300_HIC, E_28815_HIC, F_28834_HIC, G_3624_HIC, H_3651_HIC, &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;)
+
 #Function for calculating gene-wise correlations.
 cor.calc &lt;- function(hicdata, exprdata){
   cor.exp &lt;- vector(length=nrow(hicdata))
@@ -1000,6 +1006,10 @@ cor.calc &lt;- function(hicdata, exprdata){
 fullcors &lt;- data.frame(cor=cor.calc(mycontacts, myexprs), type=&quot;all&quot;)
 fullDEcors &lt;- data.frame(cor=cor.calc(DEcontacts, DEexprs), type=&quot;DE&quot;)
 fullnoDEcors &lt;- data.frame(cor=cor.calc(nonDEcontacts, nonDEexprs), type=&quot;non-DE&quot;)
+quant1cor &lt;- data.frame(cor=cor.calc(quant1contactexpr[,1:8], quant1contactexpr[,9:16]), type=&quot;quant1&quot;)
+quant2cor &lt;- data.frame(cor=cor.calc(quant2contactexpr[,1:8], quant2contactexpr[,9:16]), type=&quot;quant2&quot;)
+quant3cor &lt;- data.frame(cor=cor.calc(quant3contactexpr[,1:8], quant3contactexpr[,9:16]), type=&quot;quant3&quot;)
+quant4cor &lt;- data.frame(cor=cor.calc(quant4contactexpr[,1:8], quant4contactexpr[,9:16]), type=&quot;quant4&quot;)
 # humcors &lt;- data.frame(cor=cor.calc(mycontacts[,c(1:2, 5:6)], myexprs[,c(1:2, 5:6)]), type=&quot;h_ALL&quot;)
 # humDEcors &lt;- data.frame(cor=cor.calc(DEcontacts[,c(1:2, 5:6)], DEexprs[,c(1:2, 5:6)]), type=&quot;h_DE&quot;)
 # humnoDEcors &lt;- data.frame(cor=cor.calc(nonDEcontacts[,c(1:2, 5:6)], nonDEexprs[,c(1:2, 5:6)]), type=&quot;h_non-DE&quot;)
@@ -1008,11 +1018,14 @@ fullnoDEcors &lt;- data.frame(cor=cor.calc(nonDEcontacts, nonDEexprs), type=&quo
 # chimpnoDEcors &lt;- data.frame(cor=cor.calc(nonDEcontacts[,c(3:4, 7:8)], nonDEexprs[,c(3:4, 7:8)]), type=&quot;c_non-DE&quot;)
 
 #Combine these dfs to plot in one gorgeous ggplot!
-ggcors &lt;- rbind(fullcors, fullDEcors, fullnoDEcors)#, humcors, humDEcors, humnoDEcors, chimpcors, chimpDEcors, chimpnoDEcors)
+ggcors &lt;- rbind(fullcors, fullDEcors, fullnoDEcors, quant1cor, quant2cor, quant3cor, quant4cor)#, humcors, humDEcors, humnoDEcors, chimpcors, chimpDEcors, chimpnoDEcors)
 
-ggplot(data=ggcors) + stat_density(aes(x=cor, group=type, color=type, y=..scaled..), position=&quot;identity&quot;, geom=&quot;line&quot;) + ggtitle(&quot;Correlation b/t RPKM Expression and Hi-C Contact Frequency&quot;) + xlab(&quot;Pearson Correlations b/t RPKM Expression and Hi-C Contact Frequency&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Gene Set&quot;, values=c(&quot;red&quot;, &quot;blue&quot;, &quot;green&quot;), labels=c(&quot;All genes&quot;, &quot;DE genes&quot;, &quot;non-DE genes&quot;))</code></pre>
+#First without the expression quantiles, then with.
+ggplot(data=filter(ggcors, type==&quot;all&quot;|type==&quot;DE&quot;|type==&quot;non-DE&quot;)) + stat_density(aes(x=cor, group=type, color=type, y=..scaled..), position=&quot;identity&quot;, geom=&quot;line&quot;) + ggtitle(&quot;Correlation b/t RPKM Expression and Hi-C Contact Frequency&quot;) + xlab(&quot;Pearson Correlations b/t RPKM Expression and Hi-C Contact Frequency&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Gene Set&quot;, values=c(&quot;red&quot;, &quot;blue&quot;, &quot;green&quot;), labels=c(&quot;All genes&quot;, &quot;DE genes&quot;, &quot;non-DE genes&quot;))</code></pre>
 <p><img src="figure/gene_expression.Rmd/Merging%20Expression%20and%20Hi-C;%20Followed%20by%20correlation%20exploration-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>###This looks great, showing strong bimodal distribution for the DE genes and broader distributions with a peak at 0 for the non-DE set and the full set. To assess if this is legit at all, I now re-run this correlation analysis after permuting the Hi-C values. I shuffle sample IDs on a gene-by-gene basis to accomplish this:
+<pre class="r"><code>ggplot(data=ggcors) + stat_density(aes(x=cor, group=type, color=type, y=..scaled..), position=&quot;identity&quot;, geom=&quot;line&quot;) + ggtitle(&quot;Correlation b/t RPKM Expression and Hi-C Contact Frequency&quot;) + xlab(&quot;Pearson Correlations b/t RPKM Expression and Hi-C Contact Frequency&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Gene Set&quot;, values=c(&quot;red&quot;, &quot;blue&quot;, &quot;green&quot;, &quot;purple&quot;, &quot;orange&quot;, &quot;yellow&quot;, &quot;brown&quot;), labels=c(&quot;All genes&quot;, &quot;DE genes&quot;, &quot;non-DE genes&quot;, &quot;expression.quant1&quot;, &quot;expression.quant2&quot;, &quot;expression.quant3&quot;, &quot;expression.quant4&quot;))</code></pre>
+<p><img src="figure/gene_expression.Rmd/Merging%20Expression%20and%20Hi-C;%20Followed%20by%20correlation%20exploration-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>###This looks great, showing strong bimodal distribution for the DE genes and broader distributions with a peak at 0 for the non-DE set and the full set. Also see no difference in terms of the distribution of correlations on individual sets of genes stratified by quantiles of expression (mean b/t species). Note that I&#39;ve done that on just DE genes as well and see slightly shorter peaks on the bimodality for the middle quantiles of expression, which makes sense (extreme unlikely to be as severe b/t species). Also, to assess if this is legit at all, I now re-run this correlation analysis after permuting the Hi-C values. I shuffle sample IDs on a gene-by-gene basis to accomplish this:
 cor.permuter &lt;- function(hicdata, exprdata, nperm){
   result &lt;- data.frame(cor=NA, type=rep(1:nperm, each=nrow(exprdata)))
   for(perm in 1:nperm){
@@ -1032,8 +1045,8 @@ DE.perm &lt;-  cor.permuter(DEcontacts, DEexprs, 10)
 nonDE.perm &lt;- cor.permuter(nonDEcontacts, nonDEexprs, 10)
 
 #Now visualize.
-ggplot(data=ggcors) + stat_density(aes(x=cor, group=type, color=type, y=..scaled..), position=&quot;identity&quot;, geom=&quot;line&quot;) + stat_density(data=full.perm, aes(x=cor, group=type), geom=&quot;line&quot;, linetype=&quot;dotted&quot;, position=&quot;identity&quot;) + stat_density(data=DE.perm, aes(x=cor, group=type), geom=&quot;line&quot;, linetype=&quot;dashed&quot;, position=&quot;identity&quot;) + stat_density(data=nonDE.perm, aes(x=cor, group=type), geom=&quot;line&quot;, linetype=&quot;twodash&quot;, position=&quot;identity&quot;) + ggtitle(&quot;Correlation b/t RPKM Expression and Hi-C Contact Frequency&quot;) + xlab(&quot;Pearson Correlations b/t RPKM Expression and Hi-C Contact Frequency&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Gene Set&quot;, values=c(&quot;red&quot;, &quot;blue&quot;, &quot;green&quot;), labels=c(&quot;All genes&quot;, &quot;DE genes&quot;, &quot;non-DE genes&quot;))</code></pre>
-<p><img src="figure/gene_expression.Rmd/Merging%20Expression%20and%20Hi-C;%20Followed%20by%20correlation%20exploration-2.png" width="672" style="display: block; margin: auto;" /></p>
+ggplot(data=filter(ggcors, type==&quot;all&quot;|type==&quot;DE&quot;|type==&quot;non-DE&quot;)) + stat_density(aes(x=cor, group=type, color=type, y=..scaled..), position=&quot;identity&quot;, geom=&quot;line&quot;) + stat_density(data=full.perm, aes(x=cor, group=type), geom=&quot;line&quot;, linetype=&quot;dotted&quot;, position=&quot;identity&quot;) + stat_density(data=DE.perm, aes(x=cor, group=type), geom=&quot;line&quot;, linetype=&quot;dashed&quot;, position=&quot;identity&quot;) + stat_density(data=nonDE.perm, aes(x=cor, group=type), geom=&quot;line&quot;, linetype=&quot;twodash&quot;, position=&quot;identity&quot;) + ggtitle(&quot;Correlation b/t RPKM Expression and Hi-C Contact Frequency&quot;) + xlab(&quot;Pearson Correlations b/t RPKM Expression and Hi-C Contact Frequency&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Gene Set&quot;, values=c(&quot;red&quot;, &quot;blue&quot;, &quot;green&quot;), labels=c(&quot;All genes&quot;, &quot;DE genes&quot;, &quot;non-DE genes&quot;))</code></pre>
+<p><img src="figure/gene_expression.Rmd/Merging%20Expression%20and%20Hi-C;%20Followed%20by%20correlation%20exploration-3.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#See that permuted datasets have a tighter correlation distribution with a strong peak at 0. Reassuring. In the future I will repeat this analysis on Midway2, running 10000 permutations to see the full range of permuted data possible.
 
 ####Deprecated, for use in species-specific analysis.
@@ -1193,14 +1206,14 @@ perm.vis(&quot;permout_h_minFDR&quot;, hmin, meta.data, &quot;(min FDR contact, 
 <h3>Exploration of higher-order structure in relation to gene expression. A/B Compartment Analysis</h3>
 <p>Here, I look at A/B compartment calls from HOMER and see if DE and/or DC genes are more likely to be in different compartments between species.</p>
 <pre class="r"><code>###Start with A/B compartments; much simpler. Read them in!
-A_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/A-21792.PC1.txt&quot;, header = TRUE, data.table=FALSE)
-B_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/B-28126.PC1.txt&quot;, header = TRUE, data.table=FALSE)
-E_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/E-28815.PC1.txt&quot;, header = TRUE, data.table=FALSE)
-F_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/F-28834.PC1.txt&quot;, header = TRUE, data.table=FALSE)
-C_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/C-3649.PC1.txt&quot;, header = TRUE, data.table=FALSE)
-D_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/D-40300.PC1.txt&quot;, header = TRUE, data.table=FALSE)
-G_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/G-3624.PC1.txt&quot;, header = TRUE, data.table=FALSE)
-H_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/H-3651.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+A_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/50kb/A-21792.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+B_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/50kb/B-28126.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+E_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/50kb/E-28815.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+F_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/50kb/F-28834.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+C_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/50kb/C-3649.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+D_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/50kb/D-40300.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+G_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/50kb/G-3624.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+H_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/50kb/H-3651.PC1.txt&quot;, header = TRUE, data.table=FALSE)
 
 colnames(A_AB) &lt;- colnames(B_AB) &lt;- colnames(C_AB) &lt;- colnames(D_AB) &lt;- colnames(E_AB) &lt;- colnames(F_AB) &lt;- colnames(G_AB) &lt;- colnames(H_AB) &lt;- c(&quot;peakID&quot;, &quot;chr&quot;, &quot;start&quot;, &quot;end&quot;, &quot;strand&quot;, &quot;PC1&quot;)
 
@@ -1221,16 +1234,16 @@ colnames(cgene.hic) &lt;- c(&quot;Cchr&quot;, &quot;Cstart&quot;, &quot;Cend&quo
 
 #Add in lengths for appropriate PCA bin assignment in next part.
 colnames(human_lengths) &lt;- colnames(chimp_lengths) &lt;- c(&quot;genes&quot;, &quot;length&quot;)
-hgene.hic &lt;- left_join(hgene.hic, human_lengths, by=&quot;genes&quot;)
-cgene.hic &lt;- left_join(cgene.hic, chimp_lengths, by=&quot;genes&quot;)
+hgene.PCA &lt;- left_join(hgene.hic, human_lengths, by=&quot;genes&quot;)
+cgene.PCA &lt;- left_join(cgene.hic, chimp_lengths, by=&quot;genes&quot;)
 
 #Assign genes to A/B compartment bins based on their position along the 50kb interval and their gene length, as well as strand orientation (trying to get the gene body in the actual 50kb interval).
-hgene.hic$HID &lt;- paste(hgene.hic$Hchr, ifelse(hgene.hic$Hstrand==&quot;+&quot;, ifelse(hgene.hic$Hstart%%50000&gt;=(50000-hgene.hic$length), as.integer(50000*ceiling(hgene.hic$Hstart/50000)), as.integer(50000*floor(hgene.hic$Hstart/50000))), ifelse(hgene.hic$Hstart%%50000&lt;=hgene.hic$length, as.integer((50000*floor(hgene.hic$Hstart/50000)-50000)), as.integer(50000*floor(hgene.hic$Hstart/50000)))), sep=&quot;-&quot;)
-cgene.hic$CID &lt;- paste(cgene.hic$Cchr, ifelse(cgene.hic$Cstrand==&quot;+&quot;, ifelse(cgene.hic$Cstart%%50000&gt;=(50000-cgene.hic$length), as.integer(50000*ceiling(cgene.hic$Cstart/50000)), as.integer(50000*floor(cgene.hic$Cstart/50000))), ifelse(cgene.hic$Cstart%%50000&lt;=cgene.hic$length, as.integer((50000*floor(cgene.hic$Cstart/50000)-50000)), as.integer(50000*floor(cgene.hic$Cstart/50000)))), sep=&quot;-&quot;)
+hgene.PCA$HID &lt;- paste(hgene.PCA$Hchr, ifelse(hgene.PCA$Hstrand==&quot;+&quot;, ifelse(hgene.PCA$Hstart%%50000&gt;=(50000-hgene.PCA$length), as.integer(50000*ceiling(hgene.PCA$Hstart/50000)), as.integer(50000*floor(hgene.PCA$Hstart/50000))), ifelse(hgene.PCA$Hstart%%50000&lt;=hgene.PCA$length, as.integer((50000*floor(hgene.PCA$Hstart/50000)-50000)), as.integer(50000*floor(hgene.PCA$Hstart/50000)))), sep=&quot;-&quot;)
+cgene.PCA$CID &lt;- paste(cgene.PCA$Cchr, ifelse(cgene.PCA$Cstrand==&quot;+&quot;, ifelse(cgene.PCA$Cstart%%50000&gt;=(50000-cgene.PCA$length), as.integer(50000*ceiling(cgene.PCA$Cstart/50000)), as.integer(50000*floor(cgene.PCA$Cstart/50000))), ifelse(cgene.PCA$Cstart%%50000&lt;=cgene.PCA$length, as.integer((50000*floor(cgene.PCA$Cstart/50000)-50000)), as.integer(50000*floor(cgene.PCA$Cstart/50000)))), sep=&quot;-&quot;)
 #hgene.hic$HID &lt;- ifelse(hgene.hic$Hstrand==&quot;+&quot;, paste(hgene.hic$Hchr, as.integer(50000*floor(hgene.hic$Hstart/50000)), sep=&quot;-&quot;))
 #cgene.hic$CID &lt;- paste(cgene.hic$Cchr, as.integer(50000*floor(cgene.hic$Cstart/50000)), sep=&quot;-&quot;)
-hgenes.compartments &lt;- select(hgene.hic, Hchr, Hstart, genes, Hstrand, HID)
-cgenes.compartments &lt;- select(cgene.hic, Cchr, Cstart, genes, Cstrand, CID)
+hgenes.compartments &lt;- select(hgene.PCA, Hchr, Hstart, genes, Hstrand, HID)
+cgenes.compartments &lt;- select(cgene.PCA, Cchr, Cstart, genes, Cstrand, CID)
 compartment.genes &lt;- left_join(detable, hgenes.compartments, by=&quot;genes&quot;) %&gt;% left_join(., cgenes.compartments, by=&quot;genes&quot;)
 
 #See how many genes fall within 5 kb of one of the boundaries here (at every 50kb interval): Though this was only considering the lower end, not if they fall on the other edge of the boundary (45k modulo remainder is equivalent and comparable #s!). REALLY what I should care about are positive strand genes falling at the upper edge of a boundary (implying their gene body may lie in the next compartment) and negative strand genes falling at the lower edge of a boundary (implying their gene body may lie in the previous compartment). If I have positive strand genes near the beginning or negative strand genes near the end that&#39;s not really an issue as their gene bodies should lie entirely within the compartment. It&#39;s really just those two specific cases.
@@ -1382,6 +1395,162 @@ sum(final.AB$comp.diff==&quot;yes&quot;&amp;final.AB$compartment.H==&quot;A&quot
 <pre><code>[1] 513</code></pre>
 <pre class="r"><code>sum(final.AB$comp.diff==&quot;yes&quot;&amp;final.AB$compartment.H==&quot;B&quot;&amp;final.AB$compartment.C==&quot;A&quot;, na.rm=TRUE) #Open in chimps, closed in humans</code></pre>
 <pre><code>[1] 361</code></pre>
+<pre class="r"><code>####25kb PCA A/B compartment analysis. Repeat this entire analysis utilizing 25kb as the window size for PCA calls.
+###Start with A/B compartments; much simpler. Read them in!
+A_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/25kb/A-21792.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+B_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/25kb/B-28126.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+E_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/25kb/E-28815.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+F_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/25kb/F-28834.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+C_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/25kb/C-3649.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+D_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/25kb/D-40300.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+G_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/25kb/G-3624.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+H_AB &lt;- fread(&quot;~/Desktop/Hi-C/AB_compartments/25kb/H-3651.PC1.txt&quot;, header = TRUE, data.table=FALSE)
+
+colnames(A_AB) &lt;- colnames(B_AB) &lt;- colnames(C_AB) &lt;- colnames(D_AB) &lt;- colnames(E_AB) &lt;- colnames(F_AB) &lt;- colnames(G_AB) &lt;- colnames(H_AB) &lt;- c(&quot;peakID&quot;, &quot;chr&quot;, &quot;start&quot;, &quot;end&quot;, &quot;strand&quot;, &quot;PC1&quot;)
+
+#Interestingly, within a species they&#39;re not all the same length (which doesn&#39;t make much sense as I thought these were identical genomes). A and F are females, B and E are males, so that&#39;s why B and E are larger--just remove chrY data to deal with that. But why aren&#39;t B and E identical, or A and F identical? Perhaps this is because not every individual gets enough reads at each of the regions to call compartments? Not really clear to me...for now, use ALL regions I can by combining these DFs, taking the mean PC1 value across individuals for those hits which ARE repeated (should be the vast majority).
+humans.AB &lt;- rbind(A_AB, B_AB, E_AB, F_AB)
+humans.AB &lt;- group_by(humans.AB, peakID) %&gt;% summarise(chr=unique(chr), start=unique(start), end=unique(end), strand=unique(strand), PC1=mean(PC1))
+
+chimps.AB &lt;- rbind(C_AB, D_AB, G_AB, H_AB)
+chimps.AB &lt;- group_by(chimps.AB, peakID) %&gt;% summarise(chr=unique(chr), start=unique(start), end=unique(end), strand=unique(strand), PC1=mean(PC1))
+
+#Now, I want to assign a compartment (A or B) to each of these loci, so that they can then be examined WRT the Hi-C bins that might overlap them.
+humans.AB$compartment &lt;- ifelse(humans.AB$PC1&gt;0, &quot;A&quot;, &quot;B&quot;)
+chimps.AB$compartment &lt;- ifelse(chimps.AB$PC1&gt;0, &quot;A&quot;, &quot;B&quot;)
+
+#Really, only want to look at genes we can actually call DE on based on expression levels, so only care about those genes in detable object. Can extract their exact positions from hgene.hic and cgene.hic and create peakIDs for them that match the AB compartment peak names. Basically, I just want to call which of the AB compartment peak bins they&#39;ll fall into. Note that those compartments were made 50kb at a time, so I need to round to lower 50k (or higher, depending on strand and proximity to boundary!) to figure out which compartment a gene belongs to.
+colnames(hgene.hic) &lt;- c(&quot;Hchr&quot;, &quot;Hstart&quot;, &quot;Hend&quot;, &quot;genes&quot;, &quot;Hplace&quot;, &quot;Hstrand&quot;, &quot;binchr&quot;, &quot;binstart&quot;, &quot;binend&quot;, &quot;bindist.TSS&quot;)
+colnames(cgene.hic) &lt;- c(&quot;Cchr&quot;, &quot;Cstart&quot;, &quot;Cend&quot;, &quot;genes&quot;, &quot;Cplace&quot;, &quot;Cstrand&quot;, &quot;binchr&quot;, &quot;binstart&quot;, &quot;binend&quot;, &quot;bindist.TSS&quot;)
+
+#Add in lengths for appropriate PCA bin assignment in next part.
+colnames(human_lengths) &lt;- colnames(chimp_lengths) &lt;- c(&quot;genes&quot;, &quot;length&quot;)
+hgene.PCA &lt;- left_join(hgene.hic, human_lengths, by=&quot;genes&quot;)
+cgene.PCA &lt;- left_join(cgene.hic, chimp_lengths, by=&quot;genes&quot;)
+
+#Assign genes to A/B compartment bins based on their position along the 50kb interval and their gene length, as well as strand orientation (trying to get the gene body in the actual 50kb interval).
+hgene.PCA$HID &lt;- paste(hgene.PCA$Hchr, ifelse(hgene.PCA$Hstrand==&quot;+&quot;, ifelse(hgene.PCA$Hstart%%25000&gt;=(25000-hgene.PCA$length), as.integer(25000*ceiling(hgene.PCA$Hstart/25000)), as.integer(25000*floor(hgene.PCA$Hstart/25000))), ifelse(hgene.PCA$Hstart%%25000&lt;=hgene.PCA$length, as.integer((25000*floor(hgene.PCA$Hstart/25000)-25000)), as.integer(25000*floor(hgene.PCA$Hstart/25000)))), sep=&quot;-&quot;)
+cgene.PCA$CID &lt;- paste(cgene.PCA$Cchr, ifelse(cgene.PCA$Cstrand==&quot;+&quot;, ifelse(cgene.PCA$Cstart%%25000&gt;=(25000-cgene.PCA$length), as.integer(25000*ceiling(cgene.PCA$Cstart/25000)), as.integer(25000*floor(cgene.PCA$Cstart/25000))), ifelse(cgene.PCA$Cstart%%25000&lt;=cgene.PCA$length, as.integer((25000*floor(cgene.PCA$Cstart/25000)-25000)), as.integer(25000*floor(cgene.PCA$Cstart/25000)))), sep=&quot;-&quot;)
+#hgene.hic$HID &lt;- ifelse(hgene.hic$Hstrand==&quot;+&quot;, paste(hgene.hic$Hchr, as.integer(25000*floor(hgene.hic$Hstart/25000)), sep=&quot;-&quot;))
+#cgene.hic$CID &lt;- paste(cgene.hic$Cchr, as.integer(25000*floor(cgene.hic$Cstart/25000)), sep=&quot;-&quot;)
+hgenes.compartments &lt;- select(hgene.PCA, Hchr, Hstart, genes, Hstrand, HID)
+cgenes.compartments &lt;- select(cgene.PCA, Cchr, Cstart, genes, Cstrand, CID)
+compartment.genes &lt;- left_join(detable, hgenes.compartments, by=&quot;genes&quot;) %&gt;% left_join(., cgenes.compartments, by=&quot;genes&quot;)
+
+#See how many genes fall within 5 kb of one of the boundaries here (at every 50kb interval): Though this was only considering the lower end, not if they fall on the other edge of the boundary (45k modulo remainder is equivalent and comparable #s!). REALLY what I should care about are positive strand genes falling at the upper edge of a boundary (implying their gene body may lie in the next compartment) and negative strand genes falling at the lower edge of a boundary (implying their gene body may lie in the previous compartment). If I have positive strand genes near the beginning or negative strand genes near the end that&#39;s not really an issue as their gene bodies should lie entirely within the compartment. It&#39;s really just those two specific cases.
+sum((compartment.genes$Hstart%%25000)&lt;=5000, na.rm=TRUE)</code></pre>
+<pre><code>[1] 2167</code></pre>
+<pre class="r"><code>sum((compartment.genes$Cstart%%25000)&lt;=5000, na.rm=TRUE)</code></pre>
+<pre><code>[1] 2182</code></pre>
+<pre class="r"><code>#In both species, roughly 1k of the genes we can consider at all fall near (w/in 5kb) one of the A/B boundaries we&#39;ve established here. Could there be issues with pos/neg strand and how close they are to the boundary? I can check on this...or can also assume it&#39;s balanced across both issues. If the results from a naive analysis don&#39;t look good I can go back and fix this part of that.
+
+#Now, merge compartment.genes and the humans.AB and chimps.AB compartment assignment DFs!
+HAB &lt;- select(humans.AB, peakID, compartment, PC1)
+CAB &lt;- select(chimps.AB, peakID, compartment, PC1)
+colnames(HAB) &lt;- c(&quot;HID&quot;, &quot;compartment.H&quot;, &quot;PC.H&quot;)
+colnames(CAB) &lt;- c(&quot;CID&quot;, &quot;compartment.C&quot;, &quot;PC.C&quot;)
+
+final.AB &lt;- left_join(compartment.genes, HAB, by=&quot;HID&quot;) %&gt;% left_join(., CAB, by=&quot;CID&quot;)
+final.AB$comp.diff &lt;- ifelse(final.AB$compartment.H==final.AB$compartment.C, &quot;no&quot;, &quot;yes&quot;) #Note that 311 of these rows have missing data from at least one species so this determination can&#39;t be made? Often b/c of being on a scaffold in chimps.
+final.AB$PC.diff &lt;- abs(final.AB$PC.H-final.AB$PC.C)
+final.AB &lt;- final.AB[order(final.AB$adj.P.Val),]
+final.AB$DE &lt;- ifelse(final.AB$adj.P.Val&lt;=0.05, &quot;yes&quot;, &quot;no&quot;)
+table(final.AB$DE, final.AB$comp.diff, dnn=c(&quot;DE?&quot;, &quot;Different Compartment b/t Species?&quot;))</code></pre>
+<pre><code>     Different Compartment b/t Species?
+DE?     no  yes
+  no  7968  570
+  yes 2048  145</code></pre>
+<pre class="r"><code>chisq.test(table(final.AB$DE, final.AB$comp.diff, dnn=c(&quot;DE?&quot;, &quot;Same Compartment b/t Species?&quot;)))</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  table(final.AB$DE, final.AB$comp.diff, dnn = c(&quot;DE?&quot;, &quot;Same Compartment b/t Species?&quot;))
+X-squared = 0.0035226, df = 1, p-value = 0.9527</code></pre>
+<pre class="r"><code>#So roughly 6.61% of DE genes are in different compartments between species, whereas 6.68% of non-DE genes are in different compartments between species...shitty! And not significant!
+
+#Would be nice to know if the differential compartments between species are at least concentrated in those differential contacts b/t species?! Add a column of the DC status between species.
+final.AB$DC &lt;- ifelse(final.AB$genes %in% filter(gene.hic.filt, min_FDR.H&lt;=0.05|min_FDR.C&lt;=0.05)$genes, &quot;yes&quot;, &quot;no&quot;)
+table(final.AB$DC, final.AB$comp.diff, dnn=c(&quot;DC?&quot;, &quot;Different Compartment b/t Species?&quot;))</code></pre>
+<pre><code>     Different Compartment b/t Species?
+DC?     no  yes
+  no  9407  674
+  yes  609   41</code></pre>
+<pre class="r"><code>chisq.test(table(final.AB$DC, final.AB$comp.diff, dnn=c(&quot;DC?&quot;, &quot;Different Compartment b/t Species?&quot;)))</code></pre>
+<pre><code>
+    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
+
+data:  table(final.AB$DC, final.AB$comp.diff, dnn = c(&quot;DC?&quot;, &quot;Different Compartment b/t Species?&quot;))
+X-squared = 0.086185, df = 1, p-value = 0.7691</code></pre>
+<pre class="r"><code>#Again, not significant...can see that the genes which are DC have ~6.3% of them in different compartments b/t species, while the non-DC ones have 6.7% of them in different compartments b/t species. Note that this is also the exact opposite result I was hoping for...
+
+#So a simple classification system is not sufficient for A/B compartment changes between the species. What if I actually took the mean PC value and plotted the difference bewtween species vs decreasing significance? The final.AB df is already ordered by DE p-val, so can do this real quick simply:
+ggplot(data=final.AB) + geom_line(aes(x=adj.P.Val, y=PC.diff)) + ggtitle(&quot;Absolute Difference of PC1 Ordered by DE Significance&quot;) + xlab(&quot;Decreasing DE Significance&quot;) + ylab(&quot;|PC1 Difference b/t Species|&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-1-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(final.AB, DE==&quot;yes&quot;)$PC.diff, filter(final.AB, DE==&quot;no&quot;)$PC.diff)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(final.AB, DE == &quot;yes&quot;)$PC.diff and filter(final.AB, DE == &quot;no&quot;)$PC.diff
+t = 0.25904, df = 3489.3, p-value = 0.7956
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -0.009105945  0.011878442
+sample estimates:
+mean of x mean of y 
+0.2175951 0.2162088 </code></pre>
+<pre class="r"><code>ggplot(data=final.AB) + geom_violin(aes(group=DE, x=DE, y=PC.diff), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle(&quot;Absolute Difference of PC1 | DE&quot;) + xlab(&quot;DE Status&quot;) + ylab(&quot;|PC1 Difference b/t Species|&quot;)</code></pre>
+<pre><code>Warning: Removed 343 rows containing non-finite values (stat_ydensity).</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-1-6.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#None of this is particularly encouraging...but what if I did it on DC status? Can just check on binary status here to see if it&#39;ll even be significant or not:
+t.test(filter(final.AB, DC==&quot;yes&quot;)$PC.diff, filter(final.AB, DC==&quot;no&quot;)$PC.diff)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(final.AB, DC == &quot;yes&quot;)$PC.diff and filter(final.AB, DC == &quot;no&quot;)$PC.diff
+t = 2.6375, df = 726.52, p-value = 0.008531
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 0.006501246 0.044361584
+sample estimates:
+mean of x mean of y 
+0.2403831 0.2149517 </code></pre>
+<pre class="r"><code>#This time it is!...
+ggplot(data=final.AB) + geom_violin(aes(group=DC, x=DC, y=PC.diff), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle(&quot;Absolute Difference of PC1 | DC&quot;) + xlab(&quot;DC Status&quot;) + ylab(&quot;|PC1 Difference b/t Species|&quot;) + annotate(&quot;text&quot;, x=1.5, y=1, label=&quot;8.5 e - 3&quot;)</code></pre>
+<pre><code>Warning: Removed 343 rows containing non-finite values (stat_ydensity).</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-1-7.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Just a quick check to see if not using absolute difference would be better?
+final.AB$PC.hdiff &lt;- final.AB$PC.C-final.AB$PC.H
+ggplot(data=final.AB) + geom_line(aes(x=adj.P.Val, y=PC.hdiff)) + ggtitle(&quot;Difference of PC1 Ordered by DE Significance&quot;) + xlab(&quot;Decreasing DE Significance&quot;) + ylab(&quot;PC1 Difference b/t Species (H-C)&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-1-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(final.AB, adj.P.Val&lt;=0.05)$PC.hdiff, filter(final.AB, adj.P.Val&gt;0.05)$PC.hdiff)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(final.AB, adj.P.Val &lt;= 0.05)$PC.hdiff and filter(final.AB, adj.P.Val &gt; 0.05)$PC.hdiff
+t = -0.67607, df = 3442.5, p-value = 0.499
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -0.019637088  0.009566943
+sample estimates:
+  mean of x   mean of y 
+-0.02171785 -0.01668278 </code></pre>
+<pre class="r"><code>ggplot(data=final.AB) + geom_violin(aes(group=DE, x=DE, y=PC.hdiff), draw_quantiles = c(0.25, 0.5, 0.75)) + ggtitle(&quot;Difference of PC1 | DE&quot;) + xlab(&quot;DE Status&quot;) + ylab(&quot;PC1 Difference b/t Species (H-C)&quot;)</code></pre>
+<pre><code>Warning: Removed 343 rows containing non-finite values (stat_ydensity).</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-1-9.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#None of this is particularly encouraging...but what if I did it on DC status? Can just check on binary status here to see if it&#39;ll even be significant or not:
+t.test(filter(final.AB, DC==&quot;yes&quot;)$PC.hdiff, filter(final.AB, DC==&quot;no&quot;)$PC.hdiff)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(final.AB, DC == &quot;yes&quot;)$PC.hdiff and filter(final.AB, DC == &quot;no&quot;)$PC.hdiff
+t = -3.2522, df = 724.08, p-value = 0.001198
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -0.07021267 -0.01735265
+sample estimates:
+  mean of x   mean of y 
+-0.05884241 -0.01505974 </code></pre>
+<pre class="r"><code>#Overall, most of the A/B compartment calling results look rather atrocious...nothing much interesting to be gleaned here, unfortuantely.</code></pre>
 </div>
 <div id="tad-analysis" class="section level3">
 <h3>TAD Analysis</h3>
@@ -1422,65 +1591,143 @@ chimp.bounds &lt;- format(chimp.bounds, scientific=FALSE)
 colnames(chimp.bounds) &lt;- c(&quot;chromosome&quot;, &quot;start&quot;, &quot;end&quot;, &quot;frombin&quot;, &quot;tobin&quot;, &quot;strand&quot;, &quot;tag&quot;, &quot;size&quot;)
 fwrite(chimp.bounds, &quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/chimp.boundaries.bed&quot;, sep=&quot;\t&quot;, na=&quot;NA&quot;, col.names=TRUE, quote=FALSE)
 
-#Load in the pairs that are NOT interrupted by a TAD boundary!
+#Load in the pairs that are NOT interrupted by a TAD boundary! First using the agnostic approach where I just take all boundaries, and then for more stringent criteria (i.e. boundary found in at least 2 individuals, at least 3, or all 4)
 TADcross.humans &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hg38.TD.bounds.notispan.bed&quot;)
+TADcross.humans.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.2.bed&quot;)
+TADcross.humans.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.3.bed&quot;)
+TADcross.humans.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.4.bed&quot;)
+
 TADcross.chimps &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/pt5.TD.bounds.notispan.bed&quot;)
+TADcross.chimps.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.2.bed&quot;)
+TADcross.chimps.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.3.bed&quot;)
+TADcross.chimps.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.4.bed&quot;)
 
 full.annotations &lt;- readRDS(&quot;~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS&quot;)
 
 TADcross.humans$HpairID &lt;- paste(paste(TADcross.humans$V1, TADcross.humans$V2, sep=&quot;-&quot;), paste(TADcross.humans$V4, TADcross.humans$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.2$HpairID &lt;- paste(paste(TADcross.humans.2$V1, TADcross.humans.2$V2, sep=&quot;-&quot;), paste(TADcross.humans.2$V4, TADcross.humans.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.3$HpairID &lt;- paste(paste(TADcross.humans.3$V1, TADcross.humans.3$V2, sep=&quot;-&quot;), paste(TADcross.humans.3$V4, TADcross.humans.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.4$HpairID &lt;- paste(paste(TADcross.humans.4$V1, TADcross.humans.4$V2, sep=&quot;-&quot;), paste(TADcross.humans.4$V4, TADcross.humans.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+
 TADcross.chimps$CpairID &lt;- paste(paste(TADcross.chimps$V1, TADcross.chimps$V2, sep=&quot;-&quot;), paste(TADcross.chimps$V4, TADcross.chimps$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.2$CpairID &lt;- paste(paste(TADcross.chimps.2$V1, TADcross.chimps.2$V2, sep=&quot;-&quot;), paste(TADcross.chimps.2$V4, TADcross.chimps.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.3$CpairID &lt;- paste(paste(TADcross.chimps.3$V1, TADcross.chimps.3$V2, sep=&quot;-&quot;), paste(TADcross.chimps.3$V4, TADcross.chimps.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.4$CpairID &lt;- paste(paste(TADcross.chimps.4$V1, TADcross.chimps.4$V2, sep=&quot;-&quot;), paste(TADcross.chimps.4$V4, TADcross.chimps.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
 
 full.annotations$HTAD.interrupt &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.2 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.2$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.3 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.3$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.4 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.4$HpairID, &quot;no&quot;, &quot;yes&quot;)
 full.annotations$CTAD.interrupt &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps$CpairID, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$diff.TAD.interrupt &lt;- ifelse(full.annotations$HTAD.interrupt==full.annotations$CTAD.interrupt, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.2 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.2$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.3 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.3$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.4 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.4$CpairID, &quot;no&quot;, &quot;yes&quot;)
 
-table(full.annotations$DE, full.annotations$diff.TAD.interrupt, dnn=c(&quot;DE?&quot;, &quot;TAD Boundary Cross Diff. b/t Species?&quot;))</code></pre>
-<pre><code>     TAD Boundary Cross Diff. b/t Species?
+full.annotations$diff.TAD.interrupt &lt;- ifelse(full.annotations$HTAD.interrupt==full.annotations$CTAD.interrupt, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.2 &lt;- ifelse(full.annotations$HTAD.interrupt.2==full.annotations$CTAD.interrupt.2, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.3 &lt;- ifelse(full.annotations$HTAD.interrupt.3==full.annotations$CTAD.interrupt.3, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.4 &lt;- ifelse(full.annotations$HTAD.interrupt.4==full.annotations$CTAD.interrupt.4, &quot;no&quot;, &quot;yes&quot;)
+
+chisq.summarizer &lt;- function(df, col1, robust){
+  DEtable &lt;- table(df$DE, df[,col1], dnn=c(&quot;DE?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
+  promsDEtable &lt;- table(filter(df, true.promoter==&quot;yes&quot;)$DE, filter(df, true.promoter==&quot;yes&quot;)[,col1], dnn=c(&quot;DE?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
+  DCtable &lt;- table(df$DC, df[,col1], dnn=c(&quot;DC?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
+  promsDCtable &lt;- table(filter(df, true.promoter==&quot;yes&quot;)$DC, filter(df, true.promoter==&quot;yes&quot;)[,col1], dnn=c(&quot;DC?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
+  print(paste(&quot;As seen in the table below, amongst all hits, &quot;, signif((DEtable[2,2]/sum(DEtable[2,]))*100, 3), &quot;% of DE contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((DEtable[1,2]/sum(DEtable[1,]))*100, 3), &quot;% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((DEtable[2,2]/sum(DEtable[,2]))*100, 3), &quot;% DE, while those not crossing are &quot;, signif((DEtable[2,1]/sum(DEtable[,1]))*100, 3), &quot;% DE. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(DEtable)$p.val, 2), sep=&quot;&quot;))
+  print(DEtable)
+  print(paste(&quot;As seen in the table below, amongst all hits, &quot;, signif((DCtable[2,2]/sum(DCtable[2,]))*100, 3), &quot;% of DC contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((DCtable[1,2]/sum(DCtable[1,]))*100, 3), &quot;% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((DCtable[2,2]/sum(DCtable[,2]))*100, 3), &quot;% DC, while those not crossing are &quot;, signif((DCtable[2,1]/sum(DCtable[,1]))*100, 3), &quot;% DC. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(DCtable)$p.val, 2), sep=&quot;&quot;))
+  print(DCtable)
+  print(paste(&quot;As seen in the table below, amongst promoter-contacting hits, &quot;, signif((promsDEtable[2,2]/sum(promsDEtable[2,]))*100, 3), &quot;% of DE contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((promsDEtable[1,2]/sum(promsDEtable[1,]))*100, 3), &quot;% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((promsDEtable[2,2]/sum(promsDEtable[,2]))*100, 3), &quot;% DE, while those not crossing are &quot;, signif((promsDEtable[2,1]/sum(promsDEtable[,1]))*100, 3), &quot;% DE. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(promsDEtable)$p.val, 2), sep=&quot;&quot;))
+  print(promsDEtable)
+  print(paste(&quot;As seen in the table below, amongst promoter-contacting hits, &quot;, signif((promsDCtable[2,2]/sum(promsDCtable[2,]))*100, 3), &quot;% of DC contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((promsDCtable[1,2]/sum(promsDCtable[1,]))*100, 3), &quot;% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((promsDCtable[2,2]/sum(promsDCtable[,2]))*100, 3), &quot;% DC, while those not crossing are &quot;, signif((promsDCtable[2,1]/sum(promsDCtable[,1]))*100, 3), &quot;% DC. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(promsDCtable)$p.val, 2), sep=&quot;&quot;))
+  print(promsDCtable)
+}
+
+#Call the summarizer on all the different TAD boundary specs :)
+chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt&quot;, 1)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 18.1% of DE contacts cross TAD boundaries | 1  differentially between species, while 14.6% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 3.37% DE, while those not crossing are 2.64% DE. This is chi-squared significant w/ p-val 9.5e-18&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
 DE?       no    yes
   no  242501  41554
-  yes   6566   1449</code></pre>
-<pre class="r"><code>chisq.test(table(full.annotations$DE, full.annotations$diff.TAD.interrupt))</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
-
-data:  table(full.annotations$DE, full.annotations$diff.TAD.interrupt)
-X-squared = 73.61, df = 1, p-value &lt; 2.2e-16</code></pre>
-<pre class="r"><code>#About 18.1% of DE-involved contacts cross TAD boundaries differently between the species; only 14.6% of the non-DE contacts do this.
-
-table(filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, filter(full.annotations, true.promoter==&quot;yes&quot;)$diff.TAD.interrupt, dnn=c(&quot;DE?&quot;, &quot;TAD Boundary Cross Diff. b/t Species?&quot;))</code></pre>
-<pre><code>     TAD Boundary Cross Diff. b/t Species?
-DE?      no   yes
-  no  23492  4587
-  yes  6566  1449</code></pre>
-<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$DE, filter(full.annotations, true.promoter==&quot;yes&quot;)$diff.TAD.interrupt, dnn=c(&quot;DE?&quot;, &quot;TAD Boundary Cross Diff. b/t Species?&quot;)))</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
-
-data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$DE, filter(full.annotations,     true.promoter == &quot;yes&quot;)$diff.TAD.interrupt, dnn = c(&quot;DE?&quot;,     &quot;TAD Boundary Cross Diff. b/t Species?&quot;))
-X-squared = 13.47, df = 1, p-value = 0.0002424</code></pre>
-<pre class="r"><code>table(full.annotations$DC, full.annotations$diff.TAD.interrupt, dnn=c(&quot;DC?&quot;, &quot;TAD Boundary Cross Diff. b/t Species?&quot;))</code></pre>
-<pre><code>     TAD Boundary Cross Diff. b/t Species?
+  yes   6566   1449
+[1] &quot;As seen in the table below, amongst all hits, 19.4% of DC contacts cross TAD boundaries | 1  differentially between species, while 14.6% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 4.35% DC, while those not crossing are 3.13% DC. This is chi-squared significant w/ p-val 2.8e-39&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
 DC?       no    yes
   no  241278  41131
-  yes   7789   1872</code></pre>
-<pre class="r"><code>chisq.test(table(full.annotations$DC, full.annotations$diff.TAD.interrupt))</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
-
-data:  table(full.annotations$DC, full.annotations$diff.TAD.interrupt)
-X-squared = 171.93, df = 1, p-value &lt; 2.2e-16</code></pre>
-<pre class="r"><code>table(filter(full.annotations, true.promoter==&quot;yes&quot;)$DC, filter(full.annotations, true.promoter==&quot;yes&quot;)$diff.TAD.interrupt, dnn=c(&quot;DC?&quot;, &quot;TAD Boundary Cross Diff. b/t Species?&quot;))</code></pre>
-<pre><code>     TAD Boundary Cross Diff. b/t Species?
+  yes   7789   1872
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 18.1% of DE contacts cross TAD boundaries | 1  differentially between species, while 16.3% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 24% DE, while those not crossing are 21.8% DE. This is chi-squared significant w/ p-val 0.00024&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  23492  4587
+  yes  6566  1449
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 21.7% of DC contacts cross TAD boundaries | 1  differentially between species, while 16.5% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 4.46% DC, while those not crossing are 3.23% DC. This is chi-squared significant w/ p-val 2.4e-06&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
 DC?      no   yes
   no  29086  5767
   yes   972   269</code></pre>
-<pre class="r"><code>chisq.test(table(filter(full.annotations, true.promoter==&quot;yes&quot;)$DC, filter(full.annotations, true.promoter==&quot;yes&quot;)$diff.TAD.interrupt, dnn=c(&quot;DC?&quot;, &quot;TAD Boundary Cross Diff. b/t Species?&quot;)))</code></pre>
-<pre><code>
-    Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
-
-data:  table(filter(full.annotations, true.promoter == &quot;yes&quot;)$DC, filter(full.annotations,     true.promoter == &quot;yes&quot;)$diff.TAD.interrupt, dnn = c(&quot;DC?&quot;,     &quot;TAD Boundary Cross Diff. b/t Species?&quot;))
-X-squared = 22.273, df = 1, p-value = 2.365e-06</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.2&quot;, 2)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 12.8% of DE contacts cross TAD boundaries | 2  differentially between species, while 8.42% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 4.11% DE, while those not crossing are 2.62% DE. This is chi-squared significant w/ p-val 5.5e-43&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  260140  23915
+  yes   6991   1024
+[1] &quot;As seen in the table below, amongst all hits, 13% of DC contacts cross TAD boundaries | 2  differentially between species, while 8.39% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 5.03% DC, while those not crossing are 3.15% DC. This is chi-squared significant w/ p-val 1.1e-56&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  258724  23685
+  yes   8407   1254
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 12.8% of DE contacts cross TAD boundaries | 2  differentially between species, while 12.9% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 22.1% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.81&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  24460  3619
+  yes  6991  1024
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 14.3% of DC contacts cross TAD boundaries | 2  differentially between species, while 12.8% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 3.83% DC, while those not crossing are 3.38% DC. This is chi-squared significant w/ p-val 0.12&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  30388  4465
+  yes  1063   178</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.3&quot;, 3)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 9.83% of DE contacts cross TAD boundaries | 3  differentially between species, while 5.89% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 4.5% DE, while those not crossing are 2.63% DE. This is chi-squared significant w/ p-val 1.6e-48&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  267327  16728
+  yes   7227    788
+[1] &quot;As seen in the table below, amongst all hits, 10.7% of DC contacts cross TAD boundaries | 3  differentially between species, while 5.84% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 5.9% DC, while those not crossing are 3.14% DC. This is chi-squared significant w/ p-val 3.7e-87&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  265927  16482
+  yes   8627   1034
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 9.83% of DE contacts cross TAD boundaries | 3  differentially between species, while 10.6% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 20.9% DE, while those not crossing are 22.4% DE. This is chi-squared significant w/ p-val 0.045&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  25098  2981
+  yes  7227   788
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 14.4% of DC contacts cross TAD boundaries | 3  differentially between species, while 10.3% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 4.75% DC, while those not crossing are 3.29% DC. This is chi-squared significant w/ p-val 3.8e-06&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  31263  3590
+  yes  1062   179</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.4&quot;, 4)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 6.89% of DE contacts cross TAD boundaries | 4  differentially between species, while 3.78% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 4.89% DE, while those not crossing are 2.66% DE. This is chi-squared significant w/ p-val 6.1e-46&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  273330  10725
+  yes   7463    552
+[1] &quot;As seen in the table below, amongst all hits, 5.63% of DC contacts cross TAD boundaries | 4  differentially between species, while 3.8% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 4.82% DC, while those not crossing are 3.25% DC. This is chi-squared significant w/ p-val 5.4e-20&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  271676  10733
+  yes   9117    544
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 6.89% of DE contacts cross TAD boundaries | 4  differentially between species, while 7.43% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 20.9% DE, while those not crossing are 22.3% DE. This is chi-squared significant w/ p-val 0.11&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  25994  2085
+  yes  7463   552
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 9.51% of DC contacts cross TAD boundaries | 4  differentially between species, while 7.23% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 4.47% DC, while those not crossing are 3.36% DC. This is chi-squared significant w/ p-val 0.0029&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  32334  2519
+  yes  1123   118</code></pre>
 </div>
 <div id="exploration-of-genes-with-or-without-an-upstream-contact" class="section level3">
 <h3>Exploration of genes with or without an upstream contact</h3>
@@ -2001,7 +2248,7 @@ mean of x mean of y
 <p>This next section would be to look at differences in effect size and sign changes when doing the two separate lms (one before and one after regressing out Hi-C data from RPKM expression). Unfortunately the ash results I get have all their svalues as 1 so this is boring/not interesting right now. Hence it is not included. But let’s give it another go!</p>
 <pre class="r"><code>#######Effect size differences/sign changes
 design &lt;- model.matrix(~meta.data$SP)
-exprs &lt;- as.data.frame(filter(hmin, adj.P.Val&lt;=0.05) %&gt;% select(., &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;, genes))
+exprs &lt;- as.data.frame(filter(hmin, adj.P.Val&lt;=0.05) %&gt;% select(., &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;, genes)) #Should be done on just DE genes, filter with adj.P.Val&lt;=0.05
 hic &lt;- as.data.frame(filter(hmin, adj.P.Val&lt;=0.05) %&gt;% select(.,&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;))
 present &lt;- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
 DEgenes &lt;- exprs$genes
@@ -2016,24 +2263,39 @@ resid_hic &lt;- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe 
 for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
      resid_hic[i,] &lt;- lm(exprs[i,]~hic[i,])$resid
 }
-residweight &lt;- myweight
-residweight$E &lt;- resid_hic
-lmFit(myweight, design=design) %&gt;% eBayes(.) -&gt; fit_b
-lmFit(residweight, design=design) %&gt;% eBayes(.) -&gt; fit_a
+#residweight &lt;- myweight
+#residweight$E &lt;- resid_hic
+#lmFit(myweight, design=design) %&gt;% eBayes(.) -&gt; fit_b
+#lmFit(residweight, design=design) %&gt;% eBayes(.) -&gt; fit_a
+
+#lmFit(myweight, design=design) -&gt; fit_b2 #for some reason, running it with this makes it awful. VERY different sigmas...perhaps b/c this was already a voom object?
+#lmFit(residweight, design=design) -&gt; fit_a
+
+lmFit(exprs, design=design) -&gt; fit_b
+lmFit(resid_hic, design=design) -&gt; fit_a
 
 #Get effect sizes.
 beta_b &lt;- fit_b$coefficients[,2]
 beta_a &lt;- fit_a$coefficients[,2]
-result_b &lt;- ash(betahat=beta_b, sebetahat=fit_b$stdev.unscaled[,2]*sqrt(fit_b$s2.post), df=fit_b$df.total[1])</code></pre>
-<pre><code>Due to absence of package REBayes, switching to EM algorithm</code></pre>
-<pre class="r"><code>result_a &lt;- ash(betahat=beta_a, sebetahat=fit_a$stdev.unscaled[,2]*sqrt(fit_a$s2.post), df=fit_a$df.total[1])</code></pre>
-<pre><code>Due to absence of package REBayes, switching to EM algorithm</code></pre>
-<pre class="r"><code>se_beta_b &lt;- se_beta_hic &lt;- se_beta_a &lt;- cov_beta_ba &lt;- vector(&quot;numeric&quot;, nrow(hic))
+#result_b &lt;- ash(betahat=beta_b, sebetahat=fit_b$stdev.unscaled[,2]*sqrt(fit_b$s2.post), df=fit_b$df.total[1])
+#result_a &lt;- ash(betahat=beta_a, sebetahat=fit_a$stdev.unscaled[,2]*sqrt(fit_a$s2.post), df=fit_a$df.total[1])
+
+se_beta_b &lt;- se_beta_hic &lt;- se_beta_a &lt;- cov_beta_ba &lt;- vector(&quot;numeric&quot;, nrow(hic))
+
+design[c(3:4, 7:8),2] &lt;- -1 #Because of the transposing for getting A below, need to have chimps be -1
 
 #Get variances of beta_before&#39;s species effect:
 se_beta_b &lt;- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
 
-#Get variances of se_beta_hic, Hi-C effect:
+head(cbind(se_beta_b,fit_b$sigma*sqrt(fit_b$cov.coefficients[2,2])))</code></pre>
+<pre><code>   se_beta_b           
+1 0.04498742 0.08997484
+2 0.18270096 0.36540192
+3 0.05901818 0.11803637
+4 0.06034491 0.12068982
+5 0.12512973 0.25025946
+6 0.04983582 0.09967164</code></pre>
+<pre class="r"><code>#Get variances of se_beta_hic, Hi-C effect:
 for (g in 1:length(se_beta_hic)) {
   design_2 &lt;- model.matrix(~ as.numeric(hic[g,]))
   sigma_g &lt;- fit_b$sigma[g]
@@ -2067,11 +2329,17 @@ for(g in 1:length(cov_beta_ba)){
 
 #Covariance beta_b-beta_a
 cov_diff_sqrt &lt;- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
-beta_diff &lt;- beta_b-beta_a
+beta_diff &lt;- beta_b-beta_a #Everything written out by LEB&#39;s example was checked up to here, so that&#39;s where something must be different.
 
 #Now run some of that ASH!
 fit_ash &lt;- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)</code></pre>
 <pre><code>Due to absence of package REBayes, switching to EM algorithm</code></pre>
+<pre class="r"><code>summary(fit_ash$result$svalue) #For some reason these are slightly inflated still compared to Lauren&#39;s analysis.</code></pre>
+<pre><code>     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+0.000e+00 2.288e-05 1.176e-03 8.696e-03 8.892e-03 7.771e-02 </code></pre>
+<pre class="r"><code>summary(fit_ash$result$svalue&lt;0.05) #As a result I have fewer here true than hers (528 vs 339)</code></pre>
+<pre><code>   Mode   FALSE    TRUE 
+logical      72    1465 </code></pre>
 <pre class="r"><code>ind_sig &lt;- (fit_ash$result$svalue &lt; 0.05)
 ind_sig[ind_sig == TRUE] &lt;- &quot;red&quot;
 ind_sig[ind_sig == FALSE] &lt;- &quot;black&quot;
@@ -2083,7 +2351,7 @@ make_plot[,2] &lt;- as.numeric(make_plot[,2])
 make_plot[,3] &lt;- as.character(make_plot[,3])
 make_plot[,4] &lt;- as.numeric(make_plot[,4])
 
-plot(x=make_plot[,1], y=make_plot[,2], ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (DE genes)&quot;, pch=16, cex=0.6, col=make_plot[,3], xlim=c(-5, 5))
+plot(x=make_plot[,1], y=make_plot[,2], ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (DE genes)&quot;, pch=16, cex=0.6, col=make_plot[,3], xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
 legend(&quot;topleft&quot;, legend=c(&quot;s &lt; 0.05&quot;, &quot;s &gt;= 0.05&quot;), col=c(&quot;red&quot;, &quot;black&quot;), pch=16:16, cex=0.8)</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>####Now do the same thing for non-DE genes
@@ -2098,11 +2366,11 @@ resid_hic &lt;- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe 
 for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
      resid_hic[i,] &lt;- lm(exprs[i,]~hic[i,])$resid
 }
-mygenes &lt;- which(weighted.data$genes$genes %in% nonDEgenes)
-myweight &lt;- weighted.data[mygenes,]
+#mygenes &lt;- which(weighted.data$genes$genes %in% nonDEgenes)
+#myweight &lt;- weighted.data[mygenes,]
 
-lmFit(exprs, design=design) %&gt;% eBayes(.) -&gt; fit_b
-lmFit(resid_hic, design=design) %&gt;% eBayes(.) -&gt; fit_a
+lmFit(exprs, design=design) -&gt; fit_b
+lmFit(resid_hic, design=design) -&gt; fit_a
 
 #Get effect sizes.
 beta_b &lt;- fit_b$coefficients[,2]
@@ -2163,7 +2431,7 @@ make_plot[,2] &lt;- as.numeric(make_plot[,2])
 make_plot[,3] &lt;- as.character(make_plot[,3])
 make_plot[,4] &lt;- as.numeric(make_plot[,4])
 
-plot(x=make_plot[,1], y=make_plot[,2], ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (non-DE genes)&quot;, pch=16, cex=0.6, col=make_plot[,3], xlim=c(-5, 5))
+plot(x=make_plot[,1], y=make_plot[,2], ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (non-DE genes)&quot;, pch=16, cex=0.6, col=make_plot[,3], xlim=c(-2, 2))
 legend(&quot;topright&quot;, legend=c(&quot;s &lt; 0.05&quot;, &quot;s &gt;= 0.05&quot;), col=c(&quot;red&quot;, &quot;black&quot;), pch=16:16, cex=0.8)</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-2.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
@@ -2477,9 +2745,9 @@ loaded via a namespace (and not attached):
 [82] modelr_0.1.1         crayon_1.3.4         futile.options_1.0.0
 [85] KernSmooth_2.23-15   rmarkdown_1.9        locfit_1.5-9.1      
 [88] grid_3.4.0           readxl_1.0.0         git2r_0.21.0        
-[91] etrunct_0.1          digest_0.6.15        diptest_0.75-7      
-[94] webshot_0.5.0        VennDiagram_1.6.19   R.utils_2.6.0       
-[97] stats4_3.4.0         munsell_0.4.3        registry_0.5        </code></pre>
+[91] digest_0.6.15        diptest_0.75-7       webshot_0.5.0       
+[94] VennDiagram_1.6.19   R.utils_2.6.0        stats4_3.4.0        
+[97] munsell_0.4.3        registry_0.5        </code></pre>
 </div>
 
 <hr>
