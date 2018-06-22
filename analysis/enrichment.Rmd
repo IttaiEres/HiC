@@ -303,6 +303,7 @@ saveRDS(mates.proms.DC.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/m
 saveRDS(mates.proms.DCDE.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.DCDE.only.RDS")
 saveRDS(mates.proms.neither.only, file="~/Desktop/Hi-C/enrichdfs/metaproms/justmeta/mates.proms.neither.only.RDS")
 ```
+
 ###WIDE VARIETY OF DISTANCE ANALYSES!!!!
 ```{r}
 #After adding in promoters could also be interested in what distances look like for promoter vs non-promoter contacts:
@@ -387,6 +388,13 @@ ggplot(data=filter(ggdist, type=="Human", distance>2000000)) + geom_violin(aes(y
 ggplot(data=filter(ggdist, type=="Human", distance>2000000, FDR<=0.05)) + geom_violin(aes(y=abs(beta), x=sp.contact, group=sp.contact, color=sp.contact), draw_quantiles = c(0.25, 0.5, 0.75)) + xlab("Species with stronger contact") + ylab("|Species Effect Size|") + ggtitle("Species Betas for DC Long-Range (>2MB) Contacts") + annotate("text", x=1.5, y=3, label="4.1 e -5") #This is a comparison of 67 in chimps to 9 in humans.
 
 #Time to actually evaluate what these strange chimp hits actually are...would be very exciting if any of them are gene contacts!
+interesting.hits <- which(data.filtered$Hdist>2000000&data.filtered$sp_BH_pval<=0.05)
+unique(data.filtered$Cchr[interesting.hits])
+
+DE.interest <- which(gene.hic$HID %in% data.filtered$H1[interesting.hits] | gene.hic$HID %in% data.filtered$H2[interesting.hits]) #Not clear whether hmin or gene.hic would be better, although both only give 4 with this method...
+unique(gene.hic$Hchr.C[DE.interest])
+DE.interest <- which(data.filtered$H1[interesting.hits] %in% gene.hic$HID | data.filtered$H2[interesting.hits] %in% gene.hic$HID)
+unique(data.filtered$Hchr[DE.interest])
 ```
 
 ###ChromHMM Mark Length Analysis and Normalization

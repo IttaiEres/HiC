@@ -45,6 +45,7 @@ library(tidyverse)
 library(compiler)
 library(bedr)
 library(ashr)
+library(vashr)
 library(medinome)
 library(glmnet)
 enableJIT(3)
@@ -1036,53 +1037,178 @@ t.test(filter(final.AB, DC=="yes")$PC.hdiff, filter(final.AB, DC=="no")$PC.hdiff
 
 ###TAD Analysis
 Here, I look at TAD calls from TopDom to see if I can find a trend of DE genes or DC genes being more likely to have contacts that cross TAD boundaries.
-```{r}
-A_TAD <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/A-21792_TOPDOM_ALL.domain", header=TRUE, data.table=FALSE)
-B_TAD <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/B-28126_TOPDOM_ALL.domain", header=TRUE, data.table=FALSE)
-C_TAD <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/C-3649_TOPDOM_ALL.domain", header=TRUE, data.table=FALSE)
-D_TAD <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/D-40300_TOPDOM_ALL.domain", header=TRUE, data.table=FALSE)
-E_TAD <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/E-28815_TOPDOM_ALL.domain", header=TRUE, data.table=FALSE)
-F_TAD <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/F-28834_TOPDOM_ALL.domain", header=TRUE, data.table=FALSE)
-G_TAD <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/G-3624_TOPDOM_ALL.domain", header=TRUE, data.table=FALSE)
-H_TAD <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/H-3651_TOPDOM_ALL.domain", header=TRUE, data.table=FALSE)
+```{r include=FALSE}
+###First, simpler analysis looking at total number of TADs called, mean TAD sizes, and TAD size density distributions for each individual across the 3 different window sizes called.
+TAD.stats <- function(window){
+  A_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window,"/A-21792_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  B_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/B-28126_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  C_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/C-3649_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  D_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/D-40300_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  E_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/E-28815_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  F_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/F-28834_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  G_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/G-3624_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  H_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/H-3651_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  A_bounds <- filter(A_TAD, tag=="boundary")
+  B_bounds <- filter(B_TAD, tag=="boundary")
+  E_bounds <- filter(E_TAD, tag=="boundary")
+  F_bounds <- filter(F_TAD, tag=="boundary")
+  C_bounds <- filter(C_TAD, tag=="boundary")
+  D_bounds <- filter(D_TAD, tag=="boundary")
+  G_bounds <- filter(G_TAD, tag=="boundary")
+  H_bounds <- filter(H_TAD, tag=="boundary")
+  A_domains <- filter(A_TAD, tag=="domain")
+  B_domains <- filter(B_TAD, tag=="domain")
+  E_domains <- filter(E_TAD, tag=="domain")
+  F_domains <- filter(F_TAD, tag=="domain")
+  C_domains <- filter(C_TAD, tag=="domain")
+  D_domains <- filter(D_TAD, tag=="domain")
+  G_domains <- filter(G_TAD, tag=="domain")
+  H_domains <- filter(H_TAD, tag=="domain")
+  
+  A_bounds$species <- B_bounds$species <- E_bounds$species <- F_bounds$species <- A_domains$species <- B_domains$species <- E_domains$species <- F_domains$species <- "human"
+  C_bounds$species <- D_bounds$species <- G_bounds$species <- H_bounds$species <- C_domains$species <- D_domains$species <- G_domains$species <- H_domains$species <- "chimp"
+  A_bounds$ID <- A_domains$ID <- "A"
+  B_bounds$ID <- B_domains$ID <- "B"
+  C_bounds$ID <- C_domains$ID <- "C"
+  D_bounds$ID <- D_domains$ID <- "D"
+  E_bounds$ID <- E_domains$ID <- "E"
+  F_bounds$ID <- F_domains$ID <- "F"
+  G_bounds$ID <- G_domains$ID <- "G"
+  H_bounds$ID <- H_domains$ID <- "H"
+  
+  ggboundaries <- rbind(select(A_bounds, chr, size, species, ID), select(B_bounds, chr, size, species, ID), select(C_bounds, chr, size, species, ID), select(D_bounds, chr, size, species, ID), select(E_bounds, chr, size, species, ID), select(F_bounds, chr, size, species, ID), select(G_bounds, chr, size, species, ID), select(H_bounds, chr, size, species, ID))
+  
+  ggdomains <- rbind(select(A_domains, chr, size, species, ID), select(B_domains, chr, size, species, ID), select(C_domains, chr, size, species, ID), select(D_domains, chr, size, species, ID), select(E_domains, chr, size, species, ID), select(F_domains, chr, size, species, ID), select(G_domains, chr, size, species, ID), select(H_domains, chr, size, species, ID))
+  
+  broad.stats <- data.frame(individuals=c("A", "B", "C", "D", "E", "F", "G", "H"), species=c("human", "human", "chimp", "chimp", "human", "human", "chimp", "chimp"), total.TADs=c(nrow(A_domains), nrow(B_domains), nrow(C_domains), nrow(D_domains), nrow(E_domains), nrow(F_domains), nrow(G_domains), nrow(H_domains)), mean.TAD.size=c(mean(A_domains$size), mean(B_domains$size), mean(C_domains$size), mean(D_domains$size), mean(E_domains$size), mean(F_domains$size), mean(G_domains$size), mean(H_domains$size)), total.bounds=c(nrow(A_bounds), nrow(B_bounds), nrow(C_bounds), nrow(D_bounds), nrow(E_bounds), nrow(F_bounds), nrow(G_bounds), nrow(H_bounds)), mean.bound.size=c(mean(A_bounds$size), mean(B_bounds$size), mean(C_bounds$size), mean(D_bounds$size), mean(E_bounds$size), mean(F_bounds$size), mean(G_bounds$size), mean(H_bounds$size)))
+  
+  result <- list(boundaries=ggboundaries, domains=ggdomains, stats=broad.stats)
+  return(result)
+  
+}
 
-#Can ask a variety of different questions. Start simple and just get a table of TAD boundary crossings for individual contacts/genes within species.
-A_bounds <- filter(A_TAD, tag=="boundary")
-B_bounds <- filter(B_TAD, tag=="boundary")
-E_bounds <- filter(E_TAD, tag=="boundary")
-F_bounds <- filter(F_TAD, tag=="boundary")
-#Rather than worry about how to create a standardized set of boundaries or other elements here (lots of inter-individual variance), start by using ALL boundary calls as real boundaries and see results. Note that this was very annoying because the formatting was off for some reason, have to use awk to print these files out and then tail -n +2 each of them (awk -v OFS="\t" '{print $1, $2, $3, $4, $5, $6, $7, $8}' TOPDOM/human.boundaries.bed > TOPDOM/hbounds.bed). The tail -n +2 has to write to a completely new file for some reason. The ultimate command run is akin to (bedtools pairtobed -type notispan -a filt.bins.humans.bedPE -b TOPDOM/hbounds.final.bed > TOPDOM/hg38.TD.bounds.notispan.bed)
-human.bounds <- rbind(A_bounds, B_bounds, E_bounds, F_bounds)
-human.bounds <- human.bounds[!duplicated(human.bounds),]
-human.bounds$strand <- "."
-human.bounds <- human.bounds[,c(1, 3, 5, 2, 4, 8, 6, 7)]
-human.bounds <- format(human.bounds, scientific=FALSE)
-colnames(human.bounds) <- c("chromosome", "start", "end", "frombin", "tobin", "strand", "tag", "size")
-fwrite(human.bounds, "~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/human.boundaries.bed", sep="\t", na="NA", col.names=TRUE, quote=FALSE)
+TADs.20 <- TAD.stats(20)
+TADs.10 <- TAD.stats(10)
+TADs.5 <- TAD.stats(5)
 
-#Repeat on chimps.
-C_bounds <- filter(C_TAD, tag=="boundary")
-D_bounds <- filter(D_TAD, tag=="boundary")
-G_bounds <- filter(G_TAD, tag=="boundary")
-H_bounds <- filter(H_TAD, tag=="boundary")
-chimp.bounds <- rbind(C_bounds, D_bounds, G_bounds, H_bounds)
-chimp.bounds <- chimp.bounds[!duplicated(chimp.bounds),]
-chimp.bounds$strand <- "."
-chimp.bounds <- chimp.bounds[,c(1, 3, 5, 2, 4, 8, 6, 7)]
-chimp.bounds <- format(chimp.bounds, scientific=FALSE)
-colnames(chimp.bounds) <- c("chromosome", "start", "end", "frombin", "tobin", "strand", "tag", "size")
-fwrite(chimp.bounds, "~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/chimp.boundaries.bed", sep="\t", na="NA", col.names=TRUE, quote=FALSE)
+TADs.20$stats$window <- 200
+TADs.10$stats$window <- 100
+TADs.5$stats$window <- 50
+
+TADs.overall <- rbind(TADs.20$stats, TADs.10$stats, TADs.5$stats)
+
+#Total TADs
+ggplot(data=TADs.overall) + geom_line(aes(x=window, group=individuals, y=total.TADs, color=species)) + ggtitle("Total # of TADs Called by Window Size Used") + xlab("Window Size (kb)") + ylab("Total Number of TADs") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=50, y=14000, label="0.015", size=3) + annotate("text", x=100, y=10000, label="2.6 e -3", size=3) + annotate("text", x=200, y=11000, label="1.5 e -4", size=3)
+t.test(TADs.20$stats$total.TADs[c(1:2, 5:6)], TADs.20$stats$total.TADs[c(3:4, 7:8)])
+t.test(TADs.10$stats$total.TADs[c(1:2, 5:6)], TADs.10$stats$total.TADs[c(3:4, 7:8)])
+t.test(TADs.5$stats$total.TADs[c(1:2, 5:6)], TADs.5$stats$total.TADs[c(3:4, 7:8)])
+
+#Mean TAD size
+ggplot(data=TADs.overall) + geom_line(aes(x=window, group=individuals, y=mean.TAD.size, color=species)) + ggtitle("Mean TAD Size by Window Size Used") + xlab("Window Size (kb)") + ylab("Mean TAD Size") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=50, y=130000, label="0.013", size=3) + annotate("text", x=100, y=170000, label="4 e -3", size=3) + annotate("text", x=200, y=240000, label="4.7 e -4", size=3)
+t.test(TADs.20$stats$mean.TAD.size[c(1:2, 5:6)], TADs.20$stats$mean.TAD.size[c(3:4, 7:8)])
+t.test(TADs.10$stats$mean.TAD.size[c(1:2, 5:6)], TADs.10$stats$mean.TAD.size[c(3:4, 7:8)])
+t.test(TADs.5$stats$mean.TAD.size[c(1:2, 5:6)], TADs.5$stats$mean.TAD.size[c(3:4, 7:8)])
+
+#TAD size distributions
+ggplot(data=TADs.20$domains) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("TAD Size Distributions by Species, 200kb Windows") + xlab("TAD Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=1000000, y=0.5, label="< 2.2 e -16") + coord_cartesian(xlim=c(0, 2250000))#Already checked and this looks very similar even if chr2/A/B is removed, and across chrs
+t.test(filter(TADs.20$domains, species=="human")$size, filter(TADs.20$domains, species=="chimp")$size)
+
+ggplot(data=TADs.10$domains) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("TAD Size Distributions by Species, 100kb Windows") + xlab("TAD Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=1000000, y=0.5, label="< 2.2 e -16") + coord_cartesian(xlim=c(0, 1500000)) #+ facet_wrap(~chr) #Already checked and this looks very similar even if chr2/A/B is removed, and across chrs
+t.test(filter(TADs.10$domains, species=="human")$size, filter(TADs.10$domains, species=="chimp")$size)
+
+ggplot(data=TADs.5$domains) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("TAD Size Distributions by Species, 50kb Windows") + xlab("TAD Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=1000000, y=0.5, label="< 2.2 e -16") + coord_cartesian(xlim=c(0, 1250000)) #+ facet_wrap(~chr) #Already checked and this looks very similar even if chr2/A/B is removed, and across chrs
+t.test(filter(TADs.5$domains, species=="human")$size, filter(TADs.5$domains, species=="chimp")$size)
+
+#TAD size by chr...
+ggplot(data=TADs.20$domains) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("TAD Size Distributions by Species, 200kb Windows") + xlab("TAD Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=1000000, y=0.5, label="< 2.2 e -16") + facet_wrap(~chr)
+
+#Repeat all TAD analyses, but on the boundaries instead of the domains:
+#Total TADs
+ggplot(data=TADs.overall) + geom_line(aes(x=window, group=individuals, y=total.bounds, color=species)) + ggtitle("Total # of TAD Boundaries Called by Window Size Used") + xlab("Window Size (kb)") + ylab("Total Number of TAD Boundaries") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=50, y=750, label="0.07", size=3) + annotate("text", x=100, y=1275, label="0.01", size=3) + annotate("text", x=200, y=1525, label="4.1 e -5", size=3)
+t.test(TADs.20$stats$total.bounds[c(1:2, 5:6)], TADs.20$stats$total.bounds[c(3:4, 7:8)])
+t.test(TADs.10$stats$total.bounds[c(1:2, 5:6)], TADs.10$stats$total.bounds[c(3:4, 7:8)])
+t.test(TADs.5$stats$total.bounds[c(1:2, 5:6)], TADs.5$stats$total.bounds[c(3:4, 7:8)])
+
+#Mean Boundary Size
+ggplot(data=TADs.overall) + geom_line(aes(x=window, group=individuals, y=mean.bound.size, color=species)) + ggtitle("Mean Boundary Size by Window Size Used") + xlab("Window Size (kb)") + ylab("Mean Boundary Size") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=50, y=22000, label="0.31", size=3) + annotate("text", x=100, y=30000, label="0.9", size=3) + annotate("text", x=200, y=74000, label="0.09", size=3)
+t.test(TADs.20$stats$mean.bound.size[c(1:2, 5:6)], TADs.20$stats$mean.bound.size[c(3:4, 7:8)])$p.value
+t.test(TADs.10$stats$mean.bound.size[c(1:2, 5:6)], TADs.10$stats$mean.bound.size[c(3:4, 7:8)])$p.value
+t.test(TADs.5$stats$mean.bound.size[c(1:2, 5:6)], TADs.5$stats$mean.bound.size[c(3:4, 7:8)])$p.value
+
+#Boundary Size distributions
+ggplot(data=TADs.20$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("Boundary Size Distributions by Species, 200kb Windows") + xlab("Boundary Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=150000, y=0.5, label=signif(t.test(filter(TADs.20$boundaries, species=="human")$size, filter(TADs.20$boundaries, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 300000))#Already checked and this looks very similar even if chr2/A/B is removed, and across chrs
+
+ggplot(data=TADs.10$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("Boundary Size Distributions by Species, 100kb Windows") + xlab("Boundary Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=70000, y=0.5, label=signif(t.test(filter(TADs.10$boundaries, species=="human")$size, filter(TADs.10$boundaries, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 150000)) #+ facet_wrap(~chr) #Already checked and this looks very similar even if chr2/A/B is removed, and across chrs
+
+ggplot(data=TADs.5$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("Boundary Size Distributions by Species, 50kb Windows") + xlab("Boundary Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + annotate("text", x=1000000, y=0.5, label="< 2.2 e -16") + coord_cartesian(xlim=c(0, 1250000)) #+ facet_wrap(~chr) #Already checked and this looks very similar even if chr2/A/B is removed, and across chrs
+t.test(filter(TADs.5$boundaries, species=="human")$size, filter(TADs.5$boundaries, species=="chimp")$size)
+
+#Boundary Size by chr...
+ggplot(data=TADs.20$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("Boundary Size Distributions by Species, 200kb Windows") + xlab("Boundary Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + facet_wrap(~chr)#+ annotate("text", x=1000000, y=0.5, label="< 2.2 e -16") + facet_wrap(~chr)
+
+#Do it on ONLY ortho regions: Need to just do a basic re-run of this comparison on ortho boundaries in the orthos folder of /Users/ittaieres/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM, and also on the domains files. Also need to do intersects on domains files to find % consesrvation amongs orthologous TADs.
+TAD.stats.ortho <- function(window){
+  A_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window,"/A-21792_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  B_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/B-28126_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  C_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/C-3649_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  D_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/D-40300_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  E_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/E-28815_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  F_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/F-28834_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  G_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/G-3624_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  H_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/H-3651_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
+  A_bounds <- filter(A_TAD, tag=="boundary")
+  B_bounds <- filter(B_TAD, tag=="boundary")
+  E_bounds <- filter(E_TAD, tag=="boundary")
+  F_bounds <- filter(F_TAD, tag=="boundary")
+  C_bounds <- filter(C_TAD, tag=="boundary")
+  D_bounds <- filter(D_TAD, tag=="boundary")
+  G_bounds <- filter(G_TAD, tag=="boundary")
+  H_bounds <- filter(H_TAD, tag=="boundary")
+  A_domains <- filter(A_TAD, tag=="domain")
+  B_domains <- filter(B_TAD, tag=="domain")
+  E_domains <- filter(E_TAD, tag=="domain")
+  F_domains <- filter(F_TAD, tag=="domain")
+  C_domains <- filter(C_TAD, tag=="domain")
+  D_domains <- filter(D_TAD, tag=="domain")
+  G_domains <- filter(G_TAD, tag=="domain")
+  H_domains <- filter(H_TAD, tag=="domain")
+  
+  A_bounds$species <- B_bounds$species <- E_bounds$species <- F_bounds$species <- A_domains$species <- B_domains$species <- E_domains$species <- F_domains$species <- "human"
+  C_bounds$species <- D_bounds$species <- G_bounds$species <- H_bounds$species <- C_domains$species <- D_domains$species <- G_domains$species <- H_domains$species <- "chimp"
+  A_bounds$ID <- A_domains$ID <- "A"
+  B_bounds$ID <- B_domains$ID <- "B"
+  C_bounds$ID <- C_domains$ID <- "C"
+  D_bounds$ID <- D_domains$ID <- "D"
+  E_bounds$ID <- E_domains$ID <- "E"
+  F_bounds$ID <- F_domains$ID <- "F"
+  G_bounds$ID <- G_domains$ID <- "G"
+  H_bounds$ID <- H_domains$ID <- "H"
+  
+  ggboundaries <- rbind(select(A_bounds, chr, size, species, ID), select(B_bounds, chr, size, species, ID), select(C_bounds, chr, size, species, ID), select(D_bounds, chr, size, species, ID), select(E_bounds, chr, size, species, ID), select(F_bounds, chr, size, species, ID), select(G_bounds, chr, size, species, ID), select(H_bounds, chr, size, species, ID))
+  
+  ggdomains <- rbind(select(A_domains, chr, size, species, ID), select(B_domains, chr, size, species, ID), select(C_domains, chr, size, species, ID), select(D_domains, chr, size, species, ID), select(E_domains, chr, size, species, ID), select(F_domains, chr, size, species, ID), select(G_domains, chr, size, species, ID), select(H_domains, chr, size, species, ID))
+  
+  broad.stats <- data.frame(individuals=c("A", "B", "C", "D", "E", "F", "G", "H"), species=c("human", "human", "chimp", "chimp", "human", "human", "chimp", "chimp"), total.TADs=c(nrow(A_domains), nrow(B_domains), nrow(C_domains), nrow(D_domains), nrow(E_domains), nrow(F_domains), nrow(G_domains), nrow(H_domains)), mean.TAD.size=c(mean(A_domains$size), mean(B_domains$size), mean(C_domains$size), mean(D_domains$size), mean(E_domains$size), mean(F_domains$size), mean(G_domains$size), mean(H_domains$size)), total.bounds=c(nrow(A_bounds), nrow(B_bounds), nrow(C_bounds), nrow(D_bounds), nrow(E_bounds), nrow(F_bounds), nrow(G_bounds), nrow(H_bounds)), mean.bound.size=c(mean(A_bounds$size), mean(B_bounds$size), mean(C_bounds$size), mean(D_bounds$size), mean(E_bounds$size), mean(F_bounds$size), mean(G_bounds$size), mean(H_bounds$size)))
+  
+  result <- list(boundaries=ggboundaries, domains=ggdomains, stats=broad.stats)
+  return(result)
+  
+}
+
+######NOW, actually move to assess DE/DC status effects of boundaries and the like!:
+#The ultimate command run is akin to (bedtools pairtobed -type notispan -a filt.bins.humans.bedPE -b TOPDOM/hbounds.final.bed > TOPDOM/hg38.TD.bounds.notispan.bed)
+
 
 #Load in the pairs that are NOT interrupted by a TAD boundary! First using the agnostic approach where I just take all boundaries, and then for more stringent criteria (i.e. boundary found in at least 2 individuals, at least 3, or all 4)
-TADcross.humans <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hg38.TD.bounds.notispan.bed")
-TADcross.humans.2 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.2.bed")
-TADcross.humans.3 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.3.bed")
-TADcross.humans.4 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.4.bed")
+TADcross.humans <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/hu.TD.bounds.notispan.1.bed")
+TADcross.humans.2 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/hu.TD.bounds.notispan.2.bed")
+TADcross.humans.3 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/hu.TD.bounds.notispan.3.bed")
+TADcross.humans.4 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/hu.TD.bounds.notispan.4.bed")
 
-TADcross.chimps <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/pt5.TD.bounds.notispan.bed")
-TADcross.chimps.2 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.2.bed")
-TADcross.chimps.3 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.3.bed")
-TADcross.chimps.4 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.4.bed")
+TADcross.chimps <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/ch.TD.bounds.notispan.1.bed")
+TADcross.chimps.2 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/ch.TD.bounds.notispan.2.bed")
+TADcross.chimps.3 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/ch.TD.bounds.notispan.3.bed")
+TADcross.chimps.4 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/ch.TD.bounds.notispan.4.bed")
 
 full.annotations <- readRDS("~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS")
 
@@ -1126,6 +1252,90 @@ chisq.summarizer <- function(df, col1, robust){
 }
 
 #Call the summarizer on all the different TAD boundary specs :)
+chisq.summarizer(full.annotations, "diff.TAD.interrupt", 1)
+chisq.summarizer(full.annotations, "diff.TAD.interrupt.2", 2)
+chisq.summarizer(full.annotations, "diff.TAD.interrupt.3", 3)
+chisq.summarizer(full.annotations, "diff.TAD.interrupt.4", 4)
+
+#Now do the same thing again, but for window sizes of 5 and 10 instead!
+TADcross.humans <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/hu.TD.bounds.notispan.1.bed")
+TADcross.humans.2 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/hu.TD.bounds.notispan.2.bed")
+TADcross.humans.3 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/hu.TD.bounds.notispan.3.bed")
+TADcross.humans.4 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/hu.TD.bounds.notispan.4.bed")
+
+TADcross.chimps <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/ch.TD.bounds.notispan.1.bed")
+TADcross.chimps.2 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/ch.TD.bounds.notispan.2.bed")
+TADcross.chimps.3 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/ch.TD.bounds.notispan.3.bed")
+TADcross.chimps.4 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/ch.TD.bounds.notispan.4.bed")
+
+full.annotations <- readRDS("~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS")
+
+TADcross.humans$HpairID <- paste(paste(TADcross.humans$V1, TADcross.humans$V2, sep="-"), paste(TADcross.humans$V4, TADcross.humans$V5, sep="-"), sep="_")
+TADcross.humans.2$HpairID <- paste(paste(TADcross.humans.2$V1, TADcross.humans.2$V2, sep="-"), paste(TADcross.humans.2$V4, TADcross.humans.2$V5, sep="-"), sep="_")
+TADcross.humans.3$HpairID <- paste(paste(TADcross.humans.3$V1, TADcross.humans.3$V2, sep="-"), paste(TADcross.humans.3$V4, TADcross.humans.3$V5, sep="-"), sep="_")
+TADcross.humans.4$HpairID <- paste(paste(TADcross.humans.4$V1, TADcross.humans.4$V2, sep="-"), paste(TADcross.humans.4$V4, TADcross.humans.4$V5, sep="-"), sep="_")
+
+TADcross.chimps$CpairID <- paste(paste(TADcross.chimps$V1, TADcross.chimps$V2, sep="-"), paste(TADcross.chimps$V4, TADcross.chimps$V5, sep="-"), sep="_")
+TADcross.chimps.2$CpairID <- paste(paste(TADcross.chimps.2$V1, TADcross.chimps.2$V2, sep="-"), paste(TADcross.chimps.2$V4, TADcross.chimps.2$V5, sep="-"), sep="_")
+TADcross.chimps.3$CpairID <- paste(paste(TADcross.chimps.3$V1, TADcross.chimps.3$V2, sep="-"), paste(TADcross.chimps.3$V4, TADcross.chimps.3$V5, sep="-"), sep="_")
+TADcross.chimps.4$CpairID <- paste(paste(TADcross.chimps.4$V1, TADcross.chimps.4$V2, sep="-"), paste(TADcross.chimps.4$V4, TADcross.chimps.4$V5, sep="-"), sep="_")
+
+full.annotations$HTAD.interrupt <- ifelse(full.annotations$HpairID %in% TADcross.humans$HpairID, "no", "yes")
+full.annotations$HTAD.interrupt.2 <- ifelse(full.annotations$HpairID %in% TADcross.humans.2$HpairID, "no", "yes")
+full.annotations$HTAD.interrupt.3 <- ifelse(full.annotations$HpairID %in% TADcross.humans.3$HpairID, "no", "yes")
+full.annotations$HTAD.interrupt.4 <- ifelse(full.annotations$HpairID %in% TADcross.humans.4$HpairID, "no", "yes")
+full.annotations$CTAD.interrupt <- ifelse(full.annotations$CpairID %in% TADcross.chimps$CpairID, "no", "yes")
+full.annotations$CTAD.interrupt.2 <- ifelse(full.annotations$CpairID %in% TADcross.chimps.2$CpairID, "no", "yes")
+full.annotations$CTAD.interrupt.3 <- ifelse(full.annotations$CpairID %in% TADcross.chimps.3$CpairID, "no", "yes")
+full.annotations$CTAD.interrupt.4 <- ifelse(full.annotations$CpairID %in% TADcross.chimps.4$CpairID, "no", "yes")
+
+full.annotations$diff.TAD.interrupt <- ifelse(full.annotations$HTAD.interrupt==full.annotations$CTAD.interrupt, "no", "yes")
+full.annotations$diff.TAD.interrupt.2 <- ifelse(full.annotations$HTAD.interrupt.2==full.annotations$CTAD.interrupt.2, "no", "yes")
+full.annotations$diff.TAD.interrupt.3 <- ifelse(full.annotations$HTAD.interrupt.3==full.annotations$CTAD.interrupt.3, "no", "yes")
+full.annotations$diff.TAD.interrupt.4 <- ifelse(full.annotations$HTAD.interrupt.4==full.annotations$CTAD.interrupt.4, "no", "yes")
+
+chisq.summarizer(full.annotations, "diff.TAD.interrupt", 1)
+chisq.summarizer(full.annotations, "diff.TAD.interrupt.2", 2)
+chisq.summarizer(full.annotations, "diff.TAD.interrupt.3", 3)
+chisq.summarizer(full.annotations, "diff.TAD.interrupt.4", 4)
+
+###Now for window size of 5 (50kb total):
+TADcross.humans <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/hu.TD.bounds.notispan.1.bed")
+TADcross.humans.2 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/hu.TD.bounds.notispan.2.bed")
+TADcross.humans.3 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/hu.TD.bounds.notispan.3.bed")
+TADcross.humans.4 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/hu.TD.bounds.notispan.4.bed")
+
+TADcross.chimps <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/ch.TD.bounds.notispan.1.bed")
+TADcross.chimps.2 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/ch.TD.bounds.notispan.2.bed")
+TADcross.chimps.3 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/ch.TD.bounds.notispan.3.bed")
+TADcross.chimps.4 <- fread("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/ch.TD.bounds.notispan.4.bed")
+
+full.annotations <- readRDS("~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS")
+
+TADcross.humans$HpairID <- paste(paste(TADcross.humans$V1, TADcross.humans$V2, sep="-"), paste(TADcross.humans$V4, TADcross.humans$V5, sep="-"), sep="_")
+TADcross.humans.2$HpairID <- paste(paste(TADcross.humans.2$V1, TADcross.humans.2$V2, sep="-"), paste(TADcross.humans.2$V4, TADcross.humans.2$V5, sep="-"), sep="_")
+TADcross.humans.3$HpairID <- paste(paste(TADcross.humans.3$V1, TADcross.humans.3$V2, sep="-"), paste(TADcross.humans.3$V4, TADcross.humans.3$V5, sep="-"), sep="_")
+TADcross.humans.4$HpairID <- paste(paste(TADcross.humans.4$V1, TADcross.humans.4$V2, sep="-"), paste(TADcross.humans.4$V4, TADcross.humans.4$V5, sep="-"), sep="_")
+
+TADcross.chimps$CpairID <- paste(paste(TADcross.chimps$V1, TADcross.chimps$V2, sep="-"), paste(TADcross.chimps$V4, TADcross.chimps$V5, sep="-"), sep="_")
+TADcross.chimps.2$CpairID <- paste(paste(TADcross.chimps.2$V1, TADcross.chimps.2$V2, sep="-"), paste(TADcross.chimps.2$V4, TADcross.chimps.2$V5, sep="-"), sep="_")
+TADcross.chimps.3$CpairID <- paste(paste(TADcross.chimps.3$V1, TADcross.chimps.3$V2, sep="-"), paste(TADcross.chimps.3$V4, TADcross.chimps.3$V5, sep="-"), sep="_")
+TADcross.chimps.4$CpairID <- paste(paste(TADcross.chimps.4$V1, TADcross.chimps.4$V2, sep="-"), paste(TADcross.chimps.4$V4, TADcross.chimps.4$V5, sep="-"), sep="_")
+
+full.annotations$HTAD.interrupt <- ifelse(full.annotations$HpairID %in% TADcross.humans$HpairID, "no", "yes")
+full.annotations$HTAD.interrupt.2 <- ifelse(full.annotations$HpairID %in% TADcross.humans.2$HpairID, "no", "yes")
+full.annotations$HTAD.interrupt.3 <- ifelse(full.annotations$HpairID %in% TADcross.humans.3$HpairID, "no", "yes")
+full.annotations$HTAD.interrupt.4 <- ifelse(full.annotations$HpairID %in% TADcross.humans.4$HpairID, "no", "yes")
+full.annotations$CTAD.interrupt <- ifelse(full.annotations$CpairID %in% TADcross.chimps$CpairID, "no", "yes")
+full.annotations$CTAD.interrupt.2 <- ifelse(full.annotations$CpairID %in% TADcross.chimps.2$CpairID, "no", "yes")
+full.annotations$CTAD.interrupt.3 <- ifelse(full.annotations$CpairID %in% TADcross.chimps.3$CpairID, "no", "yes")
+full.annotations$CTAD.interrupt.4 <- ifelse(full.annotations$CpairID %in% TADcross.chimps.4$CpairID, "no", "yes")
+
+full.annotations$diff.TAD.interrupt <- ifelse(full.annotations$HTAD.interrupt==full.annotations$CTAD.interrupt, "no", "yes")
+full.annotations$diff.TAD.interrupt.2 <- ifelse(full.annotations$HTAD.interrupt.2==full.annotations$CTAD.interrupt.2, "no", "yes")
+full.annotations$diff.TAD.interrupt.3 <- ifelse(full.annotations$HTAD.interrupt.3==full.annotations$CTAD.interrupt.3, "no", "yes")
+full.annotations$diff.TAD.interrupt.4 <- ifelse(full.annotations$HTAD.interrupt.4==full.annotations$CTAD.interrupt.4, "no", "yes")
+
 chisq.summarizer(full.annotations, "diff.TAD.interrupt", 1)
 chisq.summarizer(full.annotations, "diff.TAD.interrupt.2", 2)
 chisq.summarizer(full.annotations, "diff.TAD.interrupt.3", 3)
@@ -1437,185 +1647,70 @@ There are some interesting stories to be told here about increasing expression w
 ###Differences in effect size/sign changes
 This next section would be to look at differences in effect size and sign changes when doing the two separate lms (one before and one after regressing out Hi-C data from RPKM expression). Unfortunately the ash results I get have all their svalues as 1 so this is boring/not interesting right now. Hence it is not included. But let's give it another go!
 ```{r Differences in Effect Sizes}
-#######Effect size differences/sign changes
+#######FRESH CODE 6-21-18#########
 design <- model.matrix(~meta.data$SP)
-exprs <- as.data.frame(filter(hmin, adj.P.Val<=0.05) %>% select(., "A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651", genes)) #Should be done on just DE genes, filter with adj.P.Val<=0.05
-hic <- as.data.frame(filter(hmin, adj.P.Val<=0.05) %>% select(.,"A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC"))
+exprs <- select(hmin, "A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651", genes) #Should be done on just DE genes, filter with adj.P.Val<=0.05
+hic <- select(hmin,"A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC")
 present <- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
-DEgenes <- exprs$genes
+genes <- exprs$genes
+DEgenes <- filter(hmin, adj.P.Val<=0.05) %>% select(., genes)
+myDEindices <- which(genes %in% DEgenes[,1])
 exprs <- exprs[,-9]
 exprs <- data.matrix(exprs[present,])
 hic <- data.matrix(hic[present,])
-mygenes <- which(weighted.data$genes$genes %in% DEgenes)
-myweight <- weighted.data[mygenes,]
+designy <- as.factor(c("human", "human", "chimp", "chimp", "human", "human", "chimp", "chimp"))
+colnames(hic) <- colnames(exprs)
+hic <- as.data.table(hic)
+exprs <- as.data.table(exprs)
+test <- mediate.test.regressing(exprs, designy, hic)
 
-#Now run analyses
-resid_hic <- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
-for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
-     resid_hic[i,] <- lm(exprs[i,]~hic[i,])$resid
-}
-#residweight <- myweight
-#residweight$E <- resid_hic
-#lmFit(myweight, design=design) %>% eBayes(.) -> fit_b
-#lmFit(residweight, design=design) %>% eBayes(.) -> fit_a
+#Shrink dat variance!
+vshrDE <- vash(test$d_se[myDEindices], df=6)
+vshrnonDE <- vash(test$d_se[-myDEindices], df=6)
+vshrink <- vash(test$d_se, df=6)
 
-#lmFit(myweight, design=design) -> fit_b2 #for some reason, running it with this makes it awful. VERY different sigmas...perhaps b/c this was already a voom object?
-#lmFit(residweight, design=design) -> fit_a
+#Separate out DE from non-DE genes:
+DEtest <- test[myDEindices,]
+nonDEtest <- test[-myDEindices,]
 
-lmFit(exprs, design=design) -> fit_b
-lmFit(resid_hic, design=design) -> fit_a
-
-#Get effect sizes.
-beta_b <- fit_b$coefficients[,2]
-beta_a <- fit_a$coefficients[,2]
-#result_b <- ash(betahat=beta_b, sebetahat=fit_b$stdev.unscaled[,2]*sqrt(fit_b$s2.post), df=fit_b$df.total[1])
-#result_a <- ash(betahat=beta_a, sebetahat=fit_a$stdev.unscaled[,2]*sqrt(fit_a$s2.post), df=fit_a$df.total[1])
-
-se_beta_b <- se_beta_hic <- se_beta_a <- cov_beta_ba <- vector("numeric", nrow(hic))
-
-design[c(3:4, 7:8),2] <- -1 #Because of the transposing for getting A below, need to have chimps be -1
-
-#Get variances of beta_before's species effect:
-se_beta_b <- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
-
-head(cbind(se_beta_b,fit_b$sigma*sqrt(fit_b$cov.coefficients[2,2])))
-
-#Get variances of se_beta_hic, Hi-C effect:
-for (g in 1:length(se_beta_hic)) {
-  design_2 <- model.matrix(~ as.numeric(hic[g,]))
-  sigma_g <- fit_b$sigma[g]
-  se_beta_hic[g] <- sigma_g*sqrt((solve(t(design_2)%*%design_2))[2,2])
-}
-
-#Get variances of beta_after's species effect:
-A <- solve(t(design)%*%design)%*%t(design)
-contr.vector <- array(c(0,1), dim=c(2,1))
-# compute beta_after by hand
-for (g in 1:length(se_beta_a)) {
-  M_g <- hic[g,]
-  design_2g <- model.matrix(~ as.numeric(M_g))
-  A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
-  sigma_g <- fit_b$sigma[g]
-  var_beta2g <- (se_beta_hic^2)[g]
-  var_part1 <- (se_beta_b[g])^2
-  var_part2 <- ( A%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A) )[2,2]
-  var_part3 <- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A) )[2,2]
-  se_beta_a[g] <- sqrt(var_part1 + var_part2 + var_part3)
-}
-#Get covariance of beta_b and beta_a
-for(g in 1:length(cov_beta_ba)){
-  M_g <- hic[g,]
-  design_2g <- model.matrix(~ as.numeric(M_g))
-  A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
-  sigma_g <- fit_b$sigma[g]
-  var_part1 <- (se_beta_b[g])^2
-  cov_beta_ba[g] <- var_part1 - (sigma_g^2)*((A %*% t(A_2g) %*%contr.vector%*%t(M_g)%*%t(A))[2,2])
-}
-
-#Covariance beta_b-beta_a
-cov_diff_sqrt <- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
-beta_diff <- beta_b-beta_a #Everything written out by LEB's example was checked up to here, so that's where something must be different.
-
-#Now run some of that ASH!
-fit_ash <- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)
-
-summary(fit_ash$result$svalue) #For some reason these are slightly inflated still compared to Lauren's analysis.
-summary(fit_ash$result$svalue<0.05) #As a result I have fewer here true than hers (528 vs 339)
-
-
-ind_sig <- (fit_ash$result$svalue < 0.05)
+#Ash on DE genes
+ash_reg <- ash(as.vector(DEtest$d), as.vector(vshrDE$sd.post), mixcompdist = "normal") #Now it works with this design coding. Use 6 df, as 2-group comparison and 8 individual samples (samples - 2)
+summary(ash_reg$result$svalue<=0.05) #Incredible result, looks too good to be true.
+ind_sig <- (ash_reg$result$svalue < 0.05)
 ind_sig[ind_sig == TRUE] <- "red"
 ind_sig[ind_sig == FALSE] <- "black"
-
-make_plot <- cbind(beta_b-beta_a, cov_diff_sqrt, ind_sig, fit_ash$result$lfdr)
-colnames(make_plot) <- c("Diff", "SE", "Sign", "LFDR")
-make_plot[,1] <- as.numeric(make_plot[,1])
-make_plot[,2] <- as.numeric(make_plot[,2])
-make_plot[,3] <- as.character(make_plot[,3])
-make_plot[,4] <- as.numeric(make_plot[,4])
-
-plot(x=make_plot[,1], y=make_plot[,2], ylab="Standard error of the difference", xlab="Difference in effect size from 2 lms", main="Difference of effect size (DE genes)", pch=16, cex=0.6, col=make_plot[,3], xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
+plot(x=ash_reg$result$betahat, y=ash_reg$result$sebetahat, ylab="Standard error of the difference", xlab="Difference in effect size from 2 lms", main="Difference of effect size (DE genes)", pch=16, cex=0.6, col=ind_sig)#, xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
 legend("topleft", legend=c("s < 0.05", "s >= 0.05"), col=c("red", "black"), pch=16:16, cex=0.8)
+plot(ash_reg$result$betahat, -log10(ash_reg$result$svalue))
 
-####Now do the same thing for non-DE genes
-exprs <- as.data.frame(filter(hmin, adj.P.Val>0.05) %>% select(., "A-21792", "B-28126", "C-3649", "D-40300", "E-28815", "F-28834", "G-3624", "H-3651", genes))
-hic <- as.data.frame(filter(hmin, adj.P.Val>0.05) %>% select(.,"A_21792_HIC", "B_28126_HIC", "C_3649_HIC", "D_40300_HIC", "E_28815_HIC", "F_28834_HIC", "G_3624_HIC", "H_3651_HIC"))
-nonDEgenes <- exprs$genes
-exprs <- exprs[,-9]
-present <- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
-exprs <- data.matrix(exprs[present,])
-hic <- data.matrix(hic[present,])
-resid_hic <- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
-for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
-     resid_hic[i,] <- lm(exprs[i,]~hic[i,])$resid
-}
-#mygenes <- which(weighted.data$genes$genes %in% nonDEgenes)
-#myweight <- weighted.data[mygenes,]
-
-lmFit(exprs, design=design) -> fit_b
-lmFit(resid_hic, design=design) -> fit_a
-
-#Get effect sizes.
-beta_b <- fit_b$coefficients[,2]
-beta_a <- fit_a$coefficients[,2]
-
-se_beta_b <- se_beta_hic <- se_beta_a <- cov_beta_ba <- vector("numeric", nrow(hic))
-
-#Get variances of beta_before's species effect:
-se_beta_b <- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
-
-#Get variances of se_beta_hic, Hi-C effect:
-for (g in 1:length(se_beta_hic)) {
-  design_2 <- model.matrix(~ as.numeric(hic[g,]))
-  sigma_g <- fit_b$sigma[g]
-  se_beta_hic[g] <- sigma_g*sqrt((solve(t(design_2)%*%design_2))[2,2])
-}
-
-#Get variances of beta_after's species effect:
-A <- solve(t(design)%*%design)%*%t(design)
-contr.vector <- array(c(0,1), dim=c(2,1))
-# compute beta_after by hand
-for (g in 1:length(se_beta_a)) {
-  M_g <- hic[g,]
-  design_2g <- model.matrix(~ as.numeric(M_g))
-  A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
-  sigma_g <- fit_b$sigma[g]
-  var_beta2g <- (se_beta_hic^2)[g]
-  var_part1 <- (se_beta_b[g])^2
-  var_part2 <- ( A%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A) )[2,2]
-  var_part3 <- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A) )[2,2]
-  se_beta_a[g] <- sqrt(var_part1 + var_part2 + var_part3)
-}
-#Get covariance of beta_b and beta_a
-for(g in 1:length(cov_beta_ba)){
-  M_g <- hic[g,]
-  design_2g <- model.matrix(~ as.numeric(M_g))
-  A_2g <- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
-  sigma_g <- fit_b$sigma[g]
-  var_part1 <- (se_beta_b[g])^2
-  cov_beta_ba[g] <- var_part1 - (sigma_g^2)*((A %*% t(A_2g) %*%contr.vector%*%t(M_g)%*%t(A))[2,2])
-}
-
-#Covariance beta_b-beta_a
-cov_diff_sqrt <- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
-beta_diff <- beta_b-beta_a
-
-#Now run some of that ASH!
-fit_ash <- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)
-
-ind_sig <- (fit_ash$result$svalue < 0.05)
+#Now on non-DE genes
+ash_reg_nonDE <- ash(as.vector(nonDEtest$d), as.vector(vshrnonDE$sd.post), mixcompdist = "normal") #Now it works with this design coding. Use 6 df, as 2-group comparison and 8 individual samples (samples - 2)
+summary(ash_reg_nonDE$result$svalue<=0.05) #Incredible result, looks too good to be true.
+ind_sig <- (ash_reg_nonDE$result$svalue < 0.05)
 ind_sig[ind_sig == TRUE] <- "red"
 ind_sig[ind_sig == FALSE] <- "black"
+plot(x=ash_reg_nonDE$result$betahat, y=ash_reg_nonDE$result$sebetahat, ylab="Standard error of the difference", xlab="Difference in effect size from 2 lms", main="Difference of effect size (DE genes)", pch=16, cex=0.6, col=ind_sig)#, xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
+legend("topleft", legend=c("s < 0.05", "s >= 0.05"), col=c("red", "black"), pch=16:16, cex=0.8)
+plot(ash_reg_nonDE$result$betahat, -log10(ash_reg_nonDE$result$svalue))
 
-make_plot <- cbind(beta_b-beta_a, cov_diff_sqrt, ind_sig, fit_ash$result$lfdr)
-colnames(make_plot) <- c("Diff", "SE", "Sign", "LFDR")
-make_plot[,1] <- as.numeric(make_plot[,1])
-make_plot[,2] <- as.numeric(make_plot[,2])
-make_plot[,3] <- as.character(make_plot[,3])
-make_plot[,4] <- as.numeric(make_plot[,4])
+#Now on the full set, for comparison's sake.
+ash_reg_full <- ash(as.vector(test$d), as.vector(vshrink$sd.post), mixcompdist = "normal") #Now it works with this design coding. Use 6 df, as 2-group comparison and 8 individual samples (samples - 2)
+summary(ash_reg_full$result$svalue<=0.05) #Incredible result, looks too good to be true.
+ind_sig <- (ash_reg_full$result$svalue < 0.05)
+ind_sig[ind_sig == TRUE] <- "red"
+ind_sig[ind_sig == FALSE] <- "black"
+plot(x=ash_reg_full$result$betahat, y=ash_reg_full$result$sebetahat, ylab="Standard error of the difference", xlab="Difference in effect size from 2 lms", main="Difference of effect size (DE genes)", pch=16, cex=0.6, col=ind_sig)#, xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
+legend("topleft", legend=c("s < 0.05", "s >= 0.05"), col=c("red", "black"), pch=16:16, cex=0.8)
+plot(ash_reg_full$result$betahat, -log10(ash_reg_full$result$svalue))
 
-plot(x=make_plot[,1], y=make_plot[,2], ylab="Standard error of the difference", xlab="Difference in effect size from 2 lms", main="Difference of effect size (non-DE genes)", pch=16, cex=0.6, col=make_plot[,3], xlim=c(-2, 2))
-legend("topright", legend=c("s < 0.05", "s >= 0.05"), col=c("red", "black"), pch=16:16, cex=0.8)
+#Look at effect size shrinkage in full set ash vs. separated DE/nonDE ash:
+plot(c(ash_reg$result$PosteriorMean, ash_reg_nonDE$result$PosteriorMean), ash_reg_full$result$PosteriorMean)
+
+#Look at this just in DE:
+plot(ash_reg$result$PosteriorMean, ash_reg_full$result$PosteriorMean[myDEindices])
+
+#Look at this just in non-DE:
+plot(ash_reg_nonDE$result$PosteriorMean, ash_reg_full$result$PosteriorMean[-myDEindices])
 ```
 
 ###Expression distance analysis
