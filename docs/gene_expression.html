@@ -315,10 +315,10 @@ div.tocify {
 shared across the workflowr files. -->
 <!-- Update knitr chunk options -->
 <!-- Insert the date the file was last updated -->
-<p><strong>Last updated:</strong> 2018-06-06</p>
+<p><strong>Last updated:</strong> 2018-06-21</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 506df20</p>
+<p><strong>Code version:</strong> 598ce4c</p>
 <!-- Add your analysis here -->
 <div id="preparing-the-gene-expression-data" class="section level3">
 <h3>Preparing the gene expression data</h3>
@@ -1555,179 +1555,6 @@ sample estimates:
 <div id="tad-analysis" class="section level3">
 <h3>TAD Analysis</h3>
 <p>Here, I look at TAD calls from TopDom to see if I can find a trend of DE genes or DC genes being more likely to have contacts that cross TAD boundaries.</p>
-<pre class="r"><code>A_TAD &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/A-21792_TOPDOM_ALL.domain&quot;, header=TRUE, data.table=FALSE)
-B_TAD &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/B-28126_TOPDOM_ALL.domain&quot;, header=TRUE, data.table=FALSE)
-C_TAD &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/C-3649_TOPDOM_ALL.domain&quot;, header=TRUE, data.table=FALSE)
-D_TAD &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/D-40300_TOPDOM_ALL.domain&quot;, header=TRUE, data.table=FALSE)
-E_TAD &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/E-28815_TOPDOM_ALL.domain&quot;, header=TRUE, data.table=FALSE)
-F_TAD &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/F-28834_TOPDOM_ALL.domain&quot;, header=TRUE, data.table=FALSE)
-G_TAD &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/G-3624_TOPDOM_ALL.domain&quot;, header=TRUE, data.table=FALSE)
-H_TAD &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/H-3651_TOPDOM_ALL.domain&quot;, header=TRUE, data.table=FALSE)
-
-#Can ask a variety of different questions. Start simple and just get a table of TAD boundary crossings for individual contacts/genes within species.
-A_bounds &lt;- filter(A_TAD, tag==&quot;boundary&quot;)
-B_bounds &lt;- filter(B_TAD, tag==&quot;boundary&quot;)
-E_bounds &lt;- filter(E_TAD, tag==&quot;boundary&quot;)
-F_bounds &lt;- filter(F_TAD, tag==&quot;boundary&quot;)
-#Rather than worry about how to create a standardized set of boundaries or other elements here (lots of inter-individual variance), start by using ALL boundary calls as real boundaries and see results. Note that this was very annoying because the formatting was off for some reason, have to use awk to print these files out and then tail -n +2 each of them (awk -v OFS=&quot;\t&quot; &#39;{print $1, $2, $3, $4, $5, $6, $7, $8}&#39; TOPDOM/human.boundaries.bed &gt; TOPDOM/hbounds.bed). The tail -n +2 has to write to a completely new file for some reason. The ultimate command run is akin to (bedtools pairtobed -type notispan -a filt.bins.humans.bedPE -b TOPDOM/hbounds.final.bed &gt; TOPDOM/hg38.TD.bounds.notispan.bed)
-human.bounds &lt;- rbind(A_bounds, B_bounds, E_bounds, F_bounds)
-human.bounds &lt;- human.bounds[!duplicated(human.bounds),]
-human.bounds$strand &lt;- &quot;.&quot;
-human.bounds &lt;- human.bounds[,c(1, 3, 5, 2, 4, 8, 6, 7)]
-human.bounds &lt;- format(human.bounds, scientific=FALSE)
-colnames(human.bounds) &lt;- c(&quot;chromosome&quot;, &quot;start&quot;, &quot;end&quot;, &quot;frombin&quot;, &quot;tobin&quot;, &quot;strand&quot;, &quot;tag&quot;, &quot;size&quot;)
-fwrite(human.bounds, &quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/human.boundaries.bed&quot;, sep=&quot;\t&quot;, na=&quot;NA&quot;, col.names=TRUE, quote=FALSE)
-
-#Repeat on chimps.
-C_bounds &lt;- filter(C_TAD, tag==&quot;boundary&quot;)
-D_bounds &lt;- filter(D_TAD, tag==&quot;boundary&quot;)
-G_bounds &lt;- filter(G_TAD, tag==&quot;boundary&quot;)
-H_bounds &lt;- filter(H_TAD, tag==&quot;boundary&quot;)
-chimp.bounds &lt;- rbind(C_bounds, D_bounds, G_bounds, H_bounds)
-chimp.bounds &lt;- chimp.bounds[!duplicated(chimp.bounds),]
-chimp.bounds$strand &lt;- &quot;.&quot;
-chimp.bounds &lt;- chimp.bounds[,c(1, 3, 5, 2, 4, 8, 6, 7)]
-chimp.bounds &lt;- format(chimp.bounds, scientific=FALSE)
-colnames(chimp.bounds) &lt;- c(&quot;chromosome&quot;, &quot;start&quot;, &quot;end&quot;, &quot;frombin&quot;, &quot;tobin&quot;, &quot;strand&quot;, &quot;tag&quot;, &quot;size&quot;)
-fwrite(chimp.bounds, &quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/chimp.boundaries.bed&quot;, sep=&quot;\t&quot;, na=&quot;NA&quot;, col.names=TRUE, quote=FALSE)
-
-#Load in the pairs that are NOT interrupted by a TAD boundary! First using the agnostic approach where I just take all boundaries, and then for more stringent criteria (i.e. boundary found in at least 2 individuals, at least 3, or all 4)
-TADcross.humans &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hg38.TD.bounds.notispan.bed&quot;)
-TADcross.humans.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.2.bed&quot;)
-TADcross.humans.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.3.bed&quot;)
-TADcross.humans.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/hu.TD.bounds.notispan.4.bed&quot;)
-
-TADcross.chimps &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/pt5.TD.bounds.notispan.bed&quot;)
-TADcross.chimps.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.2.bed&quot;)
-TADcross.chimps.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.3.bed&quot;)
-TADcross.chimps.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/ch.TD.bounds.notispan.4.bed&quot;)
-
-full.annotations &lt;- readRDS(&quot;~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS&quot;)
-
-TADcross.humans$HpairID &lt;- paste(paste(TADcross.humans$V1, TADcross.humans$V2, sep=&quot;-&quot;), paste(TADcross.humans$V4, TADcross.humans$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
-TADcross.humans.2$HpairID &lt;- paste(paste(TADcross.humans.2$V1, TADcross.humans.2$V2, sep=&quot;-&quot;), paste(TADcross.humans.2$V4, TADcross.humans.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
-TADcross.humans.3$HpairID &lt;- paste(paste(TADcross.humans.3$V1, TADcross.humans.3$V2, sep=&quot;-&quot;), paste(TADcross.humans.3$V4, TADcross.humans.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
-TADcross.humans.4$HpairID &lt;- paste(paste(TADcross.humans.4$V1, TADcross.humans.4$V2, sep=&quot;-&quot;), paste(TADcross.humans.4$V4, TADcross.humans.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
-
-TADcross.chimps$CpairID &lt;- paste(paste(TADcross.chimps$V1, TADcross.chimps$V2, sep=&quot;-&quot;), paste(TADcross.chimps$V4, TADcross.chimps$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
-TADcross.chimps.2$CpairID &lt;- paste(paste(TADcross.chimps.2$V1, TADcross.chimps.2$V2, sep=&quot;-&quot;), paste(TADcross.chimps.2$V4, TADcross.chimps.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
-TADcross.chimps.3$CpairID &lt;- paste(paste(TADcross.chimps.3$V1, TADcross.chimps.3$V2, sep=&quot;-&quot;), paste(TADcross.chimps.3$V4, TADcross.chimps.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
-TADcross.chimps.4$CpairID &lt;- paste(paste(TADcross.chimps.4$V1, TADcross.chimps.4$V2, sep=&quot;-&quot;), paste(TADcross.chimps.4$V4, TADcross.chimps.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
-
-full.annotations$HTAD.interrupt &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans$HpairID, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$HTAD.interrupt.2 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.2$HpairID, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$HTAD.interrupt.3 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.3$HpairID, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$HTAD.interrupt.4 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.4$HpairID, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$CTAD.interrupt &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps$CpairID, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$CTAD.interrupt.2 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.2$CpairID, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$CTAD.interrupt.3 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.3$CpairID, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$CTAD.interrupt.4 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.4$CpairID, &quot;no&quot;, &quot;yes&quot;)
-
-full.annotations$diff.TAD.interrupt &lt;- ifelse(full.annotations$HTAD.interrupt==full.annotations$CTAD.interrupt, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$diff.TAD.interrupt.2 &lt;- ifelse(full.annotations$HTAD.interrupt.2==full.annotations$CTAD.interrupt.2, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$diff.TAD.interrupt.3 &lt;- ifelse(full.annotations$HTAD.interrupt.3==full.annotations$CTAD.interrupt.3, &quot;no&quot;, &quot;yes&quot;)
-full.annotations$diff.TAD.interrupt.4 &lt;- ifelse(full.annotations$HTAD.interrupt.4==full.annotations$CTAD.interrupt.4, &quot;no&quot;, &quot;yes&quot;)
-
-chisq.summarizer &lt;- function(df, col1, robust){
-  DEtable &lt;- table(df$DE, df[,col1], dnn=c(&quot;DE?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
-  promsDEtable &lt;- table(filter(df, true.promoter==&quot;yes&quot;)$DE, filter(df, true.promoter==&quot;yes&quot;)[,col1], dnn=c(&quot;DE?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
-  DCtable &lt;- table(df$DC, df[,col1], dnn=c(&quot;DC?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
-  promsDCtable &lt;- table(filter(df, true.promoter==&quot;yes&quot;)$DC, filter(df, true.promoter==&quot;yes&quot;)[,col1], dnn=c(&quot;DC?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
-  print(paste(&quot;As seen in the table below, amongst all hits, &quot;, signif((DEtable[2,2]/sum(DEtable[2,]))*100, 3), &quot;% of DE contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((DEtable[1,2]/sum(DEtable[1,]))*100, 3), &quot;% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((DEtable[2,2]/sum(DEtable[,2]))*100, 3), &quot;% DE, while those not crossing are &quot;, signif((DEtable[2,1]/sum(DEtable[,1]))*100, 3), &quot;% DE. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(DEtable)$p.val, 2), sep=&quot;&quot;))
-  print(DEtable)
-  print(paste(&quot;As seen in the table below, amongst all hits, &quot;, signif((DCtable[2,2]/sum(DCtable[2,]))*100, 3), &quot;% of DC contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((DCtable[1,2]/sum(DCtable[1,]))*100, 3), &quot;% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((DCtable[2,2]/sum(DCtable[,2]))*100, 3), &quot;% DC, while those not crossing are &quot;, signif((DCtable[2,1]/sum(DCtable[,1]))*100, 3), &quot;% DC. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(DCtable)$p.val, 2), sep=&quot;&quot;))
-  print(DCtable)
-  print(paste(&quot;As seen in the table below, amongst promoter-contacting hits, &quot;, signif((promsDEtable[2,2]/sum(promsDEtable[2,]))*100, 3), &quot;% of DE contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((promsDEtable[1,2]/sum(promsDEtable[1,]))*100, 3), &quot;% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((promsDEtable[2,2]/sum(promsDEtable[,2]))*100, 3), &quot;% DE, while those not crossing are &quot;, signif((promsDEtable[2,1]/sum(promsDEtable[,1]))*100, 3), &quot;% DE. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(promsDEtable)$p.val, 2), sep=&quot;&quot;))
-  print(promsDEtable)
-  print(paste(&quot;As seen in the table below, amongst promoter-contacting hits, &quot;, signif((promsDCtable[2,2]/sum(promsDCtable[2,]))*100, 3), &quot;% of DC contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((promsDCtable[1,2]/sum(promsDCtable[1,]))*100, 3), &quot;% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((promsDCtable[2,2]/sum(promsDCtable[,2]))*100, 3), &quot;% DC, while those not crossing are &quot;, signif((promsDCtable[2,1]/sum(promsDCtable[,1]))*100, 3), &quot;% DC. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(promsDCtable)$p.val, 2), sep=&quot;&quot;))
-  print(promsDCtable)
-}
-
-#Call the summarizer on all the different TAD boundary specs :)
-chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt&quot;, 1)</code></pre>
-<pre><code>[1] &quot;As seen in the table below, amongst all hits, 18.1% of DE contacts cross TAD boundaries | 1  differentially between species, while 14.6% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 3.37% DE, while those not crossing are 2.64% DE. This is chi-squared significant w/ p-val 9.5e-18&quot;
-     TAD 1 Boundary Cross Diff. b/t Species?
-DE?       no    yes
-  no  242501  41554
-  yes   6566   1449
-[1] &quot;As seen in the table below, amongst all hits, 19.4% of DC contacts cross TAD boundaries | 1  differentially between species, while 14.6% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 4.35% DC, while those not crossing are 3.13% DC. This is chi-squared significant w/ p-val 2.8e-39&quot;
-     TAD 1 Boundary Cross Diff. b/t Species?
-DC?       no    yes
-  no  241278  41131
-  yes   7789   1872
-[1] &quot;As seen in the table below, amongst promoter-contacting hits, 18.1% of DE contacts cross TAD boundaries | 1  differentially between species, while 16.3% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 24% DE, while those not crossing are 21.8% DE. This is chi-squared significant w/ p-val 0.00024&quot;
-     TAD 1 Boundary Cross Diff. b/t Species?
-DE?      no   yes
-  no  23492  4587
-  yes  6566  1449
-[1] &quot;As seen in the table below, amongst promoter-contacting hits, 21.7% of DC contacts cross TAD boundaries | 1  differentially between species, while 16.5% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 4.46% DC, while those not crossing are 3.23% DC. This is chi-squared significant w/ p-val 2.4e-06&quot;
-     TAD 1 Boundary Cross Diff. b/t Species?
-DC?      no   yes
-  no  29086  5767
-  yes   972   269</code></pre>
-<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.2&quot;, 2)</code></pre>
-<pre><code>[1] &quot;As seen in the table below, amongst all hits, 12.8% of DE contacts cross TAD boundaries | 2  differentially between species, while 8.42% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 4.11% DE, while those not crossing are 2.62% DE. This is chi-squared significant w/ p-val 5.5e-43&quot;
-     TAD 2 Boundary Cross Diff. b/t Species?
-DE?       no    yes
-  no  260140  23915
-  yes   6991   1024
-[1] &quot;As seen in the table below, amongst all hits, 13% of DC contacts cross TAD boundaries | 2  differentially between species, while 8.39% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 5.03% DC, while those not crossing are 3.15% DC. This is chi-squared significant w/ p-val 1.1e-56&quot;
-     TAD 2 Boundary Cross Diff. b/t Species?
-DC?       no    yes
-  no  258724  23685
-  yes   8407   1254
-[1] &quot;As seen in the table below, amongst promoter-contacting hits, 12.8% of DE contacts cross TAD boundaries | 2  differentially between species, while 12.9% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 22.1% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.81&quot;
-     TAD 2 Boundary Cross Diff. b/t Species?
-DE?      no   yes
-  no  24460  3619
-  yes  6991  1024
-[1] &quot;As seen in the table below, amongst promoter-contacting hits, 14.3% of DC contacts cross TAD boundaries | 2  differentially between species, while 12.8% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 3.83% DC, while those not crossing are 3.38% DC. This is chi-squared significant w/ p-val 0.12&quot;
-     TAD 2 Boundary Cross Diff. b/t Species?
-DC?      no   yes
-  no  30388  4465
-  yes  1063   178</code></pre>
-<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.3&quot;, 3)</code></pre>
-<pre><code>[1] &quot;As seen in the table below, amongst all hits, 9.83% of DE contacts cross TAD boundaries | 3  differentially between species, while 5.89% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 4.5% DE, while those not crossing are 2.63% DE. This is chi-squared significant w/ p-val 1.6e-48&quot;
-     TAD 3 Boundary Cross Diff. b/t Species?
-DE?       no    yes
-  no  267327  16728
-  yes   7227    788
-[1] &quot;As seen in the table below, amongst all hits, 10.7% of DC contacts cross TAD boundaries | 3  differentially between species, while 5.84% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 5.9% DC, while those not crossing are 3.14% DC. This is chi-squared significant w/ p-val 3.7e-87&quot;
-     TAD 3 Boundary Cross Diff. b/t Species?
-DC?       no    yes
-  no  265927  16482
-  yes   8627   1034
-[1] &quot;As seen in the table below, amongst promoter-contacting hits, 9.83% of DE contacts cross TAD boundaries | 3  differentially between species, while 10.6% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 20.9% DE, while those not crossing are 22.4% DE. This is chi-squared significant w/ p-val 0.045&quot;
-     TAD 3 Boundary Cross Diff. b/t Species?
-DE?      no   yes
-  no  25098  2981
-  yes  7227   788
-[1] &quot;As seen in the table below, amongst promoter-contacting hits, 14.4% of DC contacts cross TAD boundaries | 3  differentially between species, while 10.3% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 4.75% DC, while those not crossing are 3.29% DC. This is chi-squared significant w/ p-val 3.8e-06&quot;
-     TAD 3 Boundary Cross Diff. b/t Species?
-DC?      no   yes
-  no  31263  3590
-  yes  1062   179</code></pre>
-<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.4&quot;, 4)</code></pre>
-<pre><code>[1] &quot;As seen in the table below, amongst all hits, 6.89% of DE contacts cross TAD boundaries | 4  differentially between species, while 3.78% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 4.89% DE, while those not crossing are 2.66% DE. This is chi-squared significant w/ p-val 6.1e-46&quot;
-     TAD 4 Boundary Cross Diff. b/t Species?
-DE?       no    yes
-  no  273330  10725
-  yes   7463    552
-[1] &quot;As seen in the table below, amongst all hits, 5.63% of DC contacts cross TAD boundaries | 4  differentially between species, while 3.8% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 4.82% DC, while those not crossing are 3.25% DC. This is chi-squared significant w/ p-val 5.4e-20&quot;
-     TAD 4 Boundary Cross Diff. b/t Species?
-DC?       no    yes
-  no  271676  10733
-  yes   9117    544
-[1] &quot;As seen in the table below, amongst promoter-contacting hits, 6.89% of DE contacts cross TAD boundaries | 4  differentially between species, while 7.43% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 20.9% DE, while those not crossing are 22.3% DE. This is chi-squared significant w/ p-val 0.11&quot;
-     TAD 4 Boundary Cross Diff. b/t Species?
-DE?      no   yes
-  no  25994  2085
-  yes  7463   552
-[1] &quot;As seen in the table below, amongst promoter-contacting hits, 9.51% of DC contacts cross TAD boundaries | 4  differentially between species, while 7.23% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 4.47% DC, while those not crossing are 3.36% DC. This is chi-squared significant w/ p-val 0.0029&quot;
-     TAD 4 Boundary Cross Diff. b/t Species?
-DC?      no   yes
-  no  32334  2519
-  yes  1123   118</code></pre>
 </div>
 <div id="exploration-of-genes-with-or-without-an-upstream-contact" class="section level3">
 <h3>Exploration of genes with or without an upstream contact</h3>
@@ -2246,194 +2073,87 @@ mean of x mean of y
 <div id="differences-in-effect-sizesign-changes" class="section level3">
 <h3>Differences in effect size/sign changes</h3>
 <p>This next section would be to look at differences in effect size and sign changes when doing the two separate lms (one before and one after regressing out Hi-C data from RPKM expression). Unfortunately the ash results I get have all their svalues as 1 so this is boring/not interesting right now. Hence it is not included. But let’s give it another go!</p>
-<pre class="r"><code>#######Effect size differences/sign changes
+<pre class="r"><code>#######FRESH CODE 6-21-18#########
 design &lt;- model.matrix(~meta.data$SP)
-exprs &lt;- as.data.frame(filter(hmin, adj.P.Val&lt;=0.05) %&gt;% select(., &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;, genes)) #Should be done on just DE genes, filter with adj.P.Val&lt;=0.05
-hic &lt;- as.data.frame(filter(hmin, adj.P.Val&lt;=0.05) %&gt;% select(.,&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;))
+exprs &lt;- select(hmin, &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;, genes) #Should be done on just DE genes, filter with adj.P.Val&lt;=0.05
+hic &lt;- select(hmin,&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;)
 present &lt;- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
-DEgenes &lt;- exprs$genes
+genes &lt;- exprs$genes
+DEgenes &lt;- filter(hmin, adj.P.Val&lt;=0.05) %&gt;% select(., genes)
+myDEindices &lt;- which(genes %in% DEgenes[,1])
 exprs &lt;- exprs[,-9]
 exprs &lt;- data.matrix(exprs[present,])
 hic &lt;- data.matrix(hic[present,])
-mygenes &lt;- which(weighted.data$genes$genes %in% DEgenes)
-myweight &lt;- weighted.data[mygenes,]
+designy &lt;- as.factor(c(&quot;human&quot;, &quot;human&quot;, &quot;chimp&quot;, &quot;chimp&quot;, &quot;human&quot;, &quot;human&quot;, &quot;chimp&quot;, &quot;chimp&quot;))
+colnames(hic) &lt;- colnames(exprs)
+hic &lt;- as.data.table(hic)
+exprs &lt;- as.data.table(exprs)
+test &lt;- mediate.test.regressing(exprs, designy, hic)</code></pre>
+<pre><code>
+Attaching package: &#39;assertthat&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:tibble&#39;:
 
-#Now run analyses
-resid_hic &lt;- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
-for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
-     resid_hic[i,] &lt;- lm(exprs[i,]~hic[i,])$resid
-}
-#residweight &lt;- myweight
-#residweight$E &lt;- resid_hic
-#lmFit(myweight, design=design) %&gt;% eBayes(.) -&gt; fit_b
-#lmFit(residweight, design=design) %&gt;% eBayes(.) -&gt; fit_a
+    has_name</code></pre>
+<pre class="r"><code>#Shrink dat variance!
+vshrDE &lt;- vash(test$d_se[myDEindices], df=6)
+vshrnonDE &lt;- vash(test$d_se[-myDEindices], df=6)
+vshrink &lt;- vash(test$d_se, df=6)
 
-#lmFit(myweight, design=design) -&gt; fit_b2 #for some reason, running it with this makes it awful. VERY different sigmas...perhaps b/c this was already a voom object?
-#lmFit(residweight, design=design) -&gt; fit_a
+#Separate out DE from non-DE genes:
+DEtest &lt;- test[myDEindices,]
+nonDEtest &lt;- test[-myDEindices,]
 
-lmFit(exprs, design=design) -&gt; fit_b
-lmFit(resid_hic, design=design) -&gt; fit_a
-
-#Get effect sizes.
-beta_b &lt;- fit_b$coefficients[,2]
-beta_a &lt;- fit_a$coefficients[,2]
-#result_b &lt;- ash(betahat=beta_b, sebetahat=fit_b$stdev.unscaled[,2]*sqrt(fit_b$s2.post), df=fit_b$df.total[1])
-#result_a &lt;- ash(betahat=beta_a, sebetahat=fit_a$stdev.unscaled[,2]*sqrt(fit_a$s2.post), df=fit_a$df.total[1])
-
-se_beta_b &lt;- se_beta_hic &lt;- se_beta_a &lt;- cov_beta_ba &lt;- vector(&quot;numeric&quot;, nrow(hic))
-
-design[c(3:4, 7:8),2] &lt;- -1 #Because of the transposing for getting A below, need to have chimps be -1
-
-#Get variances of beta_before&#39;s species effect:
-se_beta_b &lt;- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
-
-head(cbind(se_beta_b,fit_b$sigma*sqrt(fit_b$cov.coefficients[2,2])))</code></pre>
-<pre><code>   se_beta_b           
-1 0.04498742 0.08997484
-2 0.18270096 0.36540192
-3 0.05901818 0.11803637
-4 0.06034491 0.12068982
-5 0.12512973 0.25025946
-6 0.04983582 0.09967164</code></pre>
-<pre class="r"><code>#Get variances of se_beta_hic, Hi-C effect:
-for (g in 1:length(se_beta_hic)) {
-  design_2 &lt;- model.matrix(~ as.numeric(hic[g,]))
-  sigma_g &lt;- fit_b$sigma[g]
-  se_beta_hic[g] &lt;- sigma_g*sqrt((solve(t(design_2)%*%design_2))[2,2])
-}
-
-#Get variances of beta_after&#39;s species effect:
-A &lt;- solve(t(design)%*%design)%*%t(design)
-contr.vector &lt;- array(c(0,1), dim=c(2,1))
-# compute beta_after by hand
-for (g in 1:length(se_beta_a)) {
-  M_g &lt;- hic[g,]
-  design_2g &lt;- model.matrix(~ as.numeric(M_g))
-  A_2g &lt;- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
-  sigma_g &lt;- fit_b$sigma[g]
-  var_beta2g &lt;- (se_beta_hic^2)[g]
-  var_part1 &lt;- (se_beta_b[g])^2
-  var_part2 &lt;- ( A%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A) )[2,2]
-  var_part3 &lt;- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A) )[2,2]
-  se_beta_a[g] &lt;- sqrt(var_part1 + var_part2 + var_part3)
-}
-#Get covariance of beta_b and beta_a
-for(g in 1:length(cov_beta_ba)){
-  M_g &lt;- hic[g,]
-  design_2g &lt;- model.matrix(~ as.numeric(M_g))
-  A_2g &lt;- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
-  sigma_g &lt;- fit_b$sigma[g]
-  var_part1 &lt;- (se_beta_b[g])^2
-  cov_beta_ba[g] &lt;- var_part1 - (sigma_g^2)*((A %*% t(A_2g) %*%contr.vector%*%t(M_g)%*%t(A))[2,2])
-}
-
-#Covariance beta_b-beta_a
-cov_diff_sqrt &lt;- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
-beta_diff &lt;- beta_b-beta_a #Everything written out by LEB&#39;s example was checked up to here, so that&#39;s where something must be different.
-
-#Now run some of that ASH!
-fit_ash &lt;- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)</code></pre>
+#Ash on DE genes
+ash_reg &lt;- ash(as.vector(DEtest$d), as.vector(vshrDE$sd.post), mixcompdist = &quot;normal&quot;) #Now it works with this design coding. Use 6 df, as 2-group comparison and 8 individual samples (samples - 2)</code></pre>
 <pre><code>Due to absence of package REBayes, switching to EM algorithm</code></pre>
-<pre class="r"><code>summary(fit_ash$result$svalue) #For some reason these are slightly inflated still compared to Lauren&#39;s analysis.</code></pre>
-<pre><code>     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
-0.000e+00 2.288e-05 1.176e-03 8.696e-03 8.892e-03 7.771e-02 </code></pre>
-<pre class="r"><code>summary(fit_ash$result$svalue&lt;0.05) #As a result I have fewer here true than hers (528 vs 339)</code></pre>
+<pre class="r"><code>summary(ash_reg$result$svalue&lt;=0.05) #Incredible result, looks too good to be true.</code></pre>
 <pre><code>   Mode   FALSE    TRUE 
-logical      72    1465 </code></pre>
-<pre class="r"><code>ind_sig &lt;- (fit_ash$result$svalue &lt; 0.05)
+logical    1243     294 </code></pre>
+<pre class="r"><code>ind_sig &lt;- (ash_reg$result$svalue &lt; 0.05)
 ind_sig[ind_sig == TRUE] &lt;- &quot;red&quot;
 ind_sig[ind_sig == FALSE] &lt;- &quot;black&quot;
-
-make_plot &lt;- cbind(beta_b-beta_a, cov_diff_sqrt, ind_sig, fit_ash$result$lfdr)
-colnames(make_plot) &lt;- c(&quot;Diff&quot;, &quot;SE&quot;, &quot;Sign&quot;, &quot;LFDR&quot;)
-make_plot[,1] &lt;- as.numeric(make_plot[,1])
-make_plot[,2] &lt;- as.numeric(make_plot[,2])
-make_plot[,3] &lt;- as.character(make_plot[,3])
-make_plot[,4] &lt;- as.numeric(make_plot[,4])
-
-plot(x=make_plot[,1], y=make_plot[,2], ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (DE genes)&quot;, pch=16, cex=0.6, col=make_plot[,3], xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
+plot(x=ash_reg$result$betahat, y=ash_reg$result$sebetahat, ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (DE genes)&quot;, pch=16, cex=0.6, col=ind_sig)#, xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
 legend(&quot;topleft&quot;, legend=c(&quot;s &lt; 0.05&quot;, &quot;s &gt;= 0.05&quot;), col=c(&quot;red&quot;, &quot;black&quot;), pch=16:16, cex=0.8)</code></pre>
 <p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-1.png" width="672" style="display: block; margin: auto;" /></p>
-<pre class="r"><code>####Now do the same thing for non-DE genes
-exprs &lt;- as.data.frame(filter(hmin, adj.P.Val&gt;0.05) %&gt;% select(., &quot;A-21792&quot;, &quot;B-28126&quot;, &quot;C-3649&quot;, &quot;D-40300&quot;, &quot;E-28815&quot;, &quot;F-28834&quot;, &quot;G-3624&quot;, &quot;H-3651&quot;, genes))
-hic &lt;- as.data.frame(filter(hmin, adj.P.Val&gt;0.05) %&gt;% select(.,&quot;A_21792_HIC&quot;, &quot;B_28126_HIC&quot;, &quot;C_3649_HIC&quot;, &quot;D_40300_HIC&quot;, &quot;E_28815_HIC&quot;, &quot;F_28834_HIC&quot;, &quot;G_3624_HIC&quot;, &quot;H_3651_HIC&quot;))
-nonDEgenes &lt;- exprs$genes
-exprs &lt;- exprs[,-9]
-present &lt;- sapply(1:nrow(hic), function(i) !any(is.na(hic[i,])))
-exprs &lt;- data.matrix(exprs[present,])
-hic &lt;- data.matrix(hic[present,])
-resid_hic &lt;- array(0, dim=c(nrow(exprs), ncol(hic))) #Initialize a dataframe for storing the residuals.
-for(i in 1:nrow(exprs)){#Loop through rows of the expression df, running linear modeling w/ Hi-C to obtain residuals.
-     resid_hic[i,] &lt;- lm(exprs[i,]~hic[i,])$resid
-}
-#mygenes &lt;- which(weighted.data$genes$genes %in% nonDEgenes)
-#myweight &lt;- weighted.data[mygenes,]
-
-lmFit(exprs, design=design) -&gt; fit_b
-lmFit(resid_hic, design=design) -&gt; fit_a
-
-#Get effect sizes.
-beta_b &lt;- fit_b$coefficients[,2]
-beta_a &lt;- fit_a$coefficients[,2]
-
-se_beta_b &lt;- se_beta_hic &lt;- se_beta_a &lt;- cov_beta_ba &lt;- vector(&quot;numeric&quot;, nrow(hic))
-
-#Get variances of beta_before&#39;s species effect:
-se_beta_b &lt;- fit_b$sigma*sqrt((solve(t(design)%*%design))[2,2])
-
-#Get variances of se_beta_hic, Hi-C effect:
-for (g in 1:length(se_beta_hic)) {
-  design_2 &lt;- model.matrix(~ as.numeric(hic[g,]))
-  sigma_g &lt;- fit_b$sigma[g]
-  se_beta_hic[g] &lt;- sigma_g*sqrt((solve(t(design_2)%*%design_2))[2,2])
-}
-
-#Get variances of beta_after&#39;s species effect:
-A &lt;- solve(t(design)%*%design)%*%t(design)
-contr.vector &lt;- array(c(0,1), dim=c(2,1))
-# compute beta_after by hand
-for (g in 1:length(se_beta_a)) {
-  M_g &lt;- hic[g,]
-  design_2g &lt;- model.matrix(~ as.numeric(M_g))
-  A_2g &lt;- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
-  sigma_g &lt;- fit_b$sigma[g]
-  var_beta2g &lt;- (se_beta_hic^2)[g]
-  var_part1 &lt;- (se_beta_b[g])^2
-  var_part2 &lt;- ( A%*%M_g%*%var_beta2g%*%t(M_g)%*%t(A) )[2,2]
-  var_part3 &lt;- ( 2*(sigma_g^2)*A%*%t(A_2g)%*%contr.vector%*%t(M_g)%*%t(A) )[2,2]
-  se_beta_a[g] &lt;- sqrt(var_part1 + var_part2 + var_part3)
-}
-#Get covariance of beta_b and beta_a
-for(g in 1:length(cov_beta_ba)){
-  M_g &lt;- hic[g,]
-  design_2g &lt;- model.matrix(~ as.numeric(M_g))
-  A_2g &lt;- solve(t(design_2g)%*%design_2g)%*%t(design_2g)
-  sigma_g &lt;- fit_b$sigma[g]
-  var_part1 &lt;- (se_beta_b[g])^2
-  cov_beta_ba[g] &lt;- var_part1 - (sigma_g^2)*((A %*% t(A_2g) %*%contr.vector%*%t(M_g)%*%t(A))[2,2])
-}
-
-#Covariance beta_b-beta_a
-cov_diff_sqrt &lt;- sqrt(se_beta_b^2 + se_beta_a^2 - 2*cov_beta_ba)
-beta_diff &lt;- beta_b-beta_a
-
-#Now run some of that ASH!
-fit_ash &lt;- ash(as.vector(beta_diff), cov_diff_sqrt, mode=0)</code></pre>
+<pre class="r"><code>plot(ash_reg$result$betahat, -log10(ash_reg$result$svalue))</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Now on non-DE genes
+ash_reg_nonDE &lt;- ash(as.vector(nonDEtest$d), as.vector(vshrnonDE$sd.post), mixcompdist = &quot;normal&quot;) #Now it works with this design coding. Use 6 df, as 2-group comparison and 8 individual samples (samples - 2)</code></pre>
 <pre><code>Due to absence of package REBayes, switching to EM algorithm</code></pre>
-<pre class="r"><code>ind_sig &lt;- (fit_ash$result$svalue &lt; 0.05)
+<pre class="r"><code>summary(ash_reg_nonDE$result$svalue&lt;=0.05) #Incredible result, looks too good to be true.</code></pre>
+<pre><code>   Mode   FALSE 
+logical    6227 </code></pre>
+<pre class="r"><code>ind_sig &lt;- (ash_reg_nonDE$result$svalue &lt; 0.05)
 ind_sig[ind_sig == TRUE] &lt;- &quot;red&quot;
 ind_sig[ind_sig == FALSE] &lt;- &quot;black&quot;
-
-make_plot &lt;- cbind(beta_b-beta_a, cov_diff_sqrt, ind_sig, fit_ash$result$lfdr)
-colnames(make_plot) &lt;- c(&quot;Diff&quot;, &quot;SE&quot;, &quot;Sign&quot;, &quot;LFDR&quot;)
-make_plot[,1] &lt;- as.numeric(make_plot[,1])
-make_plot[,2] &lt;- as.numeric(make_plot[,2])
-make_plot[,3] &lt;- as.character(make_plot[,3])
-make_plot[,4] &lt;- as.numeric(make_plot[,4])
-
-plot(x=make_plot[,1], y=make_plot[,2], ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (non-DE genes)&quot;, pch=16, cex=0.6, col=make_plot[,3], xlim=c(-2, 2))
-legend(&quot;topright&quot;, legend=c(&quot;s &lt; 0.05&quot;, &quot;s &gt;= 0.05&quot;), col=c(&quot;red&quot;, &quot;black&quot;), pch=16:16, cex=0.8)</code></pre>
-<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-2.png" width="672" style="display: block; margin: auto;" /></p>
+plot(x=ash_reg_nonDE$result$betahat, y=ash_reg_nonDE$result$sebetahat, ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (DE genes)&quot;, pch=16, cex=0.6, col=ind_sig)#, xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
+legend(&quot;topleft&quot;, legend=c(&quot;s &lt; 0.05&quot;, &quot;s &gt;= 0.05&quot;), col=c(&quot;red&quot;, &quot;black&quot;), pch=16:16, cex=0.8)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(ash_reg_nonDE$result$betahat, -log10(ash_reg_nonDE$result$svalue))</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Now on the full set, for comparison&#39;s sake.
+ash_reg_full &lt;- ash(as.vector(test$d), as.vector(vshrink$sd.post), mixcompdist = &quot;normal&quot;) #Now it works with this design coding. Use 6 df, as 2-group comparison and 8 individual samples (samples - 2)</code></pre>
+<pre><code>Due to absence of package REBayes, switching to EM algorithm</code></pre>
+<pre class="r"><code>summary(ash_reg_full$result$svalue&lt;=0.05) #Incredible result, looks too good to be true.</code></pre>
+<pre><code>   Mode   FALSE    TRUE 
+logical    7714      50 </code></pre>
+<pre class="r"><code>ind_sig &lt;- (ash_reg_full$result$svalue &lt; 0.05)
+ind_sig[ind_sig == TRUE] &lt;- &quot;red&quot;
+ind_sig[ind_sig == FALSE] &lt;- &quot;black&quot;
+plot(x=ash_reg_full$result$betahat, y=ash_reg_full$result$sebetahat, ylab=&quot;Standard error of the difference&quot;, xlab=&quot;Difference in effect size from 2 lms&quot;, main=&quot;Difference of effect size (DE genes)&quot;, pch=16, cex=0.6, col=ind_sig)#, xlim=c(-2.5, 2.5), ylim=c(0, 1.3))
+legend(&quot;topleft&quot;, legend=c(&quot;s &lt; 0.05&quot;, &quot;s &gt;= 0.05&quot;), col=c(&quot;red&quot;, &quot;black&quot;), pch=16:16, cex=0.8)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>plot(ash_reg_full$result$betahat, -log10(ash_reg_full$result$svalue))</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-6.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Look at effect size shrinkage in full set ash vs. separated DE/nonDE ash:
+plot(c(ash_reg$result$PosteriorMean, ash_reg_nonDE$result$PosteriorMean), ash_reg_full$result$PosteriorMean)</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-7.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Look at this just in DE:
+plot(ash_reg$result$PosteriorMean, ash_reg_full$result$PosteriorMean[myDEindices])</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Look at this just in non-DE:
+plot(ash_reg_nonDE$result$PosteriorMean, ash_reg_full$result$PosteriorMean[-myDEindices])</code></pre>
+<p><img src="figure/gene_expression.Rmd/Differences%20in%20Effect%20Sizes-9.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="expression-distance-analysis" class="section level3">
 <h3>Expression distance analysis</h3>
@@ -2702,17 +2422,18 @@ attached base packages:
 [8] base     
 
 other attached packages:
- [1] bindrcpp_0.2        glmnet_2.0-13       foreach_1.4.4      
- [4] Matrix_1.2-12       medinome_0.0.1      ashr_2.2-7         
- [7] bedr_1.0.4          forcats_0.3.0       purrr_0.2.4        
-[10] readr_1.1.1         tibble_1.4.2        tidyverse_1.2.1    
-[13] edgeR_3.20.9        RColorBrewer_1.1-2  heatmaply_0.14.1   
-[16] viridis_0.5.0       viridisLite_0.3.0   stringr_1.3.0      
-[19] gplots_3.0.1        Hmisc_4.1-1         Formula_1.2-2      
-[22] survival_2.41-3     lattice_0.20-35     dplyr_0.7.4        
-[25] plotly_4.7.1        ggplot2_2.2.1       reshape2_1.4.3     
-[28] data.table_1.10.4-3 tidyr_0.8.0         plyr_1.8.4         
-[31] limma_3.34.9       
+ [1] assertthat_0.2.0    bindrcpp_0.2        glmnet_2.0-13      
+ [4] foreach_1.4.4       Matrix_1.2-12       medinome_0.0.1     
+ [7] vashr_0.99.1        qvalue_2.10.0       SQUAREM_2017.10-1  
+[10] ashr_2.2-7          bedr_1.0.4          forcats_0.3.0      
+[13] purrr_0.2.4         readr_1.1.1         tibble_1.4.2       
+[16] tidyverse_1.2.1     edgeR_3.20.9        RColorBrewer_1.1-2 
+[19] heatmaply_0.14.1    viridis_0.5.0       viridisLite_0.3.0  
+[22] stringr_1.3.0       gplots_3.0.1        Hmisc_4.1-1        
+[25] Formula_1.2-2       survival_2.41-3     lattice_0.20-35    
+[28] dplyr_0.7.4         plotly_4.7.1        ggplot2_2.2.1      
+[31] reshape2_1.4.3      data.table_1.10.4-3 tidyr_0.8.0        
+[34] plyr_1.8.4          limma_3.34.9       
 
 loaded via a namespace (and not attached):
  [1] colorspace_1.3-2     class_7.3-14         modeltools_0.2-21   
@@ -2724,30 +2445,29 @@ loaded via a namespace (and not attached):
 [19] mnormt_1.5-5         robustbase_0.92-8    knitr_1.20          
 [22] jsonlite_1.5         broom_0.4.3          cluster_2.0.6       
 [25] kernlab_0.9-25       R.oo_1.21.0          httr_1.3.1          
-[28] backports_1.1.2      assertthat_0.2.0     lazyeval_0.2.1      
-[31] cli_1.0.0            acepack_1.4.1        htmltools_0.3.6     
-[34] tools_3.4.0          gtable_0.2.0         glue_1.2.0          
-[37] Rcpp_0.12.16         cellranger_1.1.0     trimcluster_0.1-2   
-[40] gdata_2.18.0         nlme_3.1-131.1       iterators_1.0.9     
-[43] fpc_2.1-11           psych_1.7.8          testthat_2.0.0      
-[46] rvest_0.3.2          gtools_3.5.0         dendextend_1.7.0    
-[49] DEoptimR_1.0-8       MASS_7.3-49          scales_0.5.0        
-[52] TSP_1.1-5            hms_0.4.2            parallel_3.4.0      
-[55] lambda.r_1.2         yaml_2.1.18          gridExtra_2.3       
-[58] rpart_4.1-13         SQUAREM_2017.10-1    latticeExtra_0.6-28 
-[61] stringi_1.1.7        gclus_1.3.1          checkmate_1.8.5     
-[64] seriation_1.2-3      caTools_1.17.1       truncnorm_1.0-8     
-[67] rlang_0.2.0          pkgconfig_2.0.1      prabclus_2.2-6      
-[70] bitops_1.0-6         evaluate_0.10.1      bindr_0.1.1         
-[73] labeling_0.3         htmlwidgets_1.0      magrittr_1.5        
-[76] R6_2.2.2             pillar_1.2.1         haven_1.1.1         
-[79] whisker_0.3-2        foreign_0.8-69       nnet_7.3-12         
-[82] modelr_0.1.1         crayon_1.3.4         futile.options_1.0.0
-[85] KernSmooth_2.23-15   rmarkdown_1.9        locfit_1.5-9.1      
-[88] grid_3.4.0           readxl_1.0.0         git2r_0.21.0        
-[91] digest_0.6.15        diptest_0.75-7       webshot_0.5.0       
-[94] VennDiagram_1.6.19   R.utils_2.6.0        stats4_3.4.0        
-[97] munsell_0.4.3        registry_0.5        </code></pre>
+[28] backports_1.1.2      lazyeval_0.2.1       cli_1.0.0           
+[31] acepack_1.4.1        htmltools_0.3.6      tools_3.4.0         
+[34] gtable_0.2.0         glue_1.2.0           Rcpp_0.12.16        
+[37] cellranger_1.1.0     trimcluster_0.1-2    gdata_2.18.0        
+[40] nlme_3.1-131.1       iterators_1.0.9      fpc_2.1-11          
+[43] psych_1.7.8          testthat_2.0.0       rvest_0.3.2         
+[46] gtools_3.5.0         dendextend_1.7.0     DEoptimR_1.0-8      
+[49] MASS_7.3-49          scales_0.5.0         TSP_1.1-5           
+[52] hms_0.4.2            parallel_3.4.0       lambda.r_1.2        
+[55] yaml_2.1.18          gridExtra_2.3        rpart_4.1-13        
+[58] latticeExtra_0.6-28  stringi_1.1.7        gclus_1.3.1         
+[61] checkmate_1.8.5      seriation_1.2-3      caTools_1.17.1      
+[64] truncnorm_1.0-8      rlang_0.2.0          pkgconfig_2.0.1     
+[67] prabclus_2.2-6       bitops_1.0-6         evaluate_0.10.1     
+[70] bindr_0.1.1          labeling_0.3         htmlwidgets_1.0     
+[73] magrittr_1.5         R6_2.2.2             pillar_1.2.1        
+[76] haven_1.1.1          whisker_0.3-2        foreign_0.8-69      
+[79] nnet_7.3-12          modelr_0.1.1         crayon_1.3.4        
+[82] futile.options_1.0.0 KernSmooth_2.23-15   rmarkdown_1.9       
+[85] locfit_1.5-9.1       grid_3.4.0           readxl_1.0.0        
+[88] git2r_0.21.0         digest_0.6.15        diptest_0.75-7      
+[91] webshot_0.5.0        VennDiagram_1.6.19   R.utils_2.6.0       
+[94] stats4_3.4.0         munsell_0.4.3        registry_0.5        </code></pre>
 </div>
 
 <hr>
