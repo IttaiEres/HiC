@@ -1037,7 +1037,7 @@ t.test(filter(final.AB, DC=="yes")$PC.hdiff, filter(final.AB, DC=="no")$PC.hdiff
 
 ###TAD Analysis
 Here, I look at TAD calls from TopDom to see if I can find a trend of DE genes or DC genes being more likely to have contacts that cross TAD boundaries.
-```{r include=FALSE}
+```{r}
 ###First, simpler analysis looking at total number of TADs called, mean TAD sizes, and TAD size density distributions for each individual across the 3 different window sizes called.
 TAD.stats <- function(window){
   A_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window,"/A-21792_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
@@ -1146,54 +1146,71 @@ t.test(filter(TADs.5$boundaries, species=="human")$size, filter(TADs.5$boundarie
 #Boundary Size by chr...
 ggplot(data=TADs.20$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle("Boundary Size Distributions by Species, 200kb Windows") + xlab("Boundary Size") + ylab("Density") + scale_color_manual("Species", values=c("red", "blue"), labels=c("Chimpanzee", "Human")) + facet_wrap(~chr)#+ annotate("text", x=1000000, y=0.5, label="< 2.2 e -16") + facet_wrap(~chr)
 
-#Do it on ONLY ortho regions: Need to just do a basic re-run of this comparison on ortho boundaries in the orthos folder of /Users/ittaieres/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM, and also on the domains files. Also need to do intersects on domains files to find % consesrvation amongs orthologous TADs.
+#Do it on ONLY ortho regions: Need to just do a basic re-run of this comparison on ortho boundaries in the orthos folder of /Users/ittaieres/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM, and also on the domains files. Also need to do intersects on domains files to find % consesrvation amongst orthologous TADs.
 TAD.stats.ortho <- function(window){
-  A_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window,"/A-21792_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
-  B_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/B-28126_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
-  C_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/C-3649_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
-  D_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/D-40300_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
-  E_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/E-28815_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
-  F_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/F-28834_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
-  G_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/G-3624_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
-  H_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window", window, "/H-3651_TOPDOM_ALL.", window, ".domain", sep=""), header=TRUE, data.table=FALSE)
-  A_bounds <- filter(A_TAD, tag=="boundary")
-  B_bounds <- filter(B_TAD, tag=="boundary")
-  E_bounds <- filter(E_TAD, tag=="boundary")
-  F_bounds <- filter(F_TAD, tag=="boundary")
-  C_bounds <- filter(C_TAD, tag=="boundary")
-  D_bounds <- filter(D_TAD, tag=="boundary")
-  G_bounds <- filter(G_TAD, tag=="boundary")
-  H_bounds <- filter(H_TAD, tag=="boundary")
-  A_domains <- filter(A_TAD, tag=="domain")
-  B_domains <- filter(B_TAD, tag=="domain")
-  E_domains <- filter(E_TAD, tag=="domain")
-  F_domains <- filter(F_TAD, tag=="domain")
-  C_domains <- filter(C_TAD, tag=="domain")
-  D_domains <- filter(D_TAD, tag=="domain")
-  G_domains <- filter(G_TAD, tag=="domain")
-  H_domains <- filter(H_TAD, tag=="domain")
+  H1s <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/", window, "/H1s.final.merged.bed.ortho.hg38", sep=""), header=FALSE, data.table=FALSE)
+  H2s <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/", window, "/H2s.final.merged.bed.ortho.hg38", sep=""), header=FALSE, data.table=FALSE)
+  H3s <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/", window, "/H3s.final.merged.bed.ortho.hg38", sep=""), header=FALSE, data.table=FALSE)
+  H4s <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/", window, "/H4s.final.merged.bed.ortho.hg38", sep=""), header=FALSE, data.table=FALSE, sep="\t")
+  C1s <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/", window, "/C1s.final.merged.bed.ortho.panTro5", sep=""), header=FALSE, data.table=FALSE)
+  C2s <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/", window, "/C2s.final.merged.bed.ortho.panTro5", sep=""), header=FALSE, data.table=FALSE)
+  C3s <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/", window, "/C3s.final.merged.bed.ortho.panTro5", sep=""), header=FALSE, data.table=FALSE)
+  C4s <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/", window, "/C4s.final.merged.bed.ortho.panTro5", sep=""), header=FALSE, data.table=FALSE, sep="\t")
+  H4s <- H4s[,1:3]
+  C4s <- C4s[,1:3]
+  colnames(H1s) <- colnames(H2s) <- colnames(H3s) <- colnames(H4s) <- colnames(C1s) <- colnames(C2s) <- colnames(C3s) <- colnames(C4s) <- c("chr", "start", "end")
+  H1s$size <- H1s$end-H1s$start
+  H2s$size <- H2s$end-H2s$start
+  H3s$size <- H3s$end-H3s$start
+  H4s$size <- H4s$end-H4s$start
+  C1s$size <- C1s$end-C1s$start
+  C2s$size <- C2s$end-C2s$start
+  C3s$size <- C3s$end-C3s$start
+  C4s$size <- C4s$end-C4s$start
+  H1s$species <- H2s$species <- H3s$species <- H4s$species <- "human"
+  C1s$species <- C2s$species <- C3s$species <- C4s$species <- "chimp"
   
-  A_bounds$species <- B_bounds$species <- E_bounds$species <- F_bounds$species <- A_domains$species <- B_domains$species <- E_domains$species <- F_domains$species <- "human"
-  C_bounds$species <- D_bounds$species <- G_bounds$species <- H_bounds$species <- C_domains$species <- D_domains$species <- G_domains$species <- H_domains$species <- "chimp"
-  A_bounds$ID <- A_domains$ID <- "A"
-  B_bounds$ID <- B_domains$ID <- "B"
-  C_bounds$ID <- C_domains$ID <- "C"
-  D_bounds$ID <- D_domains$ID <- "D"
-  E_bounds$ID <- E_domains$ID <- "E"
-  F_bounds$ID <- F_domains$ID <- "F"
-  G_bounds$ID <- G_domains$ID <- "G"
-  H_bounds$ID <- H_domains$ID <- "H"
+  broad.stats <- data.frame(sets=c("H1s", "H2s", "H3s", "H4s", "C1s", "C2s", "C3s", "C4s"), total.TADs=c(nrow(H1s), nrow(H2s), nrow(H3s), nrow(H4s), nrow(C1s), nrow(C2s), nrow(C3s), nrow(C4s)), mean.TAD.size=c(mean(H1s$size), mean(H2s$size), mean(H3s$size), mean(H4s$size), mean(C1s$size), mean(C2s$size), mean(C3s$size), mean(C4s$size)), species=c("human", "human", "human", "human", "chimp", "chimp", "chimp", "chimp"), window=window, stringency=c(1, 2, 3, 4, 1, 2, 3, 4))
   
-  ggboundaries <- rbind(select(A_bounds, chr, size, species, ID), select(B_bounds, chr, size, species, ID), select(C_bounds, chr, size, species, ID), select(D_bounds, chr, size, species, ID), select(E_bounds, chr, size, species, ID), select(F_bounds, chr, size, species, ID), select(G_bounds, chr, size, species, ID), select(H_bounds, chr, size, species, ID))
-  
-  ggdomains <- rbind(select(A_domains, chr, size, species, ID), select(B_domains, chr, size, species, ID), select(C_domains, chr, size, species, ID), select(D_domains, chr, size, species, ID), select(E_domains, chr, size, species, ID), select(F_domains, chr, size, species, ID), select(G_domains, chr, size, species, ID), select(H_domains, chr, size, species, ID))
-  
-  broad.stats <- data.frame(individuals=c("A", "B", "C", "D", "E", "F", "G", "H"), species=c("human", "human", "chimp", "chimp", "human", "human", "chimp", "chimp"), total.TADs=c(nrow(A_domains), nrow(B_domains), nrow(C_domains), nrow(D_domains), nrow(E_domains), nrow(F_domains), nrow(G_domains), nrow(H_domains)), mean.TAD.size=c(mean(A_domains$size), mean(B_domains$size), mean(C_domains$size), mean(D_domains$size), mean(E_domains$size), mean(F_domains$size), mean(G_domains$size), mean(H_domains$size)), total.bounds=c(nrow(A_bounds), nrow(B_bounds), nrow(C_bounds), nrow(D_bounds), nrow(E_bounds), nrow(F_bounds), nrow(G_bounds), nrow(H_bounds)), mean.bound.size=c(mean(A_bounds$size), mean(B_bounds$size), mean(C_bounds$size), mean(D_bounds$size), mean(E_bounds$size), mean(F_bounds$size), mean(G_bounds$size), mean(H_bounds$size)))
-  
-  result <- list(boundaries=ggboundaries, domains=ggdomains, stats=broad.stats)
+  result <- list(stats=broad.stats, ones=rbind(H1s, C1s), twos=rbind(H2s, C2s), threes=rbind(H3s, C3s), fours=rbind(H4s, C4s))
   return(result)
   
 }
+
+bounds.5 <- TAD.stats.ortho(5)
+bounds.10 <- TAD.stats.ortho(10)
+bounds.20 <- TAD.stats.ortho(20)
+
+ggboundstats <- rbind(bounds.5$stats, bounds.10$stats, bounds.20$stats)
+
+#Visualize total boundaries found:
+ggplot(data=bounds.5$stats) + geom_line(aes(x=stringency, y=total.TADs, color=species)) + xlab("Stringency, # Individuals") + ylab("Total # TAD Boundaries Found") + ggtitle("Number of TAD Boundaries in Each Species vs. Stringency, 50kb")
+ggplot(data=bounds.10$stats) + geom_line(aes(x=stringency, y=total.TADs, color=species)) + xlab("Stringency, # Individuals") + ylab("Total # TAD Boundaries Found") + ggtitle("Number of TAD Boundaries in Each Species vs. Stringency, 100kb")
+ggplot(data=bounds.20$stats) + geom_line(aes(x=stringency, y=total.TADs, color=species)) + xlab("Stringency, # Individuals") + ylab("Total # TAD Boundaries Found") + ggtitle("Number of TAD Boundaries in Each Species vs. Stringency, 200kb")
+
+#Visualize mean tad boundaries sizes:
+ggplot(data=bounds.5$stats) + geom_line(aes(x=stringency, y=mean.TAD.size, color=species)) + xlab("Stringency, # Individuals") + ylab("Mean TAD Boundary Size") + ggtitle("Mean Boundary Size in Each Species vs. Stringency, 50kb")
+ggplot(data=bounds.10$stats) + geom_line(aes(x=stringency, y=mean.TAD.size, color=species)) + xlab("Stringency, # Individuals") + ylab("Mean TAD Boundary Size") + ggtitle("Mean Boundary Size in Each Species vs. Stringency, 100kb")
+ggplot(data=bounds.20$stats) + geom_line(aes(x=stringency, y=mean.TAD.size, color=species)) + xlab("Stringency, # Individuals") + ylab("Mean TAD Boundary Size") + ggtitle("Mean Boundary Size in Each Species vs. Stringency, 200kb")
+
+#Now visualize and test boundary size differences in the different sets between species:
+ggplot(data=bounds.20$ones) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.20$ones, species=="human")$size, filter(bounds.20$ones, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("200kb TAD Boundary Size Distributions by Species | 1")
+ggplot(data=bounds.20$twos) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.20$twos, species=="human")$size, filter(bounds.20$twos, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("200kb TAD Boundary Size Distributions by Species | 2")
+ggplot(data=bounds.20$threes) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.20$threes, species=="human")$size, filter(bounds.20$threes, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("200kb TAD Boundary Size Distributions by Species | 3")
+ggplot(data=bounds.20$fours) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.20$fours, species=="human")$size, filter(bounds.20$fours, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("200kb TAD Boundary Size Distributions by Species | 4")
+
+ggplot(data=bounds.10$ones) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.10$ones, species=="human")$size, filter(bounds.10$ones, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("100kb TAD Boundary Size Distributions by Species | 1")
+ggplot(data=bounds.10$twos) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.10$twos, species=="human")$size, filter(bounds.10$twos, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("100kb TAD Boundary Size Distributions by Species | 2")
+ggplot(data=bounds.10$threes) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.10$threes, species=="human")$size, filter(bounds.10$threes, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("100kb TAD Boundary Size Distributions by Species | 3")
+ggplot(data=bounds.10$fours) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.10$fours, species=="human")$size, filter(bounds.10$fours, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("100kb TAD Boundary Size Distributions by Species | 4")
+
+ggplot(data=bounds.5$ones) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.5$ones, species=="human")$size, filter(bounds.5$ones, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("50kb TAD Boundary Size Distributions by Species | 1")
+ggplot(data=bounds.5$twos) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.5$twos, species=="human")$size, filter(bounds.5$twos, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("50kb TAD Boundary Size Distributions by Species | 2")
+ggplot(data=bounds.5$threes) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.5$threes, species=="human")$size, filter(bounds.5$threes, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("50kb TAD Boundary Size Distributions by Species | 3")
+ggplot(data=bounds.5$fours) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.5$fours, species=="human")$size, filter(bounds.5$fours, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("50kb TAD Boundary Size Distributions by Species | 4")
+
+
+
 
 ######NOW, actually move to assess DE/DC status effects of boundaries and the like!:
 #The ultimate command run is akin to (bedtools pairtobed -type notispan -a filt.bins.humans.bedPE -b TOPDOM/hbounds.final.bed > TOPDOM/hg38.TD.bounds.notispan.bed)

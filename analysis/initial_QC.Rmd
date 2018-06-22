@@ -87,7 +87,7 @@ From these quality control checks we can infer that the libraries are comparable
 First, I read in the data and normalize it with cyclic pairwise loess normalization. Then I look at histograms of the distributions of the contact frequencies on an individual-by-individual basis, to see if they are comparable. I also look at a plot of the mean vs. the variance as an additional quality control metric; this is typically done on RNA-seq count data. In that case, it's done to check if the normalized data are distributed in a particular fashion (e.g. a poisson model would have a linear mean-variance relationship). In the limma/voom pipeline, count data are log-cpm transformed and a loess trend line of variance vs. mean is then fit to create weights for individual genes to be fed into linear modeling with limma. Since this is not a QC metric typically used for Hi-C data, the only thing I hope to see is no particularly strong relationship between variance and mean.
 ```{r Initial Hi-C Data Read-in and QC}
 ###Read in data, normalize it with cyclic loess (pairwise), clean it from any rows that have missing values.
-full.data <- fread("~/Desktop/final.10kb.homer.df", header=TRUE, stringsAsFactors = FALSE, data.table=FALSE, showProgress = FALSE)
+full.data <- fread("~/Desktop/Hi-C/final.10kb.homer.df", header=TRUE, stringsAsFactors = FALSE, data.table=FALSE, showProgress = FALSE)
 full.contacts <- full.data[complete.cases(full.data[,304:311]), 304:311]
 full.contacts <- as.data.frame(normalizeCyclicLoess(full.contacts, span=1/4, iterations=3, method="pairs"))
 full.data <- full.data[complete.cases(full.data[,304:311]),]
