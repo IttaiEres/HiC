@@ -318,7 +318,7 @@ shared across the workflowr files. -->
 <p><strong>Last updated:</strong> 2018-06-21</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 598ce4c</p>
+<p><strong>Code version:</strong> 886a925</p>
 <!-- Add your analysis here -->
 <div id="preparing-the-gene-expression-data" class="section level3">
 <h3>Preparing the gene expression data</h3>
@@ -1555,6 +1555,737 @@ sample estimates:
 <div id="tad-analysis" class="section level3">
 <h3>TAD Analysis</h3>
 <p>Here, I look at TAD calls from TopDom to see if I can find a trend of DE genes or DC genes being more likely to have contacts that cross TAD boundaries.</p>
+<pre class="r"><code>###First, simpler analysis looking at total number of TADs called, mean TAD sizes, and TAD size density distributions for each individual across the 3 different window sizes called.
+TAD.stats &lt;- function(window){
+  A_TAD &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window&quot;, window,&quot;/A-21792_TOPDOM_ALL.&quot;, window, &quot;.domain&quot;, sep=&quot;&quot;), header=TRUE, data.table=FALSE)
+  B_TAD &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window&quot;, window, &quot;/B-28126_TOPDOM_ALL.&quot;, window, &quot;.domain&quot;, sep=&quot;&quot;), header=TRUE, data.table=FALSE)
+  C_TAD &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window&quot;, window, &quot;/C-3649_TOPDOM_ALL.&quot;, window, &quot;.domain&quot;, sep=&quot;&quot;), header=TRUE, data.table=FALSE)
+  D_TAD &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window&quot;, window, &quot;/D-40300_TOPDOM_ALL.&quot;, window, &quot;.domain&quot;, sep=&quot;&quot;), header=TRUE, data.table=FALSE)
+  E_TAD &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window&quot;, window, &quot;/E-28815_TOPDOM_ALL.&quot;, window, &quot;.domain&quot;, sep=&quot;&quot;), header=TRUE, data.table=FALSE)
+  F_TAD &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window&quot;, window, &quot;/F-28834_TOPDOM_ALL.&quot;, window, &quot;.domain&quot;, sep=&quot;&quot;), header=TRUE, data.table=FALSE)
+  G_TAD &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window&quot;, window, &quot;/G-3624_TOPDOM_ALL.&quot;, window, &quot;.domain&quot;, sep=&quot;&quot;), header=TRUE, data.table=FALSE)
+  H_TAD &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/window&quot;, window, &quot;/H-3651_TOPDOM_ALL.&quot;, window, &quot;.domain&quot;, sep=&quot;&quot;), header=TRUE, data.table=FALSE)
+  A_bounds &lt;- filter(A_TAD, tag==&quot;boundary&quot;)
+  B_bounds &lt;- filter(B_TAD, tag==&quot;boundary&quot;)
+  E_bounds &lt;- filter(E_TAD, tag==&quot;boundary&quot;)
+  F_bounds &lt;- filter(F_TAD, tag==&quot;boundary&quot;)
+  C_bounds &lt;- filter(C_TAD, tag==&quot;boundary&quot;)
+  D_bounds &lt;- filter(D_TAD, tag==&quot;boundary&quot;)
+  G_bounds &lt;- filter(G_TAD, tag==&quot;boundary&quot;)
+  H_bounds &lt;- filter(H_TAD, tag==&quot;boundary&quot;)
+  A_domains &lt;- filter(A_TAD, tag==&quot;domain&quot;)
+  B_domains &lt;- filter(B_TAD, tag==&quot;domain&quot;)
+  E_domains &lt;- filter(E_TAD, tag==&quot;domain&quot;)
+  F_domains &lt;- filter(F_TAD, tag==&quot;domain&quot;)
+  C_domains &lt;- filter(C_TAD, tag==&quot;domain&quot;)
+  D_domains &lt;- filter(D_TAD, tag==&quot;domain&quot;)
+  G_domains &lt;- filter(G_TAD, tag==&quot;domain&quot;)
+  H_domains &lt;- filter(H_TAD, tag==&quot;domain&quot;)
+  
+  A_bounds$species &lt;- B_bounds$species &lt;- E_bounds$species &lt;- F_bounds$species &lt;- A_domains$species &lt;- B_domains$species &lt;- E_domains$species &lt;- F_domains$species &lt;- &quot;human&quot;
+  C_bounds$species &lt;- D_bounds$species &lt;- G_bounds$species &lt;- H_bounds$species &lt;- C_domains$species &lt;- D_domains$species &lt;- G_domains$species &lt;- H_domains$species &lt;- &quot;chimp&quot;
+  A_bounds$ID &lt;- A_domains$ID &lt;- &quot;A&quot;
+  B_bounds$ID &lt;- B_domains$ID &lt;- &quot;B&quot;
+  C_bounds$ID &lt;- C_domains$ID &lt;- &quot;C&quot;
+  D_bounds$ID &lt;- D_domains$ID &lt;- &quot;D&quot;
+  E_bounds$ID &lt;- E_domains$ID &lt;- &quot;E&quot;
+  F_bounds$ID &lt;- F_domains$ID &lt;- &quot;F&quot;
+  G_bounds$ID &lt;- G_domains$ID &lt;- &quot;G&quot;
+  H_bounds$ID &lt;- H_domains$ID &lt;- &quot;H&quot;
+  
+  ggboundaries &lt;- rbind(select(A_bounds, chr, size, species, ID), select(B_bounds, chr, size, species, ID), select(C_bounds, chr, size, species, ID), select(D_bounds, chr, size, species, ID), select(E_bounds, chr, size, species, ID), select(F_bounds, chr, size, species, ID), select(G_bounds, chr, size, species, ID), select(H_bounds, chr, size, species, ID))
+  
+  ggdomains &lt;- rbind(select(A_domains, chr, size, species, ID), select(B_domains, chr, size, species, ID), select(C_domains, chr, size, species, ID), select(D_domains, chr, size, species, ID), select(E_domains, chr, size, species, ID), select(F_domains, chr, size, species, ID), select(G_domains, chr, size, species, ID), select(H_domains, chr, size, species, ID))
+  
+  broad.stats &lt;- data.frame(individuals=c(&quot;A&quot;, &quot;B&quot;, &quot;C&quot;, &quot;D&quot;, &quot;E&quot;, &quot;F&quot;, &quot;G&quot;, &quot;H&quot;), species=c(&quot;human&quot;, &quot;human&quot;, &quot;chimp&quot;, &quot;chimp&quot;, &quot;human&quot;, &quot;human&quot;, &quot;chimp&quot;, &quot;chimp&quot;), total.TADs=c(nrow(A_domains), nrow(B_domains), nrow(C_domains), nrow(D_domains), nrow(E_domains), nrow(F_domains), nrow(G_domains), nrow(H_domains)), mean.TAD.size=c(mean(A_domains$size), mean(B_domains$size), mean(C_domains$size), mean(D_domains$size), mean(E_domains$size), mean(F_domains$size), mean(G_domains$size), mean(H_domains$size)), total.bounds=c(nrow(A_bounds), nrow(B_bounds), nrow(C_bounds), nrow(D_bounds), nrow(E_bounds), nrow(F_bounds), nrow(G_bounds), nrow(H_bounds)), mean.bound.size=c(mean(A_bounds$size), mean(B_bounds$size), mean(C_bounds$size), mean(D_bounds$size), mean(E_bounds$size), mean(F_bounds$size), mean(G_bounds$size), mean(H_bounds$size)))
+  
+  result &lt;- list(boundaries=ggboundaries, domains=ggdomains, stats=broad.stats)
+  return(result)
+  
+}
+
+TADs.20 &lt;- TAD.stats(20)
+TADs.10 &lt;- TAD.stats(10)
+TADs.5 &lt;- TAD.stats(5)
+
+TADs.20$stats$window &lt;- 200
+TADs.10$stats$window &lt;- 100
+TADs.5$stats$window &lt;- 50
+
+TADs.overall &lt;- rbind(TADs.20$stats, TADs.10$stats, TADs.5$stats)
+
+#Total TADs
+ggplot(data=TADs.overall) + geom_line(aes(x=window, group=individuals, y=total.TADs, color=species)) + ggtitle(&quot;Total # of TADs Called by Window Size Used&quot;) + xlab(&quot;Window Size (kb)&quot;) + ylab(&quot;Total Number of TADs&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=50, y=14000, label=&quot;0.015&quot;, size=3) + annotate(&quot;text&quot;, x=100, y=10000, label=&quot;2.6 e -3&quot;, size=3) + annotate(&quot;text&quot;, x=200, y=11000, label=&quot;1.5 e -4&quot;, size=3)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(TADs.20$stats$total.TADs[c(1:2, 5:6)], TADs.20$stats$total.TADs[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.20$stats$total.TADs[c(1:2, 5:6)] and TADs.20$stats$total.TADs[c(3:4, 7:8)]
+t = -17.12, df = 3.5764, p-value = 0.0001465
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -2963.429 -2102.071
+sample estimates:
+mean of x mean of y 
+  7187.00   9719.75 </code></pre>
+<pre class="r"><code>t.test(TADs.10$stats$total.TADs[c(1:2, 5:6)], TADs.10$stats$total.TADs[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.10$stats$total.TADs[c(1:2, 5:6)] and TADs.10$stats$total.TADs[c(3:4, 7:8)]
+t = -7.1424, df = 3.7421, p-value = 0.002608
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -2990.083 -1282.917
+sample estimates:
+mean of x mean of y 
+  11313.0   13449.5 </code></pre>
+<pre class="r"><code>t.test(TADs.5$stats$total.TADs[c(1:2, 5:6)], TADs.5$stats$total.TADs[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.5$stats$total.TADs[c(1:2, 5:6)] and TADs.5$stats$total.TADs[c(3:4, 7:8)]
+t = -4.0978, df = 3.9927, p-value = 0.01494
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -2983.1277  -572.3723
+sample estimates:
+mean of x mean of y 
+ 16947.75  18725.50 </code></pre>
+<pre class="r"><code>#Mean TAD size
+ggplot(data=TADs.overall) + geom_line(aes(x=window, group=individuals, y=mean.TAD.size, color=species)) + ggtitle(&quot;Mean TAD Size by Window Size Used&quot;) + xlab(&quot;Window Size (kb)&quot;) + ylab(&quot;Mean TAD Size&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=50, y=130000, label=&quot;0.013&quot;, size=3) + annotate(&quot;text&quot;, x=100, y=170000, label=&quot;4 e -3&quot;, size=3) + annotate(&quot;text&quot;, x=200, y=240000, label=&quot;4.7 e -4&quot;, size=3)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(TADs.20$stats$mean.TAD.size[c(1:2, 5:6)], TADs.20$stats$mean.TAD.size[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.20$stats$mean.TAD.size[c(1:2, 5:6)] and TADs.20$stats$mean.TAD.size[c(3:4, 7:8)]
+t = 15.605, df = 3.1066, p-value = 0.0004701
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+  79083.77 118635.47
+sample estimates:
+mean of x mean of y 
+ 358966.7  260107.1 </code></pre>
+<pre class="r"><code>t.test(TADs.10$stats$mean.TAD.size[c(1:2, 5:6)], TADs.10$stats$mean.TAD.size[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.10$stats$mean.TAD.size[c(1:2, 5:6)] and TADs.10$stats$mean.TAD.size[c(3:4, 7:8)]
+t = 7.1073, df = 3.3458, p-value = 0.003959
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 23533.40 57995.53
+sample estimates:
+mean of x mean of y 
+ 232281.7  191517.2 </code></pre>
+<pre class="r"><code>t.test(TADs.5$stats$mean.TAD.size[c(1:2, 5:6)], TADs.5$stats$mean.TAD.size[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.5$stats$mean.TAD.size[c(1:2, 5:6)] and TADs.5$stats$mean.TAD.size[c(3:4, 7:8)]
+t = 4.5919, df = 3.5993, p-value = 0.01291
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+  6426.645 28513.890
+sample estimates:
+mean of x mean of y 
+ 156964.5  139494.2 </code></pre>
+<pre class="r"><code>#TAD size distributions
+ggplot(data=TADs.20$domains) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle(&quot;TAD Size Distributions by Species, 200kb Windows&quot;) + xlab(&quot;TAD Size&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=1000000, y=0.5, label=&quot;&lt; 2.2 e -16&quot;) + coord_cartesian(xlim=c(0, 2250000))#Already checked and this looks very similar even if chr2/A/B is removed, and across chrs</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(TADs.20$domains, species==&quot;human&quot;)$size, filter(TADs.20$domains, species==&quot;chimp&quot;)$size)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(TADs.20$domains, species == &quot;human&quot;)$size and filter(TADs.20$domains, species == &quot;chimp&quot;)$size
+t = 54.222, df = 53899, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+  94941.28 102062.48
+sample estimates:
+mean of x mean of y 
+ 358597.8  260095.9 </code></pre>
+<pre class="r"><code>ggplot(data=TADs.10$domains) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle(&quot;TAD Size Distributions by Species, 100kb Windows&quot;) + xlab(&quot;TAD Size&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=1000000, y=0.5, label=&quot;&lt; 2.2 e -16&quot;) + coord_cartesian(xlim=c(0, 1500000)) #+ facet_wrap(~chr) #Already checked and this looks very similar even if chr2/A/B is removed, and across chrs</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(TADs.10$domains, species==&quot;human&quot;)$size, filter(TADs.10$domains, species==&quot;chimp&quot;)$size)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(TADs.10$domains, species == &quot;human&quot;)$size and filter(TADs.10$domains, species == &quot;chimp&quot;)$size
+t = 39.781, df = 90784, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 38388.50 42367.33
+sample estimates:
+mean of x mean of y 
+ 231865.3  191487.4 </code></pre>
+<pre class="r"><code>ggplot(data=TADs.5$domains) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle(&quot;TAD Size Distributions by Species, 50kb Windows&quot;) + xlab(&quot;TAD Size&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=1000000, y=0.5, label=&quot;&lt; 2.2 e -16&quot;) + coord_cartesian(xlim=c(0, 1250000)) #+ facet_wrap(~chr) #Already checked and this looks very similar even if chr2/A/B is removed, and across chrs</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(TADs.5$domains, species==&quot;human&quot;)$size, filter(TADs.5$domains, species==&quot;chimp&quot;)$size)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(TADs.5$domains, species == &quot;human&quot;)$size and filter(TADs.5$domains, species == &quot;chimp&quot;)$size
+t = 27.986, df = 137020, p-value &lt; 2.2e-16
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ 16035.91 18451.15
+sample estimates:
+mean of x mean of y 
+ 156707.2  139463.7 </code></pre>
+<pre class="r"><code>#TAD size by chr...
+ggplot(data=TADs.20$domains) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle(&quot;TAD Size Distributions by Species, 200kb Windows&quot;) + xlab(&quot;TAD Size&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=1000000, y=0.5, label=&quot;&lt; 2.2 e -16&quot;) + facet_wrap(~chr)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-6.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Repeat all TAD analyses, but on the boundaries instead of the domains:
+#Total TADs
+ggplot(data=TADs.overall) + geom_line(aes(x=window, group=individuals, y=total.bounds, color=species)) + ggtitle(&quot;Total # of TAD Boundaries Called by Window Size Used&quot;) + xlab(&quot;Window Size (kb)&quot;) + ylab(&quot;Total Number of TAD Boundaries&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=50, y=750, label=&quot;0.07&quot;, size=3) + annotate(&quot;text&quot;, x=100, y=1275, label=&quot;0.01&quot;, size=3) + annotate(&quot;text&quot;, x=200, y=1525, label=&quot;4.1 e -5&quot;, size=3)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-7.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(TADs.20$stats$total.bounds[c(1:2, 5:6)], TADs.20$stats$total.bounds[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.20$stats$total.bounds[c(1:2, 5:6)] and TADs.20$stats$total.bounds[c(3:4, 7:8)]
+t = -13.419, df = 5.0081, p-value = 4.067e-05
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -331.2273 -224.7727
+sample estimates:
+mean of x mean of y 
+   1202.5    1480.5 </code></pre>
+<pre class="r"><code>t.test(TADs.10$stats$total.bounds[c(1:2, 5:6)], TADs.10$stats$total.bounds[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.10$stats$total.bounds[c(1:2, 5:6)] and TADs.10$stats$total.bounds[c(3:4, 7:8)]
+t = -3.6347, df = 5.7455, p-value = 0.01176
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -202.5017  -38.4983
+sample estimates:
+mean of x mean of y 
+  1051.25   1171.75 </code></pre>
+<pre class="r"><code>t.test(TADs.5$stats$total.bounds[c(1:2, 5:6)], TADs.5$stats$total.bounds[c(3:4, 7:8)])</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  TADs.5$stats$total.bounds[c(1:2, 5:6)] and TADs.5$stats$total.bounds[c(3:4, 7:8)]
+t = -2.1966, df = 5.9847, p-value = 0.07054
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -70.840176   3.840176
+sample estimates:
+mean of x mean of y 
+    416.0     449.5 </code></pre>
+<pre class="r"><code>#Mean Boundary Size
+ggplot(data=TADs.overall) + geom_line(aes(x=window, group=individuals, y=mean.bound.size, color=species)) + ggtitle(&quot;Mean Boundary Size by Window Size Used&quot;) + xlab(&quot;Window Size (kb)&quot;) + ylab(&quot;Mean Boundary Size&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=50, y=22000, label=&quot;0.31&quot;, size=3) + annotate(&quot;text&quot;, x=100, y=30000, label=&quot;0.9&quot;, size=3) + annotate(&quot;text&quot;, x=200, y=74000, label=&quot;0.09&quot;, size=3)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(TADs.20$stats$mean.bound.size[c(1:2, 5:6)], TADs.20$stats$mean.bound.size[c(3:4, 7:8)])$p.value</code></pre>
+<pre><code>[1] 0.08768698</code></pre>
+<pre class="r"><code>t.test(TADs.10$stats$mean.bound.size[c(1:2, 5:6)], TADs.10$stats$mean.bound.size[c(3:4, 7:8)])$p.value</code></pre>
+<pre><code>[1] 0.8970549</code></pre>
+<pre class="r"><code>t.test(TADs.5$stats$mean.bound.size[c(1:2, 5:6)], TADs.5$stats$mean.bound.size[c(3:4, 7:8)])$p.value</code></pre>
+<pre><code>[1] 0.3111396</code></pre>
+<pre class="r"><code>#Boundary Size distributions
+ggplot(data=TADs.20$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle(&quot;Boundary Size Distributions by Species, 200kb Windows&quot;) + xlab(&quot;Boundary Size&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=150000, y=0.5, label=signif(t.test(filter(TADs.20$boundaries, species==&quot;human&quot;)$size, filter(TADs.20$boundaries, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 300000))#Already checked and this looks very similar even if chr2/A/B is removed, and across chrs</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-9.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=TADs.10$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle(&quot;Boundary Size Distributions by Species, 100kb Windows&quot;) + xlab(&quot;Boundary Size&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=70000, y=0.5, label=signif(t.test(filter(TADs.10$boundaries, species==&quot;human&quot;)$size, filter(TADs.10$boundaries, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 150000)) #+ facet_wrap(~chr) #Already checked and this looks very similar even if chr2/A/B is removed, and across chrs</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-10.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=TADs.5$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle(&quot;Boundary Size Distributions by Species, 50kb Windows&quot;) + xlab(&quot;Boundary Size&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + annotate(&quot;text&quot;, x=1000000, y=0.5, label=&quot;&lt; 2.2 e -16&quot;) + coord_cartesian(xlim=c(0, 1250000)) #+ facet_wrap(~chr) #Already checked and this looks very similar even if chr2/A/B is removed, and across chrs</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-11.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(TADs.5$boundaries, species==&quot;human&quot;)$size, filter(TADs.5$boundaries, species==&quot;chimp&quot;)$size)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(TADs.5$boundaries, species == &quot;human&quot;)$size and filter(TADs.5$boundaries, species == &quot;chimp&quot;)$size
+t = -1.8833, df = 3443.7, p-value = 0.05974
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -1896.91032    38.15433
+sample estimates:
+mean of x mean of y 
+ 26111.78  27041.16 </code></pre>
+<pre class="r"><code>#Boundary Size by chr...
+ggplot(data=TADs.20$boundaries) + geom_density(aes(x=size, group=ID, color=species, y=..scaled..)) + ggtitle(&quot;Boundary Size Distributions by Species, 200kb Windows&quot;) + xlab(&quot;Boundary Size&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(&quot;Species&quot;, values=c(&quot;red&quot;, &quot;blue&quot;), labels=c(&quot;Chimpanzee&quot;, &quot;Human&quot;)) + facet_wrap(~chr)#+ annotate(&quot;text&quot;, x=1000000, y=0.5, label=&quot;&lt; 2.2 e -16&quot;) + facet_wrap(~chr)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-12.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Do it on ONLY ortho regions: Need to just do a basic re-run of this comparison on ortho boundaries in the orthos folder of /Users/ittaieres/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM, and also on the domains files. Also need to do intersects on domains files to find % consesrvation amongst orthologous TADs.
+TAD.stats.ortho &lt;- function(window){
+  H1s &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/&quot;, window, &quot;/H1s.final.merged.bed.ortho.hg38&quot;, sep=&quot;&quot;), header=FALSE, data.table=FALSE)
+  H2s &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/&quot;, window, &quot;/H2s.final.merged.bed.ortho.hg38&quot;, sep=&quot;&quot;), header=FALSE, data.table=FALSE)
+  H3s &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/&quot;, window, &quot;/H3s.final.merged.bed.ortho.hg38&quot;, sep=&quot;&quot;), header=FALSE, data.table=FALSE)
+  H4s &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/&quot;, window, &quot;/H4s.final.merged.bed.ortho.hg38&quot;, sep=&quot;&quot;), header=FALSE, data.table=FALSE, sep=&quot;\t&quot;)
+  C1s &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/&quot;, window, &quot;/C1s.final.merged.bed.ortho.panTro5&quot;, sep=&quot;&quot;), header=FALSE, data.table=FALSE)
+  C2s &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/&quot;, window, &quot;/C2s.final.merged.bed.ortho.panTro5&quot;, sep=&quot;&quot;), header=FALSE, data.table=FALSE)
+  C3s &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/&quot;, window, &quot;/C3s.final.merged.bed.ortho.panTro5&quot;, sep=&quot;&quot;), header=FALSE, data.table=FALSE)
+  C4s &lt;- fread(paste(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/orthos/&quot;, window, &quot;/C4s.final.merged.bed.ortho.panTro5&quot;, sep=&quot;&quot;), header=FALSE, data.table=FALSE, sep=&quot;\t&quot;)
+  H4s &lt;- H4s[,1:3]
+  C4s &lt;- C4s[,1:3]
+  colnames(H1s) &lt;- colnames(H2s) &lt;- colnames(H3s) &lt;- colnames(H4s) &lt;- colnames(C1s) &lt;- colnames(C2s) &lt;- colnames(C3s) &lt;- colnames(C4s) &lt;- c(&quot;chr&quot;, &quot;start&quot;, &quot;end&quot;)
+  H1s$size &lt;- H1s$end-H1s$start
+  H2s$size &lt;- H2s$end-H2s$start
+  H3s$size &lt;- H3s$end-H3s$start
+  H4s$size &lt;- H4s$end-H4s$start
+  C1s$size &lt;- C1s$end-C1s$start
+  C2s$size &lt;- C2s$end-C2s$start
+  C3s$size &lt;- C3s$end-C3s$start
+  C4s$size &lt;- C4s$end-C4s$start
+  H1s$species &lt;- H2s$species &lt;- H3s$species &lt;- H4s$species &lt;- &quot;human&quot;
+  C1s$species &lt;- C2s$species &lt;- C3s$species &lt;- C4s$species &lt;- &quot;chimp&quot;
+  
+  broad.stats &lt;- data.frame(sets=c(&quot;H1s&quot;, &quot;H2s&quot;, &quot;H3s&quot;, &quot;H4s&quot;, &quot;C1s&quot;, &quot;C2s&quot;, &quot;C3s&quot;, &quot;C4s&quot;), total.TADs=c(nrow(H1s), nrow(H2s), nrow(H3s), nrow(H4s), nrow(C1s), nrow(C2s), nrow(C3s), nrow(C4s)), mean.TAD.size=c(mean(H1s$size), mean(H2s$size), mean(H3s$size), mean(H4s$size), mean(C1s$size), mean(C2s$size), mean(C3s$size), mean(C4s$size)), species=c(&quot;human&quot;, &quot;human&quot;, &quot;human&quot;, &quot;human&quot;, &quot;chimp&quot;, &quot;chimp&quot;, &quot;chimp&quot;, &quot;chimp&quot;), window=window, stringency=c(1, 2, 3, 4, 1, 2, 3, 4))
+  
+  result &lt;- list(stats=broad.stats, ones=rbind(H1s, C1s), twos=rbind(H2s, C2s), threes=rbind(H3s, C3s), fours=rbind(H4s, C4s))
+  return(result)
+  
+}
+
+bounds.5 &lt;- TAD.stats.ortho(5)
+bounds.10 &lt;- TAD.stats.ortho(10)
+bounds.20 &lt;- TAD.stats.ortho(20)
+
+ggboundstats &lt;- rbind(bounds.5$stats, bounds.10$stats, bounds.20$stats)
+
+#Visualize total boundaries found:
+ggplot(data=bounds.5$stats) + geom_line(aes(x=stringency, y=total.TADs, color=species)) + xlab(&quot;Stringency, # Individuals&quot;) + ylab(&quot;Total # TAD Boundaries Found&quot;) + ggtitle(&quot;Number of TAD Boundaries in Each Species vs. Stringency, 50kb&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-13.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.10$stats) + geom_line(aes(x=stringency, y=total.TADs, color=species)) + xlab(&quot;Stringency, # Individuals&quot;) + ylab(&quot;Total # TAD Boundaries Found&quot;) + ggtitle(&quot;Number of TAD Boundaries in Each Species vs. Stringency, 100kb&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-14.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.20$stats) + geom_line(aes(x=stringency, y=total.TADs, color=species)) + xlab(&quot;Stringency, # Individuals&quot;) + ylab(&quot;Total # TAD Boundaries Found&quot;) + ggtitle(&quot;Number of TAD Boundaries in Each Species vs. Stringency, 200kb&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-15.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Visualize mean tad boundaries sizes:
+ggplot(data=bounds.5$stats) + geom_line(aes(x=stringency, y=mean.TAD.size, color=species)) + xlab(&quot;Stringency, # Individuals&quot;) + ylab(&quot;Mean TAD Boundary Size&quot;) + ggtitle(&quot;Mean Boundary Size in Each Species vs. Stringency, 50kb&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-16.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.10$stats) + geom_line(aes(x=stringency, y=mean.TAD.size, color=species)) + xlab(&quot;Stringency, # Individuals&quot;) + ylab(&quot;Mean TAD Boundary Size&quot;) + ggtitle(&quot;Mean Boundary Size in Each Species vs. Stringency, 100kb&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-17.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.20$stats) + geom_line(aes(x=stringency, y=mean.TAD.size, color=species)) + xlab(&quot;Stringency, # Individuals&quot;) + ylab(&quot;Mean TAD Boundary Size&quot;) + ggtitle(&quot;Mean Boundary Size in Each Species vs. Stringency, 200kb&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-18.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>#Now visualize and test boundary size differences in the different sets between species:
+ggplot(data=bounds.20$ones) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.20$ones, species==&quot;human&quot;)$size, filter(bounds.20$ones, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;200kb TAD Boundary Size Distributions by Species | 1&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-19.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.20$twos) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.20$twos, species==&quot;human&quot;)$size, filter(bounds.20$twos, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;200kb TAD Boundary Size Distributions by Species | 2&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-20.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.20$threes) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.20$threes, species==&quot;human&quot;)$size, filter(bounds.20$threes, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;200kb TAD Boundary Size Distributions by Species | 3&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-21.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.20$fours) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.20$fours, species==&quot;human&quot;)$size, filter(bounds.20$fours, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;200kb TAD Boundary Size Distributions by Species | 4&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-22.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.10$ones) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.10$ones, species==&quot;human&quot;)$size, filter(bounds.10$ones, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;100kb TAD Boundary Size Distributions by Species | 1&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-23.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.10$twos) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.10$twos, species==&quot;human&quot;)$size, filter(bounds.10$twos, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;100kb TAD Boundary Size Distributions by Species | 2&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-24.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.10$threes) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.10$threes, species==&quot;human&quot;)$size, filter(bounds.10$threes, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;100kb TAD Boundary Size Distributions by Species | 3&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-25.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.10$fours) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.10$fours, species==&quot;human&quot;)$size, filter(bounds.10$fours, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;100kb TAD Boundary Size Distributions by Species | 4&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-26.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.5$ones) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.5$ones, species==&quot;human&quot;)$size, filter(bounds.5$ones, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;50kb TAD Boundary Size Distributions by Species | 1&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-27.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.5$twos) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.5$twos, species==&quot;human&quot;)$size, filter(bounds.5$twos, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;50kb TAD Boundary Size Distributions by Species | 2&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-28.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.5$threes) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.5$threes, species==&quot;human&quot;)$size, filter(bounds.5$threes, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;50kb TAD Boundary Size Distributions by Species | 3&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-29.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>ggplot(data=bounds.5$fours) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab(&quot;Size&quot;) + ylab(&quot;Density&quot;) + annotate(&quot;text&quot;, x=250000, y=0.5, label=signif(t.test(filter(bounds.5$fours, species==&quot;human&quot;)$size, filter(bounds.5$fours, species==&quot;chimp&quot;)$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle(&quot;50kb TAD Boundary Size Distributions by Species | 4&quot;)</code></pre>
+<p><img src="figure/gene_expression.Rmd/unnamed-chunk-2-30.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>######NOW, actually move to assess DE/DC status effects of boundaries and the like!:
+#The ultimate command run is akin to (bedtools pairtobed -type notispan -a filt.bins.humans.bedPE -b TOPDOM/hbounds.final.bed &gt; TOPDOM/hg38.TD.bounds.notispan.bed)
+
+
+#Load in the pairs that are NOT interrupted by a TAD boundary! First using the agnostic approach where I just take all boundaries, and then for more stringent criteria (i.e. boundary found in at least 2 individuals, at least 3, or all 4)
+TADcross.humans &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/hu.TD.bounds.notispan.1.bed&quot;)
+TADcross.humans.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/hu.TD.bounds.notispan.2.bed&quot;)
+TADcross.humans.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/hu.TD.bounds.notispan.3.bed&quot;)
+TADcross.humans.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/hu.TD.bounds.notispan.4.bed&quot;)
+
+TADcross.chimps &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/ch.TD.bounds.notispan.1.bed&quot;)
+TADcross.chimps.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/ch.TD.bounds.notispan.2.bed&quot;)
+TADcross.chimps.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/ch.TD.bounds.notispan.3.bed&quot;)
+TADcross.chimps.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/5s_unions/ch.TD.bounds.notispan.4.bed&quot;)
+
+full.annotations &lt;- readRDS(&quot;~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS&quot;)
+
+TADcross.humans$HpairID &lt;- paste(paste(TADcross.humans$V1, TADcross.humans$V2, sep=&quot;-&quot;), paste(TADcross.humans$V4, TADcross.humans$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.2$HpairID &lt;- paste(paste(TADcross.humans.2$V1, TADcross.humans.2$V2, sep=&quot;-&quot;), paste(TADcross.humans.2$V4, TADcross.humans.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.3$HpairID &lt;- paste(paste(TADcross.humans.3$V1, TADcross.humans.3$V2, sep=&quot;-&quot;), paste(TADcross.humans.3$V4, TADcross.humans.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.4$HpairID &lt;- paste(paste(TADcross.humans.4$V1, TADcross.humans.4$V2, sep=&quot;-&quot;), paste(TADcross.humans.4$V4, TADcross.humans.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+
+TADcross.chimps$CpairID &lt;- paste(paste(TADcross.chimps$V1, TADcross.chimps$V2, sep=&quot;-&quot;), paste(TADcross.chimps$V4, TADcross.chimps$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.2$CpairID &lt;- paste(paste(TADcross.chimps.2$V1, TADcross.chimps.2$V2, sep=&quot;-&quot;), paste(TADcross.chimps.2$V4, TADcross.chimps.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.3$CpairID &lt;- paste(paste(TADcross.chimps.3$V1, TADcross.chimps.3$V2, sep=&quot;-&quot;), paste(TADcross.chimps.3$V4, TADcross.chimps.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.4$CpairID &lt;- paste(paste(TADcross.chimps.4$V1, TADcross.chimps.4$V2, sep=&quot;-&quot;), paste(TADcross.chimps.4$V4, TADcross.chimps.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+
+full.annotations$HTAD.interrupt &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.2 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.2$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.3 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.3$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.4 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.4$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.2 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.2$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.3 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.3$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.4 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.4$CpairID, &quot;no&quot;, &quot;yes&quot;)
+
+full.annotations$diff.TAD.interrupt &lt;- ifelse(full.annotations$HTAD.interrupt==full.annotations$CTAD.interrupt, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.2 &lt;- ifelse(full.annotations$HTAD.interrupt.2==full.annotations$CTAD.interrupt.2, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.3 &lt;- ifelse(full.annotations$HTAD.interrupt.3==full.annotations$CTAD.interrupt.3, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.4 &lt;- ifelse(full.annotations$HTAD.interrupt.4==full.annotations$CTAD.interrupt.4, &quot;no&quot;, &quot;yes&quot;)
+
+chisq.summarizer &lt;- function(df, col1, robust){
+  DEtable &lt;- table(df$DE, df[,col1], dnn=c(&quot;DE?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
+  promsDEtable &lt;- table(filter(df, true.promoter==&quot;yes&quot;)$DE, filter(df, true.promoter==&quot;yes&quot;)[,col1], dnn=c(&quot;DE?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
+  DCtable &lt;- table(df$DC, df[,col1], dnn=c(&quot;DC?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
+  promsDCtable &lt;- table(filter(df, true.promoter==&quot;yes&quot;)$DC, filter(df, true.promoter==&quot;yes&quot;)[,col1], dnn=c(&quot;DC?&quot;, paste(&quot;TAD &quot;, robust, &quot; Boundary Cross Diff. b/t Species?&quot;, sep=&quot;&quot;)))
+  print(paste(&quot;As seen in the table below, amongst all hits, &quot;, signif((DEtable[2,2]/sum(DEtable[2,]))*100, 3), &quot;% of DE contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((DEtable[1,2]/sum(DEtable[1,]))*100, 3), &quot;% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((DEtable[2,2]/sum(DEtable[,2]))*100, 3), &quot;% DE, while those not crossing are &quot;, signif((DEtable[2,1]/sum(DEtable[,1]))*100, 3), &quot;% DE. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(DEtable)$p.val, 2), sep=&quot;&quot;))
+  print(DEtable)
+  print(paste(&quot;As seen in the table below, amongst all hits, &quot;, signif((DCtable[2,2]/sum(DCtable[2,]))*100, 3), &quot;% of DC contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((DCtable[1,2]/sum(DCtable[1,]))*100, 3), &quot;% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((DCtable[2,2]/sum(DCtable[,2]))*100, 3), &quot;% DC, while those not crossing are &quot;, signif((DCtable[2,1]/sum(DCtable[,1]))*100, 3), &quot;% DC. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(DCtable)$p.val, 2), sep=&quot;&quot;))
+  print(DCtable)
+  print(paste(&quot;As seen in the table below, amongst promoter-contacting hits, &quot;, signif((promsDEtable[2,2]/sum(promsDEtable[2,]))*100, 3), &quot;% of DE contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((promsDEtable[1,2]/sum(promsDEtable[1,]))*100, 3), &quot;% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((promsDEtable[2,2]/sum(promsDEtable[,2]))*100, 3), &quot;% DE, while those not crossing are &quot;, signif((promsDEtable[2,1]/sum(promsDEtable[,1]))*100, 3), &quot;% DE. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(promsDEtable)$p.val, 2), sep=&quot;&quot;))
+  print(promsDEtable)
+  print(paste(&quot;As seen in the table below, amongst promoter-contacting hits, &quot;, signif((promsDCtable[2,2]/sum(promsDCtable[2,]))*100, 3), &quot;% of DC contacts cross TAD boundaries | &quot;, robust, &quot;  differentially between species, while &quot;, signif((promsDCtable[1,2]/sum(promsDCtable[1,]))*100, 3), &quot;% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | &quot;, robust, &quot;  are &quot;, signif((promsDCtable[2,2]/sum(promsDCtable[,2]))*100, 3), &quot;% DC, while those not crossing are &quot;, signif((promsDCtable[2,1]/sum(promsDCtable[,1]))*100, 3), &quot;% DC. This is chi-squared significant w/ p-val &quot;, signif(chisq.test(promsDCtable)$p.val, 2), sep=&quot;&quot;))
+  print(promsDCtable)
+}
+
+#Call the summarizer on all the different TAD boundary specs :)
+chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt&quot;, 1)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 2.1% of DE contacts cross TAD boundaries | 1  differentially between species, while 1.52% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 3.74% DE, while those not crossing are 2.73% DE. This is chi-squared significant w/ p-val 5e-05&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  279726   4329
+  yes   7847    168
+[1] &quot;As seen in the table below, amongst all hits, 1.17% of DC contacts cross TAD boundaries | 1  differentially between species, while 1.55% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 2.51% DC, while those not crossing are 3.32% DC. This is chi-squared significant w/ p-val 0.0031&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  278025   4384
+  yes   9548    113
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 2.1% of DE contacts cross TAD boundaries | 1  differentially between species, while 1.63% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 26.9% DE, while those not crossing are 22.1% DE. This is chi-squared significant w/ p-val 0.0053&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27622   457
+  yes  7847   168
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 1.29% of DC contacts cross TAD boundaries | 1  differentially between species, while 1.75% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 2.56% DC, while those not crossing are 3.45% DC. This is chi-squared significant w/ p-val 0.27&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34244   609
+  yes  1225    16</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.2&quot;, 2)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.187% of DE contacts cross TAD boundaries | 2  differentially between species, while 0.235% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 2.2% DE, while those not crossing are 2.75% DE. This is chi-squared significant w/ p-val 0.45&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  283387    668
+  yes   8000     15
+[1] &quot;As seen in the table below, amongst all hits, 0.197% of DC contacts cross TAD boundaries | 2  differentially between species, while 0.235% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 2.78% DC, while those not crossing are 3.31% DC. This is chi-squared significant w/ p-val 0.51&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  281745    664
+  yes   9642     19
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.187% of DE contacts cross TAD boundaries | 2  differentially between species, while 0.374% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 12.5% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.014&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27974   105
+  yes  8000    15</code></pre>
+<pre><code>Warning in chisq.test(promsDCtable): Chi-squared approximation may be
+incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.403% of DC contacts cross TAD boundaries | 2  differentially between species, while 0.33% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 4.17% DC, while those not crossing are 3.44% DC. This is chi-squared significant w/ p-val 0.85&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34738   115
+  yes  1236     5</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.3&quot;, 3)</code></pre>
+<pre><code>Warning in chisq.test(DEtable): Chi-squared approximation may be incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.025% of DE contacts cross TAD boundaries | 3  differentially between species, while 0.0271% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 2.53% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 1&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  283978     77
+  yes   8013      2</code></pre>
+<pre><code>Warning in chisq.test(DCtable): Chi-squared approximation may be incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.0621% of DC contacts cross TAD boundaries | 3  differentially between species, while 0.0258% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 7.59% DC, while those not crossing are 3.31% DC. This is chi-squared significant w/ p-val 0.069&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  282336     73
+  yes   9655      6</code></pre>
+<pre><code>Warning in chisq.test(promsDEtable): Chi-squared approximation may be
+incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.025% of DE contacts cross TAD boundaries | 3  differentially between species, while 0.0249% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 22.2% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 1&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  28072     7
+  yes  8013     2</code></pre>
+<pre><code>Warning in chisq.test(promsDCtable): Chi-squared approximation may be
+incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.0806% of DC contacts cross TAD boundaries | 3  differentially between species, while 0.023% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 11.1% DC, while those not crossing are 3.44% DC. This is chi-squared significant w/ p-val 0.73&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34845     8
+  yes  1240     1</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.4&quot;, 4)</code></pre>
+<pre><code>Warning in chisq.test(DEtable): Chi-squared approximation may be incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0% of DE contacts cross TAD boundaries | 4  differentially between species, while 0.00387% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 0% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 1&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  284044     11
+  yes   8015      0</code></pre>
+<pre><code>Warning in chisq.test(DCtable): Chi-squared approximation may be incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0% of DC contacts cross TAD boundaries | 4  differentially between species, while 0.0039% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 0% DC, while those not crossing are 3.31% DC. This is chi-squared significant w/ p-val 1&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  282398     11
+  yes   9661      0</code></pre>
+<pre><code>Warning in chisq.test(promsDEtable): Chi-squared approximation may be
+incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0% of DE contacts cross TAD boundaries | 4  differentially between species, while 0.0107% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 0% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.82&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  28076     3
+  yes  8015     0</code></pre>
+<pre><code>Warning in chisq.test(promsDCtable): Chi-squared approximation may be
+incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0% of DC contacts cross TAD boundaries | 4  differentially between species, while 0.00861% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 0% DC, while those not crossing are 3.44% DC. This is chi-squared significant w/ p-val 1&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34850     3
+  yes  1241     0</code></pre>
+<pre class="r"><code>#Now do the same thing again, but for window sizes of 5 and 10 instead!
+TADcross.humans &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/hu.TD.bounds.notispan.1.bed&quot;)
+TADcross.humans.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/hu.TD.bounds.notispan.2.bed&quot;)
+TADcross.humans.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/hu.TD.bounds.notispan.3.bed&quot;)
+TADcross.humans.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/hu.TD.bounds.notispan.4.bed&quot;)
+
+TADcross.chimps &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/ch.TD.bounds.notispan.1.bed&quot;)
+TADcross.chimps.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/ch.TD.bounds.notispan.2.bed&quot;)
+TADcross.chimps.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/ch.TD.bounds.notispan.3.bed&quot;)
+TADcross.chimps.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/10s_unions/ch.TD.bounds.notispan.4.bed&quot;)
+
+full.annotations &lt;- readRDS(&quot;~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS&quot;)
+
+TADcross.humans$HpairID &lt;- paste(paste(TADcross.humans$V1, TADcross.humans$V2, sep=&quot;-&quot;), paste(TADcross.humans$V4, TADcross.humans$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.2$HpairID &lt;- paste(paste(TADcross.humans.2$V1, TADcross.humans.2$V2, sep=&quot;-&quot;), paste(TADcross.humans.2$V4, TADcross.humans.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.3$HpairID &lt;- paste(paste(TADcross.humans.3$V1, TADcross.humans.3$V2, sep=&quot;-&quot;), paste(TADcross.humans.3$V4, TADcross.humans.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.4$HpairID &lt;- paste(paste(TADcross.humans.4$V1, TADcross.humans.4$V2, sep=&quot;-&quot;), paste(TADcross.humans.4$V4, TADcross.humans.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+
+TADcross.chimps$CpairID &lt;- paste(paste(TADcross.chimps$V1, TADcross.chimps$V2, sep=&quot;-&quot;), paste(TADcross.chimps$V4, TADcross.chimps$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.2$CpairID &lt;- paste(paste(TADcross.chimps.2$V1, TADcross.chimps.2$V2, sep=&quot;-&quot;), paste(TADcross.chimps.2$V4, TADcross.chimps.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.3$CpairID &lt;- paste(paste(TADcross.chimps.3$V1, TADcross.chimps.3$V2, sep=&quot;-&quot;), paste(TADcross.chimps.3$V4, TADcross.chimps.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.4$CpairID &lt;- paste(paste(TADcross.chimps.4$V1, TADcross.chimps.4$V2, sep=&quot;-&quot;), paste(TADcross.chimps.4$V4, TADcross.chimps.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+
+full.annotations$HTAD.interrupt &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.2 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.2$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.3 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.3$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.4 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.4$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.2 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.2$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.3 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.3$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.4 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.4$CpairID, &quot;no&quot;, &quot;yes&quot;)
+
+full.annotations$diff.TAD.interrupt &lt;- ifelse(full.annotations$HTAD.interrupt==full.annotations$CTAD.interrupt, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.2 &lt;- ifelse(full.annotations$HTAD.interrupt.2==full.annotations$CTAD.interrupt.2, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.3 &lt;- ifelse(full.annotations$HTAD.interrupt.3==full.annotations$CTAD.interrupt.3, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.4 &lt;- ifelse(full.annotations$HTAD.interrupt.4==full.annotations$CTAD.interrupt.4, &quot;no&quot;, &quot;yes&quot;)
+
+chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt&quot;, 1)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 1.55% of DE contacts cross TAD boundaries | 1  differentially between species, while 1.52% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 2.78% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 0.91&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  279725   4330
+  yes   7891    124
+[1] &quot;As seen in the table below, amongst all hits, 1.7% of DC contacts cross TAD boundaries | 1  differentially between species, while 1.52% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 3.68% DC, while those not crossing are 3.3% DC. This is chi-squared significant w/ p-val 0.17&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  278119   4290
+  yes   9497    164
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 1.55% of DE contacts cross TAD boundaries | 1  differentially between species, while 1.73% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 20.4% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.29&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27594   485
+  yes  7891   124
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 1.69% of DC contacts cross TAD boundaries | 1  differentially between species, while 1.69% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 3.45% DC, while those not crossing are 3.44% DC. This is chi-squared significant w/ p-val 1&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34265   588
+  yes  1220    21</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.2&quot;, 2)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.823% of DE contacts cross TAD boundaries | 2  differentially between species, while 0.596% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 3.75% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 0.012&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  282362   1693
+  yes   7949     66
+[1] &quot;As seen in the table below, amongst all hits, 0.631% of DC contacts cross TAD boundaries | 2  differentially between species, while 0.601% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 3.47% DC, while those not crossing are 3.31% DC. This is chi-squared significant w/ p-val 0.76&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  280711   1698
+  yes   9600     61
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.823% of DE contacts cross TAD boundaries | 2  differentially between species, while 0.659% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 26.3% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.14&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27894   185
+  yes  7949    66
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.886% of DC contacts cross TAD boundaries | 2  differentially between species, while 0.689% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 4.38% DC, while those not crossing are 3.43% DC. This is chi-squared significant w/ p-val 0.52&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34613   240
+  yes  1230    11</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.3&quot;, 3)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.399% of DE contacts cross TAD boundaries | 3  differentially between species, while 0.232% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 4.63% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 0.0035&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  283396    659
+  yes   7983     32
+[1] &quot;As seen in the table below, amongst all hits, 0.331% of DC contacts cross TAD boundaries | 3  differentially between species, while 0.233% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 4.63% DC, while those not crossing are 3.3% DC. This is chi-squared significant w/ p-val 0.066&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  281750    659
+  yes   9629     32
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.399% of DE contacts cross TAD boundaries | 3  differentially between species, while 0.367% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 23.7% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.75&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27976   103
+  yes  7983    32</code></pre>
+<pre><code>Warning in chisq.test(promsDCtable): Chi-squared approximation may be
+incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.645% of DC contacts cross TAD boundaries | 3  differentially between species, while 0.364% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 5.93% DC, while those not crossing are 3.43% DC. This is chi-squared significant w/ p-val 0.18&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34726   127
+  yes  1233     8</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.4&quot;, 4)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.0998% of DE contacts cross TAD boundaries | 4  differentially between species, while 0.0739% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 3.67% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 0.53&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  283845    210
+  yes   8007      8
+[1] &quot;As seen in the table below, amongst all hits, 0.145% of DC contacts cross TAD boundaries | 4  differentially between species, while 0.0722% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 6.42% DC, while those not crossing are 3.31% DC. This is chi-squared significant w/ p-val 0.017&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  282205    204
+  yes   9647     14
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.0998% of DE contacts cross TAD boundaries | 4  differentially between species, while 0.107% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 21.1% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 1&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  28049    30
+  yes  8007     8</code></pre>
+<pre><code>Warning in chisq.test(promsDCtable): Chi-squared approximation may be
+incorrect</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.242% of DC contacts cross TAD boundaries | 4  differentially between species, while 0.1% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 7.89% DC, while those not crossing are 3.43% DC. This is chi-squared significant w/ p-val 0.29&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34818    35
+  yes  1238     3</code></pre>
+<pre class="r"><code>###Now for window size of 5 (50kb total):
+TADcross.humans &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/hu.TD.bounds.notispan.1.bed&quot;)
+TADcross.humans.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/hu.TD.bounds.notispan.2.bed&quot;)
+TADcross.humans.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/hu.TD.bounds.notispan.3.bed&quot;)
+TADcross.humans.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/hu.TD.bounds.notispan.4.bed&quot;)
+
+TADcross.chimps &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/ch.TD.bounds.notispan.1.bed&quot;)
+TADcross.chimps.2 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/ch.TD.bounds.notispan.2.bed&quot;)
+TADcross.chimps.3 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/ch.TD.bounds.notispan.3.bed&quot;)
+TADcross.chimps.4 &lt;- fread(&quot;~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/20s_unions/ch.TD.bounds.notispan.4.bed&quot;)
+
+full.annotations &lt;- readRDS(&quot;~/Desktop/Hi-C/enrichdfs/full.data.annotations.RDS&quot;)
+
+TADcross.humans$HpairID &lt;- paste(paste(TADcross.humans$V1, TADcross.humans$V2, sep=&quot;-&quot;), paste(TADcross.humans$V4, TADcross.humans$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.2$HpairID &lt;- paste(paste(TADcross.humans.2$V1, TADcross.humans.2$V2, sep=&quot;-&quot;), paste(TADcross.humans.2$V4, TADcross.humans.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.3$HpairID &lt;- paste(paste(TADcross.humans.3$V1, TADcross.humans.3$V2, sep=&quot;-&quot;), paste(TADcross.humans.3$V4, TADcross.humans.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.humans.4$HpairID &lt;- paste(paste(TADcross.humans.4$V1, TADcross.humans.4$V2, sep=&quot;-&quot;), paste(TADcross.humans.4$V4, TADcross.humans.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+
+TADcross.chimps$CpairID &lt;- paste(paste(TADcross.chimps$V1, TADcross.chimps$V2, sep=&quot;-&quot;), paste(TADcross.chimps$V4, TADcross.chimps$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.2$CpairID &lt;- paste(paste(TADcross.chimps.2$V1, TADcross.chimps.2$V2, sep=&quot;-&quot;), paste(TADcross.chimps.2$V4, TADcross.chimps.2$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.3$CpairID &lt;- paste(paste(TADcross.chimps.3$V1, TADcross.chimps.3$V2, sep=&quot;-&quot;), paste(TADcross.chimps.3$V4, TADcross.chimps.3$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+TADcross.chimps.4$CpairID &lt;- paste(paste(TADcross.chimps.4$V1, TADcross.chimps.4$V2, sep=&quot;-&quot;), paste(TADcross.chimps.4$V4, TADcross.chimps.4$V5, sep=&quot;-&quot;), sep=&quot;_&quot;)
+
+full.annotations$HTAD.interrupt &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.2 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.2$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.3 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.3$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$HTAD.interrupt.4 &lt;- ifelse(full.annotations$HpairID %in% TADcross.humans.4$HpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.2 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.2$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.3 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.3$CpairID, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$CTAD.interrupt.4 &lt;- ifelse(full.annotations$CpairID %in% TADcross.chimps.4$CpairID, &quot;no&quot;, &quot;yes&quot;)
+
+full.annotations$diff.TAD.interrupt &lt;- ifelse(full.annotations$HTAD.interrupt==full.annotations$CTAD.interrupt, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.2 &lt;- ifelse(full.annotations$HTAD.interrupt.2==full.annotations$CTAD.interrupt.2, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.3 &lt;- ifelse(full.annotations$HTAD.interrupt.3==full.annotations$CTAD.interrupt.3, &quot;no&quot;, &quot;yes&quot;)
+full.annotations$diff.TAD.interrupt.4 &lt;- ifelse(full.annotations$HTAD.interrupt.4==full.annotations$CTAD.interrupt.4, &quot;no&quot;, &quot;yes&quot;)
+
+chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt&quot;, 1)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 1.25% of DE contacts cross TAD boundaries | 1  differentially between species, while 1.14% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 2.98% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 0.42&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  280803   3252
+  yes   7915    100
+[1] &quot;As seen in the table below, amongst all hits, 1.55% of DC contacts cross TAD boundaries | 1  differentially between species, while 1.13% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 4.47% DC, while those not crossing are 3.29% DC. This is chi-squared significant w/ p-val 0.00018&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  279207   3202
+  yes   9511    150
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 1.25% of DE contacts cross TAD boundaries | 1  differentially between species, while 1.52% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 18.9% DE, while those not crossing are 22.3% DE. This is chi-squared significant w/ p-val 0.077&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27651   428
+  yes  7915   100
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 1.69% of DC contacts cross TAD boundaries | 1  differentially between species, while 1.45% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 1  are 3.98% DC, while those not crossing are 3.43% DC. This is chi-squared significant w/ p-val 0.57&quot;
+     TAD 1 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34346   507
+  yes  1220    21</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.2&quot;, 2)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.823% of DE contacts cross TAD boundaries | 2  differentially between species, while 0.615% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 3.64% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 0.023&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  282307   1748
+  yes   7949     66
+[1] &quot;As seen in the table below, amongst all hits, 0.704% of DC contacts cross TAD boundaries | 2  differentially between species, while 0.618% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 3.75% DC, while those not crossing are 3.31% DC. This is chi-squared significant w/ p-val 0.32&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  280663   1746
+  yes   9593     68
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.823% of DE contacts cross TAD boundaries | 2  differentially between species, while 0.944% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 19.9% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.35&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27814   265
+  yes  7949    66
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 1.61% of DC contacts cross TAD boundaries | 2  differentially between species, while 0.892% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 2  are 6.04% DC, while those not crossing are 3.41% DC. This is chi-squared significant w/ p-val 0.014&quot;
+     TAD 2 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34542   311
+  yes  1221    20</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.3&quot;, 3)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.512% of DE contacts cross TAD boundaries | 3  differentially between species, while 0.41% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 3.4% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 0.19&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  282889   1166
+  yes   7974     41
+[1] &quot;As seen in the table below, amongst all hits, 0.352% of DC contacts cross TAD boundaries | 3  differentially between species, while 0.415% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 2.82% DC, while those not crossing are 3.31% DC. This is chi-squared significant w/ p-val 0.38&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  281236   1173
+  yes   9627     34
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.512% of DE contacts cross TAD boundaries | 3  differentially between species, while 0.776% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 15.8% DE, while those not crossing are 22.3% DE. This is chi-squared significant w/ p-val 0.016&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27861   218
+  yes  7974    41
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.806% of DC contacts cross TAD boundaries | 3  differentially between species, while 0.714% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 3  are 3.86% DC, while those not crossing are 3.44% DC. This is chi-squared significant w/ p-val 0.84&quot;
+     TAD 3 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34604   249
+  yes  1231    10</code></pre>
+<pre class="r"><code>chisq.summarizer(full.annotations, &quot;diff.TAD.interrupt.4&quot;, 4)</code></pre>
+<pre><code>[1] &quot;As seen in the table below, amongst all hits, 0.324% of DE contacts cross TAD boundaries | 4  differentially between species, while 0.235% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 3.75% DE, while those not crossing are 2.74% DE. This is chi-squared significant w/ p-val 0.13&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DE?       no    yes
+  no  283387    668
+  yes   7989     26
+[1] &quot;As seen in the table below, amongst all hits, 0.269% of DC contacts cross TAD boundaries | 4  differentially between species, while 0.237% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 3.75% DC, while those not crossing are 3.31% DC. This is chi-squared significant w/ p-val 0.59&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DC?       no    yes
+  no  281741    668
+  yes   9635     26
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.324% of DE contacts cross TAD boundaries | 4  differentially between species, while 0.509% of non-DE contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 15.4% DE, while those not crossing are 22.2% DE. This is chi-squared significant w/ p-val 0.041&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DE?      no   yes
+  no  27936   143
+  yes  7989    26
+[1] &quot;As seen in the table below, amongst promoter-contacting hits, 0.725% of DC contacts cross TAD boundaries | 4  differentially between species, while 0.459% of non-DC contacts do so. Alternatively, the contacts differentially crossing TAD boundaries | 4  are 5.33% DC, while those not crossing are 3.43% DC. This is chi-squared significant w/ p-val 0.26&quot;
+     TAD 4 Boundary Cross Diff. b/t Species?
+DC?      no   yes
+  no  34693   160
+  yes  1232     9</code></pre>
 </div>
 <div id="exploration-of-genes-with-or-without-an-upstream-contact" class="section level3">
 <h3>Exploration of genes with or without an upstream contact</h3>
