@@ -486,10 +486,11 @@ enrichment.plotter <- function(df, HiC_col, DE_col, xlab, xmax=0.3, i=c(0.01, 0.
   print(dhics.enriched)
   print(joint.enriched)
   print(chisq.p)
+  print(enrich.table[which(enrich.table$DEFDR==0.025),]) #Added to figure out comparison for the paper.
 }
 
 #Visualization of enrichment of DE/DC in one another. For most of these, using the gene.hic.filt df is sufficient as their Hi-C FDR numbers are the same. For the upstream genes it's a little more complicated because gene.hic.filt doesn't incorporate strand information on the genes, so use the specific US dfs for that, with the USFDR column.
-enrichment.plotter(gene.hic.filt, "min_FDR.H", "adj.P.Val", "Minimum FDR of Hi-C Contacts Overlapping Gene")
+enrichment.plotter(gene.hic.filt, "min_FDR.H", "adj.P.Val", "Minimum FDR of Hi-C Contacts Overlapping Gene", xmax=1)
 enrichment.plotter(gene.hic.filt, "min_FDR.C", "adj.P.Val", "Minimum FDR of Hi-C Contacts Overlapping Gene, Chimp")
 #enrichment.plotter(h_US, "USFDR", "adj.P.Val", "FDR for Closest Upstream Hi-C Contact Overlapping Gene, Human") #These two are ugly, and can't be run anyway until next chunk is complete to create their DFs. It's OK without them.
 #enrichment.plotter(c_US, "USFDR", "adj.P.Val", "FDR for Closest Upstream Hi-C Contact Overlapping Gene, Chimp")
@@ -499,7 +500,7 @@ enrichment.plotter(gene.hic.filt, "median_FDR.H", "adj.P.Val", "Median FDR of Hi
 enrichment.plotter(gene.hic.filt, "median_FDR.C", "adj.P.Val", "Median FDR of Hi-C Contacts Overlapping Gene, Chimp")
 enrichment.plotter(gene.hic.filt, "weighted_Z.s2post.H", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Human")
 enrichment.plotter(gene.hic.filt, "weighted_Z.s2post.C", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Chimp")
-enrichment.plotter(gene.hic.filt, "weighted_Z.ALLvar.H", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene")
+enrichment.plotter(gene.hic.filt, "weighted_Z.ALLvar.H", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene", xmax=1)
 enrichment.plotter(gene.hic.filt, "weighted_Z.ALLvar.C", "adj.P.Val", "FDR for Weighted p-val Combine of Hi-C Contacts Overlapping Gene, Chimp")
 ```
 Now that I've seen some enrichment of differential contact (DC) in differential expression (DE) based on my linear modeling results from before, I would like to further quantify this effect. In order to do so, I now extract log2 observed/expected homer-normalized contact frequency values and RPKM expression values for each gene/bin set, so I can look at correlations of these values and assess their explanatory power.
@@ -1210,7 +1211,209 @@ ggplot(data=bounds.5$threes) + geom_density(aes(x=size, color=species, y=..scale
 ggplot(data=bounds.5$fours) + geom_density(aes(x=size, color=species, y=..scaled..)) + xlab("Size") + ylab("Density") + annotate("text", x=250000, y=0.5, label=signif(t.test(filter(bounds.5$fours, species=="human")$size, filter(bounds.5$fours, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0, 500000)) + ggtitle("50kb TAD Boundary Size Distributions by Species | 4")
 
 
+######Final TAD function to do all this work for me in the conserved RBHLO domains!
+ortho.TAD.domains <- function(window){
+ A_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/domains/", window,"/trueortho/A-21792_TOPDOM_ALL.", window, ".domain.domains.clean.ortho.hg38", sep=""), header=TRUE, data.table=FALSE)
+  B_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/domains/", window, "/trueortho/B-28126_TOPDOM_ALL.", window, ".domain.domains.clean.ortho.hg38", sep=""), header=TRUE, data.table=FALSE)
+  C_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/domains/", window, "/trueortho/C-3649_TOPDOM_ALL.", window, ".domain.domains.clean.ortho.panTro5", sep=""), header=TRUE, data.table=FALSE)
+  D_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/domains/", window, "/trueortho/D-40300_TOPDOM_ALL.", window, ".domain.domains.clean.ortho.panTro5", sep=""), header=TRUE, data.table=FALSE)
+  E_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/domains/", window, "/trueortho/E-28815_TOPDOM_ALL.", window, ".domain.domains.clean.ortho.hg38", sep=""), header=TRUE, data.table=FALSE)
+  F_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/domains/", window, "/trueortho/F-28834_TOPDOM_ALL.", window, ".domain.domains.clean.ortho.hg38", sep=""), header=TRUE, data.table=FALSE)
+  G_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/domains/", window, "/trueortho/G-3624_TOPDOM_ALL.", window, ".domain.domains.clean.ortho.panTro5", sep=""), header=TRUE, data.table=FALSE)
+  H_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/domains/", window, "/trueortho/H-3651_TOPDOM_ALL.", window, ".domain.domains.clean.ortho.panTro5", sep=""), header=TRUE, data.table=FALSE)
+  
+    colnames(A_TAD) <- colnames(B_TAD) <- colnames(C_TAD) <- colnames(D_TAD) <- colnames(E_TAD) <- colnames(F_TAD) <- colnames(G_TAD) <- colnames(H_TAD) <- c("chr", "start", "end")
+  A_TAD$species <- B_TAD$species <- E_TAD$species <- F_TAD$species <- "human"
+  C_TAD$species <- D_TAD$species <- G_TAD$species <- H_TAD$species <- "chimp"
+  A_TAD$ID <- "A"
+  B_TAD$ID <- "B"
+  C_TAD$ID <- "C"
+  D_TAD$ID <- "D"
+  E_TAD$ID <- "E"
+  F_TAD$ID <- "F"
+  G_TAD$ID <- "G"
+  H_TAD$ID <- "H"
+  A_TAD$size <- A_TAD$end-A_TAD$start
+  B_TAD$size <- B_TAD$end-B_TAD$start
+  C_TAD$size <- C_TAD$end-C_TAD$start
+  D_TAD$size <- D_TAD$end-D_TAD$start
+  E_TAD$size <- E_TAD$end-E_TAD$start
+  F_TAD$size <- F_TAD$end-F_TAD$start
+  G_TAD$size <- G_TAD$end-G_TAD$start
+  H_TAD$size <- H_TAD$end-H_TAD$start
+  
+  
+  ggdomains <- rbind(select(A_TAD, chr, size, species, ID), select(B_TAD, chr, size, species, ID), select(C_TAD, chr, size, species, ID), select(D_TAD, chr, size, species, ID), select(E_TAD, chr, size, species, ID), select(F_TAD, chr, size, species, ID), select(G_TAD, chr, size, species, ID), select(H_TAD, chr, size, species, ID))
+  
+  broad.stats <- data.frame(individuals=c("A", "B", "C", "D", "E", "F", "G", "H"), species=c("human", "human", "chimp", "chimp", "human", "human", "chimp", "chimp"), total.TADs=c(nrow(A_TAD), nrow(B_TAD), nrow(C_TAD), nrow(D_TAD), nrow(E_TAD), nrow(F_TAD), nrow(G_TAD), nrow(H_TAD)), mean.TAD.size=c(mean(A_TAD$size), mean(B_TAD$size), mean(C_TAD$size), mean(D_TAD$size), mean(E_TAD$size), mean(F_TAD$size), mean(G_TAD$size), mean(H_TAD$size)))
+  
+  result <- list(stats=broad.stats, domains=ggdomains)
+  return(result)
+  
+}
 
+result.20 <- ortho.TAD.domains(20)
+result.10 <- ortho.TAD.domains(10)
+result.5 <- ortho.TAD.domains(5)
+result.20$stats$window <- 200
+result.10$stats$window <- 100
+result.5$stats$window <- 50
+
+ggdomainstats <- rbind(result.5$stats, result.10$stats, result.20$stats)
+
+#Visualize total domains found:
+ggplot(data=ggdomainstats) + geom_line(aes(x=window, y=total.TADs, color=species, group=individuals)) + xlab("TopDom Window Size Used (kb)") + ylab("Total # TADs Found") + ggtitle("Number of TADs in Each Species by Window Size") + annotate("text", x=50, y=12500, label=signif(t.test(filter(ggdomainstats, window==50, species=="human")$total.TADs, filter(ggdomainstats, window==50, species=="chimp")$total.TADs)$p.value,2), size=3) + annotate("text", x=100, y=13500, label=signif(t.test(filter(ggdomainstats, window==100, species=="human")$total.TADs, filter(ggdomainstats, window==100, species=="chimp")$total.TADs)$p.value,2), size=3) + annotate("text", x=200, y=10000, label=signif(t.test(filter(ggdomainstats, window==200, species=="human")$total.TADs, filter(ggdomainstats, window==200, species=="chimp")$total.TADs)$p.value,2), size=3)
+
+#Same thing, but for mean TAD size rather than total number found:
+ggplot(data=ggdomainstats) + geom_line(aes(x=window, y=mean.TAD.size, color=species, group=individuals)) + xlab("TopDom Window Size Used (kb)") + ylab("Mean TAD Size") + ggtitle("Mean TAD Size in Each Species by Window Size") + annotate("text", x=50, y=125000, label=signif(t.test(filter(ggdomainstats, window==50, species=="human")$mean.TAD.size, filter(ggdomainstats, window==50, species=="chimp")$mean.TAD.size)$p.value,2), size=3) + annotate("text", x=100, y=185000, label=signif(t.test(filter(ggdomainstats, window==100, species=="human")$mean.TAD.size, filter(ggdomainstats, window==100, species=="chimp")$mean.TAD.size)$p.value,2), size=3) + annotate("text", x=195, y=250000, label=signif(t.test(filter(ggdomainstats, window==200, species=="human")$mean.TAD.size, filter(ggdomainstats, window==200, species=="chimp")$mean.TAD.size)$p.value,2), size=3)
+
+#Finally, direct assessment of TAD sizes:
+ggplot(data=result.20$domains) + geom_density(aes(x=size, y=..scaled.., color=species, group=ID)) + ylab("Density") + xlab("TAD Size") + ggtitle("TAD Size Distributions, Humans vs. Chimps, 200 kb Window") + annotate("text", x=1000000, y=0.5, label="< 2.2 e -16") + coord_cartesian(xlim=c(0,2000000))
+
+t.test(filter(result.20$domains, species=="human")$size, filter(result.20$domains, species=="chimp")$size)$p.value
+
+#Test these same metrics again, but this time on Lindsey's data--looking for significant difference in TAD sizes compared to my human dist'n. Note that LEM's data is using w=5, as their resolution is 40kb (so 200kb window size for each of us, I'm 10kb res w/ w=20).
+LEMTAD <- fread("~/Desktop/Hi-C/LEM_TADs/TADs-domain-WG-iPSC-combined-40kb-w5.bed", header=FALSE, data.table=FALSE)
+LEMTAD$size <- LEMTAD$V3-LEMTAD$V2
+LEMTAD$type <- "LEM"
+ggcompare <- data.frame(size=filter(result.20$domains, species=="human")$size, type="IEE")
+chimpgg <- data.frame(size=filter(result.20$domains, species=="chimp")$size, type="chimp")
+ggcomparer <- rbind(ggcompare, LEMTAD[,5:6], chimpgg)
+ggplot(data=ggcomparer) + geom_density(aes(x=size, y=..scaled.., color=type)) + ylab("Density") + xlab("TAD Size") + ggtitle("TAD Size Distn's, IEE vs. LEM")
+
+t.test(filter(result.20$domains, species=="chimp")$size, filter(ggcomparer, type=="LEM")$size)
+
+#Confirms the effect I'm seeing (significantly smaller TADs in chimps) is not just specific to my experiment!
+
+#####MORE TopDOM, but done on 25kb resolution matrices!
+ortho.TAD.domains <- function(window){
+ A_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/25kb/", window,"/A-21792_TOPDOM_ALL.domain.domains.clean.ortho.hg38", sep=""), header=TRUE, data.table=FALSE)
+  B_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/25kb/", window, "/B-28126_TOPDOM_ALL.domain.domains.clean.ortho.hg38", sep=""), header=TRUE, data.table=FALSE)
+  C_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/25kb/", window, "/C-3649_TOPDOM_ALL.domain.domains.clean.ortho.panTro5", sep=""), header=TRUE, data.table=FALSE)
+  D_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/25kb/", window, "/D-40300_TOPDOM_ALL.domain.domains.clean.ortho.panTro5", sep=""), header=TRUE, data.table=FALSE)
+  E_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/25kb/", window, "/E-28815_TOPDOM_ALL.domain.domains.clean.ortho.hg38", sep=""), header=TRUE, data.table=FALSE)
+  F_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/25kb/", window, "/F-28834_TOPDOM_ALL.domain.domains.clean.ortho.hg38", sep=""), header=TRUE, data.table=FALSE)
+  G_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/25kb/", window, "/G-3624_TOPDOM_ALL.domain.domains.clean.ortho.panTro5", sep=""), header=TRUE, data.table=FALSE)
+  H_TAD <- fread(paste("~/Desktop/Hi-C/pgltoolswork/new_updated/TOPDOM/25kb/", window, "/H-3651_TOPDOM_ALL.domain.domains.clean.ortho.panTro5", sep=""), header=TRUE, data.table=FALSE)
+  
+    colnames(A_TAD) <- colnames(B_TAD) <- colnames(C_TAD) <- colnames(D_TAD) <- colnames(E_TAD) <- colnames(F_TAD) <- colnames(G_TAD) <- colnames(H_TAD) <- c("chr", "start", "end")
+  A_TAD$species <- B_TAD$species <- E_TAD$species <- F_TAD$species <- "human"
+  C_TAD$species <- D_TAD$species <- G_TAD$species <- H_TAD$species <- "chimp"
+  A_TAD$ID <- "A"
+  B_TAD$ID <- "B"
+  C_TAD$ID <- "C"
+  D_TAD$ID <- "D"
+  E_TAD$ID <- "E"
+  F_TAD$ID <- "F"
+  G_TAD$ID <- "G"
+  H_TAD$ID <- "H"
+  A_TAD$size <- A_TAD$end-A_TAD$start
+  B_TAD$size <- B_TAD$end-B_TAD$start
+  C_TAD$size <- C_TAD$end-C_TAD$start
+  D_TAD$size <- D_TAD$end-D_TAD$start
+  E_TAD$size <- E_TAD$end-E_TAD$start
+  F_TAD$size <- F_TAD$end-F_TAD$start
+  G_TAD$size <- G_TAD$end-G_TAD$start
+  H_TAD$size <- H_TAD$end-H_TAD$start
+  
+  
+  ggdomains <- rbind(select(A_TAD, chr, size, species, ID), select(B_TAD, chr, size, species, ID), select(C_TAD, chr, size, species, ID), select(D_TAD, chr, size, species, ID), select(E_TAD, chr, size, species, ID), select(F_TAD, chr, size, species, ID), select(G_TAD, chr, size, species, ID), select(H_TAD, chr, size, species, ID))
+  
+  broad.stats <- data.frame(individuals=c("A", "B", "C", "D", "E", "F", "G", "H"), species=c("human", "human", "chimp", "chimp", "human", "human", "chimp", "chimp"), total.TADs=c(nrow(A_TAD), nrow(B_TAD), nrow(C_TAD), nrow(D_TAD), nrow(E_TAD), nrow(F_TAD), nrow(G_TAD), nrow(H_TAD)), mean.TAD.size=c(mean(A_TAD$size), mean(B_TAD$size), mean(C_TAD$size), mean(D_TAD$size), mean(E_TAD$size), mean(F_TAD$size), mean(G_TAD$size), mean(H_TAD$size)))
+  
+  result <- list(stats=broad.stats, domains=ggdomains)
+  return(result)
+  
+}
+
+result.20 <- ortho.TAD.domains(20)
+result.15 <- ortho.TAD.domains(15)
+result.10 <- ortho.TAD.domains(10)
+result.5 <- ortho.TAD.domains(5)
+result.20$stats$window <- 500
+result.15$stats$window <- 375
+result.10$stats$window <- 250
+result.5$stats$window <- 125
+
+
+ggdomainstats <- rbind(result.5$stats, result.10$stats, result.15$stats, result.20$stats)
+
+#Visualize total domains found:
+ggplot(data=ggdomainstats) + geom_line(aes(x=window, y=total.TADs, color=species, group=individuals)) + xlab("TopDom Window Size Used (kb)") + ylab("Total # TADs Found") + ggtitle("Number of TADs in Each Species by Window Size") + annotate("text", x=125, y=9000, label=signif(t.test(filter(ggdomainstats, window==125, species=="human")$total.TADs, filter(ggdomainstats, window==125, species=="chimp")$total.TADs)$p.value,2), size=3) + annotate("text", x=250, y=13500, label=signif(t.test(filter(ggdomainstats, window==250, species=="human")$total.TADs, filter(ggdomainstats, window==250, species=="chimp")$total.TADs)$p.value,2), size=3) + annotate("text", x=375, y=10000, label=signif(t.test(filter(ggdomainstats, window==375, species=="human")$total.TADs, filter(ggdomainstats, window==375, species=="chimp")$total.TADs)$p.value,2), size=3) + annotate("text", x=500, y=10000, label=signif(t.test(filter(ggdomainstats, window==500, species=="human")$total.TADs, filter(ggdomainstats, window==500, species=="chimp")$total.TADs)$p.value,2), size=3)
+
+#Same thing, but for mean TAD size rather than total number found:
+ggplot(data=ggdomainstats) + geom_line(aes(x=window, y=mean.TAD.size, color=species, group=individuals)) + xlab("TopDom Window Size Used (kb)") + ylab("Mean TAD Size") + ggtitle("Mean TAD Size in Each Species by Window Size") + annotate("text", x=50, y=125000, label=signif(t.test(filter(ggdomainstats, window==50, species=="human")$mean.TAD.size, filter(ggdomainstats, window==50, species=="chimp")$mean.TAD.size)$p.value,2), size=3) + annotate("text", x=100, y=185000, label=signif(t.test(filter(ggdomainstats, window==100, species=="human")$mean.TAD.size, filter(ggdomainstats, window==100, species=="chimp")$mean.TAD.size)$p.value,2), size=3) + annotate("text", x=195, y=250000, label=signif(t.test(filter(ggdomainstats, window==200, species=="human")$mean.TAD.size, filter(ggdomainstats, window==200, species=="chimp")$mean.TAD.size)$p.value,2), size=3)
+
+#Finally, direct assessment of TAD sizes:
+ggplot(data=result.15$domains) + geom_density(aes(x=size, y=..scaled.., color=species, group=ID)) + ylab("Density") + xlab("TAD Size") + ggtitle("TAD Size Distributions, Humans vs. Chimps, 200 kb Window") + annotate("text", x=1000000, y=0.5, label=signif(t.test(filter(result.20$domains, species=="human")$size, filter(result.20$domains, species=="chimp")$size)$p.value, 2)) + coord_cartesian(xlim=c(0,2000000))
+
+t.test(filter(result.20$domains, species=="human")$size, filter(result.20$domains, species=="chimp")$size)
+
+
+############JUICER ARROWHEAD TAD ANALYSIS############
+ATAD <- fread("~/Desktop/Hi-C/ARROWTADs/A-21792.domains", data.table = FALSE)
+ATAD.ortho <- fread("~/Desktop/Hi-C/ARROWTADs/A-21792.domains.ortho.hg38", data.table = FALSE)
+BTAD <- fread("~/Desktop/Hi-C/ARROWTADs/B-28126.domains", data.table = FALSE)
+BTAD.ortho <- fread("~/Desktop/Hi-C/ARROWTADs/B-28126.domains.ortho.hg38", data.table = FALSE)
+CTAD <- fread("~/Desktop/Hi-C/ARROWTADs/C-3649.domains", data.table=FALSE)
+CTAD.ortho <- fread("~/Desktop/Hi-C/ARROWTADs/C-3649.domains.ortho.panTro5")
+DTAD <- fread("~/Desktop/Hi-C/ARROWTADs/D-40300.domains", data.table=FALSE)
+DTAD.ortho <- fread("~/Desktop/Hi-C/ARROWTADs/D-40300.domains.ortho.panTro5", data.table=FALSE)
+ETAD <- fread("~/Desktop/Hi-C/ARROWTADs/E-28815.domains", data.table = FALSE)
+ETAD.ortho <- fread("~/Desktop/Hi-C/ARROWTADs/E-28815.domains.ortho.hg38", data.table = FALSE)
+FTAD <- fread("~/Desktop/Hi-C/ARROWTADs/F-28834.domains", data.table = FALSE)
+FTAD.ortho <- fread("~/Desktop/Hi-C/ARROWTADs/F-28834.domains.ortho.hg38", data.table = FALSE)
+GTAD <- fread("~/Desktop/Hi-C/ARROWTADs/G-3624.domains", data.table = FALSE)
+GTAD.ortho <- fread("~/Desktop/Hi-C/ARROWTADs/G-3624.domains.ortho.panTro5", data.table=FALSE)
+HTAD <- fread("~/Desktop/Hi-C/ARROWTADs/H-3651.domains", data.table=FALSE)
+HTAD.ortho <- fread("~/Desktop/Hi-C/ARROWTADs/H-3651.domains.ortho.panTro5", data.table=FALSE)
+
+sizer <- function(df, spec, indi){
+  colnames(df) <- c("chr", "start", "end")
+  df$size <- df$end-df$start
+  df$species <- spec
+  df$ID <- indi
+  df$total.TADs <- nrow(df)
+  df$mean.size <- mean(df$size)
+  return(df)
+}
+
+ATAD <- sizer(ATAD, "human", "A")
+ATAD.ortho <- sizer(ATAD.ortho, "human", "A")
+BTAD <- sizer(BTAD, "human", "B")
+BTAD.ortho <- sizer(BTAD.ortho, "human", "B")
+CTAD <- sizer(CTAD, "chimpanzee", "C")
+CTAD.ortho <- sizer(CTAD.ortho, "chimpanzee", "C")
+DTAD <- sizer(DTAD, "chimpanzee", "D")
+DTAD.ortho <- sizer(DTAD.ortho, "chimpanzee", "D")
+ETAD <- sizer(ETAD, "human", "E")
+ETAD.ortho <- sizer(ETAD.ortho, "human", "E")
+FTAD <- sizer(FTAD, "human", "F")
+FTAD.ortho <- sizer(FTAD.ortho, "human", "F")
+GTAD <- sizer(GTAD, "chimpanzee", "G")
+GTAD.ortho <- sizer(GTAD.ortho, "chimpanzee", "G")
+HTAD <- sizer(HTAD, "chimpanzee", "H")
+HTAD.ortho <- sizer(HTAD.ortho, "chimpanzee", "H")
+
+ALLTADS <- rbind(ATAD, BTAD, CTAD, DTAD, ETAD, FTAD, GTAD, HTAD)
+ORTHOTADS <- rbind(ATAD.ortho, BTAD.ortho, CTAD.ortho, DTAD.ortho, ETAD.ortho, FTAD.ortho, GTAD.ortho, HTAD.ortho)
+
+#Don't bother looking at total TADs called and their mean sizes; not really the relevant comparison here. Just size dist'ns
+ggplot(data=ALLTADS) + geom_density(aes(x=size, y=..scaled.., group=ID, color=species)) + ggtitle("ARROWHEAD TAD Size by Species") + xlab("ARROWHEAD TAD Size") + ylab("Density") + coord_cartesian(xlim=c(0, 1500000)) + annotate("text", x=1000000, y=0.5, label=signif(t.test(filter(ALLTADS, species=="human")$size, filter(ALLTADS, species=="chimpanzee")$size)$p.value, 2))
+
+ggplot(data=ORTHOTADS) + geom_density(aes(x=size, y=..scaled.., group=ID, color=species)) + ggtitle("ARROWHEAD Orthologous TAD Size by Species") + xlab("ARROWHEAD Orthologous TAD Size") + ylab("Density") + coord_cartesian(xlim=c(0, 1500000)) + annotate("text", x=1000000, y=0.5, label=signif(t.test(filter(ORTHOTADS, species=="human")$size, filter(ORTHOTADS, species=="chimpanzee")$size)$p.value, 2))
+
+#Total # Discovered
+ggplot(data=ALLTADS) + geom_bar(aes(x=ID, fill=species)) + ggtitle("Total Number of ARROWHEAD TADs Called") + xlab("Individual") + ylab("Total # ARROWHEAD TADs") + coord_cartesian(ylim=c(0, 8100))
+
+ggplot(data=ORTHOTADS) + geom_bar(aes(x=ID, fill=species)) + ggtitle("Total Number of Orthologus ARROWHEAD TADs Called") + xlab("Individual") + ylab("Total # Orthologous ARROWHEAD TADs") + coord_cartesian(ylim=c(0, 8100))
+
+#Mean Sizes
+sizedf <- data.frame(size=c(ATAD$mean.size[1], BTAD$mean.size[1], CTAD$mean.size[1], DTAD$mean.size[1], ETAD$mean.size[1], FTAD$mean.size[1], GTAD$mean.size[1], HTAD$mean.size[1]), species=c(rep("human", 2), rep("chimpanzee", 2),rep("human", 2), rep("chimpanzee", 2)), ID=c("A","B", "C", "D", "E", "F", "G", "H"))
+ggplot(data=sizedf) + geom_bar(aes(x=ID, fill=species, y=size), stat="identity") + ggtitle("Mean TAD Size By Individual") + xlab("Individual") + ylab("Mean TAD Size") + annotate("text", x=3.5, y=370000, label=signif(t.test(filter(sizedf, species=="human")$size, filter(sizedf, species=="chimpanzee")$size)$p.value, 2))
+
+sizedf.ortho <- data.frame(size=c(ATAD.ortho$mean.size[1], BTAD.ortho$mean.size[1], CTAD.ortho$mean.size[1], DTAD.ortho$mean.size[1], ETAD.ortho$mean.size[1], FTAD.ortho$mean.size[1], GTAD.ortho$mean.size[1], HTAD.ortho$mean.size[1]), species=c(rep("human", 2), rep("chimpanzee", 2),rep("human", 2), rep("chimpanzee", 2)), ID=c("A","B", "C", "D", "E", "F", "G", "H"))
+ggplot(data=sizedf.ortho) + geom_bar(aes(x=ID, fill=species, y=size), stat="identity") + ggtitle("Mean Orthologous TAD Size By Individual") + xlab("Individual") + ylab("Mean Orthologous TAD Size") + annotate("text", x=3.5, y=375000, label=signif(t.test(filter(sizedf.ortho, species=="human")$size, filter(sizedf.ortho, species=="chimpanzee")$size)$p.value, 2))
 
 ######NOW, actually move to assess DE/DC status effects of boundaries and the like!:
 #The ultimate command run is akin to (bedtools pairtobed -type notispan -a filt.bins.humans.bedPE -b TOPDOM/hbounds.final.bed > TOPDOM/hg38.TD.bounds.notispan.bed)
