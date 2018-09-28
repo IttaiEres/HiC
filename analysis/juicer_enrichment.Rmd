@@ -463,8 +463,8 @@ colnames(myrich) <- c("H1", "H1", "chromstate", "chromstate")
 myrich <- rbind(myrich[, c(1, 3)], myrich[,c(2, 4)])
 myrich <- myrich[!duplicated(myrich),]
 #myrich <- filter(myrich, chromstate!=".")
-ggplot(data=myrich) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 10000)) + ggtitle("Basal chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins")
-ggplot(data=weighter) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 10000)) + scale_x_discrete(drop=FALSE) + ggtitle("Weighted chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins")
+ggplot(data=myrich) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 10000)) + ggtitle("Basal chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins") + theme(axis.text.x=element_blank())
+ggplot(data=weighter) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 10000)) + scale_x_discrete(drop=FALSE) + ggtitle("Weighted chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins") + theme(axis.text.x=element_blank())
 #Looks much better, try running enrichment analyses on this now? Can match H1s and H2s from chromrich.KR with this, add in the sp_BH_pval to keep the Hi-C FDR up in there, and run on midway.
 weightrich <- select(chromrich.KR, H1, H2, sp_BH_pval)
 colnames(weightrich) <- c("HID", "HID", "sp_BH_pval")
@@ -566,8 +566,8 @@ colnames(myrich) <- c("H1", "H1", "chromstate", "chromstate")
 myrich <- rbind(myrich[, c(1, 3)], myrich[,c(2, 4)])
 myrich <- myrich[!duplicated(myrich),]
 #myrich <- filter(myrich, chromstate!=".")
-ggplot(data=myrich) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 10000)) + ggtitle("Basal chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins")
-ggplot(data=weighter) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 10000)) + scale_x_discrete(drop=FALSE) + ggtitle("Weighted chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins")
+ggplot(data=myrich) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 10000)) + ggtitle("Basal chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins") + theme(axis.text.x=element_blank())
+ggplot(data=weighter) + geom_histogram(aes(x=chromstate, group=chromstate, fill=chromstate), stat="count") + coord_cartesian(ylim=c(0, 10000)) + scale_x_discrete(drop=FALSE) + ggtitle("Weighted chromHMM State Assignments Distribution") + xlab("chromHMM State Assignment") + ylab("# Bins") + theme(axis.text.x=element_blank())
 #Looks much better, try running enrichment analyses on this now? Can match H1s and H2s from chromrich.VC with this, add in the sp_BH_pval to keep the Hi-C FDR up in there, and run on midway.
 weightrich <- select(chromrich.VC, H1, H2, sp_BH_pval)
 colnames(weightrich) <- c("HID", "HID", "sp_BH_pval")
