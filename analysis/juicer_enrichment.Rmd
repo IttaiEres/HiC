@@ -69,7 +69,7 @@ data.VC$C1 <- paste(data.VC$Cchr, data.VC$C1, sep="-")
 data.VC$C2 <- paste(data.VC$Cchr, data.VC$C2, sep="-")
 
 #Now, prepare a bedPE file from my filtered data! Here I construct a function to do this in case I ever want to do it again. The H1 and H2 columns are good to use for this.
-bedpe.prep <- function(homersigdf, res, species){ #Also is the BEDPE format!
+bedpe.prep <- function(homersigdf, res, species){ #Also is the BEDPE format! All this currently does is ensure first mate is always lower--it should deduplicate!!!
   if(species=="human"){
   H1 <- homersigdf$H1
   H2 <- homersigdf$H2
@@ -97,9 +97,18 @@ bedpe.prep <- function(homersigdf, res, species){ #Also is the BEDPE format!
 #I'll make and save the chimp bin files here, just for the sake of having them in case we get epigenetic data on chimps in the future. For the time being, these are mostly useless as I have nothing to overlap with them.
 humpairsKR <- bedpe.prep(data.KR, 10000 ,"human")
 chimpairsKR <- bedpe.prep(data.KR, 10000, "chimp")
+hbin1.KR.bed <- humpairsKR[!duplicated(humpairsKR[,1:3]),1:3]
+hbin2.KR.bed <- humpairsKR[!duplicated(humpairsKR[,4:6]),4:6]
 
 humpairsVC <- bedpe.prep(data.VC, 10000 ,"human")
 chimpairsVC <- bedpe.prep(data.VC, 10000, "chimp")
+hbin1.VC.bed <- humpairsVC[!duplicated(humpairsVC[,1:3]),1:3]
+hbin2.VC.bed <- humpairsVC[!duplicated(humpairsVC[,4:6]),4:6]
+
+fwrite(hbin1.KR.bed, "~/Desktop/Hi-C/pgltoolswork/juicer/hbin1.KR.bed", quote = FALSE, sep = "\t", col.names = FALSE, row.names=FALSE)
+fwrite(hbin2.KR.bed, "~/Desktop/Hi-C/pgltoolswork/juicer/hbin2.KR.bed", quote = FALSE, sep = "\t", col.names = FALSE, row.names=FALSE)
+fwrite(hbin1.VC.bed, "~/Desktop/Hi-C/pgltoolswork/juicer/hbin1.VC.bed", quote = FALSE, sep = "\t", col.names = FALSE, row.names=FALSE)
+fwrite(hbin2.VC.bed, "~/Desktop/Hi-C/pgltoolswork/juicer/hbin2.VC.bed", quote = FALSE, sep = "\t", col.names = FALSE, row.names=FALSE)
 
 fwrite(humpairsKR, "~/Desktop/Hi-C/pgltoolswork/juicer/filt.bins.humans.KR.bedPE", quote = FALSE, sep = "\t", col.names = TRUE, row.names=FALSE)
 fwrite(chimpairsKR, "~/Desktop/Hi-C/pgltoolswork/juicer/filt.bins.chimps.KR.bedPE", quote = FALSE, sep = "\t", col.names = TRUE, row.names=FALSE)
@@ -642,8 +651,8 @@ proms.KR.assigns <- proms.KR.assigns[!is.na(proms.KR.assigns)]
 nonproms.KR.assigns <- nonproms.KR.assigns[!is.na(nonproms.KR.assigns)] #Get rid of NA values
 
 #Now, make a table of whether they have any of the enhancer-associated annotations (Enh, EnhG, MAYBE EnhBiv if it looks good and can include BivFlnk if I want to...)
-proms.KR.assigns.enh <- ifelse(proms.KR.assigns=="12_EnhBiv", "yes", "no")
-nonproms.KR.assigns.enh <- ifelse(nonproms.KR.assigns=="12_EnhBiv", "yes", "no")
+proms.KR.assigns.enh <- ifelse(proms.KR.assigns=="7_Enh", "yes", "no")
+nonproms.KR.assigns.enh <- ifelse(nonproms.KR.assigns=="7_Enh", "yes", "no")
 
 table2test <- data.frame(no=c(sum(nonproms.KR.assigns.enh=="no"), sum(proms.KR.assigns.enh=="no")), yes=c(sum(nonproms.KR.assigns.enh=="yes"), sum(proms.KR.assigns.enh=="yes")))
 
@@ -662,8 +671,8 @@ nonDC.assigns.KR <- c(as.character(wt.KR.nonDC$bin1.HMM), as.character(wt.KR.non
 DC.assigns.KR <- DC.assigns.KR[!is.na(DC.assigns.KR)]
 nonDC.assigns.KR <- nonDC.assigns.KR[!is.na(nonDC.assigns.KR)]
 
-DC.assigns.enh.KR <- ifelse(DC.assigns.KR=="12_EnhBiv", "yes", "no")
-nonDC.assigns.enh.KR <- ifelse(nonDC.assigns.KR=="12_EnhBiv", "yes", "no")
+DC.assigns.enh.KR <- ifelse(DC.assigns.KR=="7_Enh", "yes", "no")
+nonDC.assigns.enh.KR <- ifelse(nonDC.assigns.KR=="7_Enh", "yes", "no")
 
 table2test <- data.frame(no=c(sum(nonDC.assigns.enh.KR=="no"), sum(DC.assigns.enh.KR=="no")), yes=c(sum(nonDC.assigns.enh.KR=="yes"), sum(DC.assigns.enh.KR=="yes")))
 
@@ -679,8 +688,8 @@ proms.VC.assigns <- proms.VC.assigns[!is.na(proms.VC.assigns)]
 nonproms.VC.assigns <- nonproms.VC.assigns[!is.na(nonproms.VC.assigns)] #Get rid of NA values
 
 #Now, make a table of whether they have any of the enhancer-associated annotations (Enh, EnhG, MAYBE EnhBiv if it looks good and can include BivFlnk if I want to...)
-proms.VC.assigns.enh <- ifelse(proms.VC.assigns=="12_EnhBiv", "yes", "no")
-nonproms.VC.assigns.enh <- ifelse(nonproms.VC.assigns=="12_EnhBiv", "yes", "no")
+proms.VC.assigns.enh <- ifelse(proms.VC.assigns=="7_Enh", "yes", "no")
+nonproms.VC.assigns.enh <- ifelse(nonproms.VC.assigns=="7_Enh", "yes", "no")
 
 table2test <- data.frame(no=c(sum(nonproms.VC.assigns.enh=="no"), sum(proms.VC.assigns.enh=="no")), yes=c(sum(nonproms.VC.assigns.enh=="yes"), sum(proms.VC.assigns.enh=="yes")))
 
@@ -699,8 +708,8 @@ nonDC.assigns.VC <- c(as.character(wt.VC.nonDC$bin1.HMM), as.character(wt.VC.non
 DC.assigns.VC <- DC.assigns.VC[!is.na(DC.assigns.VC)]
 nonDC.assigns.VC <- nonDC.assigns.VC[!is.na(nonDC.assigns.VC)]
 
-DC.assigns.enh.VC <- ifelse(DC.assigns.VC=="12_EnhBiv", "yes", "no")
-nonDC.assigns.enh.VC <- ifelse(nonDC.assigns.VC=="12_EnhBiv", "yes", "no")
+DC.assigns.enh.VC <- ifelse(DC.assigns.VC=="7_Enh", "yes", "no")
+nonDC.assigns.enh.VC <- ifelse(nonDC.assigns.VC=="7_Enh", "yes", "no")
 
 table2test <- data.frame(no=c(sum(nonDC.assigns.enh.VC=="no"), sum(DC.assigns.enh.VC=="no")), yes=c(sum(nonDC.assigns.enh.VC=="yes"), sum(DC.assigns.enh.VC=="yes")))
 
@@ -709,8 +718,8 @@ rownames(table2test) <- c("No DC", "DC")
 
 chisq.test(table2test) #Gets a good p-value, and has the right direction of effect here! Perfect, only do EnhG
 
-###6_EnhG doesn't work well or get a pretty result with EITHER of our normalization schemes--can try some other ones too...
-###DOESN'T LOOK GOOD with 7_Enh or 12_EnhBiv either; could do one last thing and try combining them if chromHMM visualization ends up being poor--leave for now.
+###7_Enh doesn't work well or get a pretty result with EITHER of our normalization schemes--can try some other ones too...
+###DOESN'T LOOK GOOD with 7_Enh or 7_Enh either; could do one last thing and try combining them if chromHMM visualization ends up being poor--leave for now.
 ```
 
 ###ChromHMM Visualization
@@ -1060,214 +1069,139 @@ ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_c
 ###Quantitative histone mark enrichments
 Now, I look at the quantitative enrichment of histone mark peaks from other studies on iPSCs, examining the overlap of these peaks with different classes of Hi-C significant bins.
 ```{r Other quantitative enrichments}
-# 
-# 
-# #######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
-# 
-# #First the non-promoter DF, looking at DC/not DC. Remember the promoter/not promoter was created in the first chunk (chrom.annos).
-# DC.non.proms <- filter(full.annotations, true.promoter=="no", DC=="yes") %>% deduplicator(.)
-# non.DC.non.proms <- filter(full.annotations, true.promoter=="no", DC=="no") %>% deduplicator(.)
-# 
-# #After deduplicating, combine so that there's one column per histone mark I'm interested in, and a column showing DC status.
-# nonproms <- data.frame(H1=c(DC.non.proms$H1, DC.non.proms$H2, non.DC.non.proms$H1, non.DC.non.proms$H2), sp_BH_pval=c(rep(DC.non.proms$sp_BH_pval, 2), rep(non.DC.non.proms$sp_BH_pval, 2)), sp_beta=c(rep(DC.non.proms$sp_beta, 2), rep(non.DC.non.proms$sp_beta, 2)), HMM=c(as.character(DC.non.proms$bin1.HMM), as.character(DC.non.proms$bin2.HMM), as.character(non.DC.non.proms$bin1.HMM), as.character(non.DC.non.proms$bin2.HMM)), DHS=c(DC.non.proms$bin1.DHSval, DC.non.proms$bin2.DHSval, non.DC.non.proms$bin1.DHSval, non.DC.non.proms$bin2.DHSval), Hac=c(DC.non.proms$bin1.Hacval, DC.non.proms$bin2.Hacval, non.DC.non.proms$bin1.Hacval, non.DC.non.proms$bin2.Hacval), Hme1=c(DC.non.proms$bin1.Hme1val, DC.non.proms$bin2.Hme1val, non.DC.non.proms$bin1.Hme1val, non.DC.non.proms$bin2.Hme1val), Hme3=c(DC.non.proms$bin1.Hme3val, DC.non.proms$bin2.Hme3val, non.DC.non.proms$bin1.Hme3val, non.DC.non.proms$bin2.Hme3val), HK27=c(DC.non.proms$bin1.HK27val, DC.non.proms$bin2.HK27val, non.DC.non.proms$bin1.HK27val, non.DC.non.proms$bin2.HK27val), DC=c(rep(DC.non.proms$DC, 2), rep(non.DC.non.proms$DC, 2)))
-# 
-# #Now, looking within promoter-contacting Hi-C bins, at which are DC and which are not. Should be fairly simple, and in these analyses, we are focusing on the bins making contact with a promoter (promoter.contacts df has excluded the promoters themselves here). In these cases, after the deduplication is done, it's as simple as rbinding the two filtered dfs, since they have the same number of columns and only a single value for each mark. Dedup function doesn't work here beacause only a single column; simpler case.
-# DC.proms <- filter(promoter.contacts, DC=="yes")
-# DC.proms <- DC.proms[!duplicated(DC.proms$H2),]
-# nonDC.proms <- filter(promoter.contacts, DC=="no")
-# nonDC.proms <- nonDC.proms[!duplicated(nonDC.proms$H2),]
-# proms.DC <- rbind(DC.proms, nonDC.proms)
-# proms.DC <- proms.DC[order(proms.DC$sp_BH_pval),] #Should be complete!
-# 
-# DE.proms <- filter(promoter.contacts, DE=="yes")
-# DE.proms <- DE.proms[!duplicated(DE.proms$H2),]
-# nonDE.proms <- filter(promoter.contacts, DE=="no")
-# nonDE.proms <- nonDE.proms[!duplicated(nonDE.proms$H2),]
-# proms.DE <- rbind(DE.proms, nonDE.proms)
-# proms.DE <- proms.DE[order(proms.DE$sp_BH_pval),]
-# 
-# DE.only.proms <- filter(promoter.contacts, differential=="expression")
-# DC.only.proms <- filter(promoter.contacts, differential=="contact")
-# DEDC.proms <- filter(promoter.contacts, differential=="both")
-# neither.proms <- filter(promoter.contacts, differential=="no")
-# DE.only.proms <- DE.only.proms[!duplicated(DE.only.proms$H2),]
-# DC.only.proms <- DC.only.proms[!duplicated(DC.only.proms$H2),]
-# DEDC.proms <- DEDC.proms[!duplicated(DEDC.proms$H2),]
-# neither.proms <- neither.proms[!duplicated(neither.proms$H2),]
-# proms.differential <- rbind(DE.only.proms, DC.only.proms, DEDC.proms, neither.proms)
-# proms.differential <- proms.differential[order(proms.differential$sp_BH_pval),]
-# colnames(proms.differential) <- colnames(proms.DE) <- colnames(proms.DC) <- colnames(chrom.annos)[1:31]
-# 
-# 
-# 
-# ###############################Plots of enrichment for different classes of hits and different marks. Seems like it would be nice to create a function for these but really it'll lead to a huge hassle with having to specify different x and y-axis limits for different marks in different sets, and drawing the segments...since I've already done it out this way, might as well keep it.
-# ##########DHS plots!!!
-# all.DHS <- ggplot(data=chrom.annos) + geom_density(aes(x=DHSval, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle("Enrichment of DHS Overlapping Hi-C Bins") + xlab("Length of overlap b/t bin and DHS peak") + ylab("Density") + scale_color_manual(name="Promoter Contact?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 1000))
-# box.all.DHS <- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=DHSval, group=true.promoter, color=true.promoter), draw_quantiles =c(0.25, 0.5, 0.75) ) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 500)) + annotate("text", x=1.5, y=300, label="< 2 e -16", size=3) + annotate("segment", x=1.1, xend=1.9, y=270, yend=270)
-# print(all.DHS)
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-# print(box.all.DHS, vp=vp)
-# t.test(chrom.annos$DHS[which(chrom.annos$true.promoter=="yes")], chrom.annos$DHS[which(chrom.annos$true.promoter=="no")])
-# 
-# noprom.DHS <- ggplot(data=nonproms) + geom_density(aes(x=DHS, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of DHS overlapping non-promoter Hi-C Bins") + xlab("Length of overlap b/t bin and DHS peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 1000))
-# box.noprom.DHS <- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=DHS, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 500)) + annotate("text", x=1.5, y=300, label="< 2 e -16", size=3) + annotate("segment", x=1.1, xend=1.9, y=270, yend=270)
-# print(noprom.DHS)
-# print(box.noprom.DHS, vp=vp)
-# t.test(filter(nonproms, DC=="no")$DHS, filter(nonproms, DC=="yes")$DHS)
-# 
-# prom.DHS <- ggplot(data=proms.differential) + geom_density(aes(x=DHSval, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of DHS overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and DHS peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 1000))
-# box.prom.DHS <- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=DHSval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 600)) + annotate("text", x=3.5, y=300, label="5 e -12", size=3) + annotate("text", x=2.5, y=300, label="0.2", size=3) + annotate("text", x=1.5, y=400, label="4 e -2", size=3) + annotate("text", label="2 e -3", x=2, y=480, size=3) + annotate("segment", x=1.1, y=370, xend=1.9, yend=370) + annotate("segment", x=2.1, y=270, xend=2.9, yend=270) + annotate("segment", x=3.1, y=270, xend=3.9, yend=270) + annotate("segment", x=1.1, y=450, xend=2.9, yend=450) + annotate("text", x=2.5, y=550, size=3, label="1 e -5") + annotate("segment", x=1.1, y=520, xend=3.9, yend=520) + annotate("text", x=3, y=400, label="3 e -4", size=3) + annotate("segment", x=2.1, xend=3.9, y=370, yend=370)
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-# print(prom.DHS)
-# print(box.prom.DHS, vp=vp)
-# t.test(filter(proms.differential, differential=="contact")$DHSval, filter(proms.differential, differential=="expression")$DHSval)
-# 
-# DE.DHS <- ggplot(data=proms.DE) + geom_density(aes(x=DHSval, group=DE, color=DE, y=..scaled..)) + ggtitle("Enrichment of DHS overlapping DE Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and DHS peak") + ylab("Density") + scale_color_manual(name="DE?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 1000))
-# boxDE.DHS <- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=DHSval, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=400, label="6 e -13", size=3) + annotate("segment", x=1.1, xend=1.9, y=350, yend=350)
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.5)
-# print(DE.DHS)
-# print(boxDE.DHS, vp=vp)
-# t.test(filter(proms.DE, DE=="yes")$DHSval, filter(proms.DE, DE=="no")$DHSval)
-# 
-# DC.DHS <- ggplot(data=proms.DC) + geom_density(aes(x=DHSval, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of DHS overlapping DC Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and DHS peak") + ylab("Density") + scale_color_manual(name="DC?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 1000))
-# boxDC.DHS <- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=DHSval, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", label="2 e -6", size=3, x=1.5, y=400) + annotate("segment", x=1.1, xend=1.9, y=350, yend=350)#+ geom_text(aes(x=1.5, y=2000, label="0.2901"), show.legend=FALSE, size=3)
-# print(DC.DHS)
-# print(boxDC.DHS, vp=vp)
-# t.test(filter(proms.DC, DC=="yes")$DHSval, filter(proms.DC, DC=="no")$DHSval)
-# 
-# ##############H3K27Ac plots!!!
-# all.Hac <- ggplot(data=chrom.annos) + geom_density(aes(x=Hacval, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle("Enrichment of H3K27ac Overlapping Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27ac peak") + ylab("Density") + scale_color_manual(name="Promoter Contact?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 2500))
-# box.all.Hac <- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=Hacval, group=true.promoter, color=true.promoter)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate("text", label="< 2 e -16", x=1.5, y=400, size=3) + annotate("segment", x=1.1, xend=1.9, y=350, yend=350)# Throws an error when draw_quantiles is added to geom_violin, because of NAs that exist in the data so the quantile call fails? Or...?
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(all.Hac)
-# print(box.all.Hac, vp=vp)
-# t.test(filter(chrom.annos, true.promoter=="yes")$Hacval, filter(chrom.annos, true.promoter=="no")$Hacval)
-# 
-# noprom.Hac <- ggplot(data=nonproms) + geom_density(aes(x=Hac, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of H3K27ac overlapping non-promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27ac peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 2000))
-# box.noprom.Hac <- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=Hac, group=DC, color=DC)) + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate("text", label="1 e -4", x=1.5, y=400, size=3) + annotate("segment", x=1.1, xend=1.9, y=350, yend=350) # Once again throws an error in draw_quantiles due to the NAs in the data (I believe).
-# print(noprom.Hac)
-# print(box.noprom.Hac, vp=vp)
-# t.test(filter(nonproms, DC=="yes")$Hac, filter(nonproms, DC=="no")$Hac)
-# 
-# prom.Hac <- ggplot(data=proms.differential) + geom_density(aes(x=Hacval, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K27ac overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27ac peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 3500))
-# box.prom.Hac <- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=Hacval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75))+ scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank())+ coord_cartesian(ylim=c(0, 1000)) + annotate("segment", x=1.1, xend=1.9, y=430, yend=430) + annotate("segment", x=1.1, xend=2.9, y=700, yend=700) + annotate("segment", x=1.1, xend=3.9, y=880, yend=880) + annotate("segment", x=2.1, xend=2.9, y=430, yend=430) + annotate("segment", x=2.1, xend=3.9, y=560, yend=560) + annotate("segment", x=3.1, xend=3.9, y=430, yend=430) + annotate("text", label="0.4", size=3, x=1.5, y=480) + annotate("text", label="0.1", size=3, x=2.5, y=480) + annotate("text", label="1 e -3", size=3, x=3.5, y=480) + annotate("text", label="2 e -6", size=3, x=3, y=610) + annotate("text", label="0.08", size=3, x=2, y=750) + annotate("text", label="8 e -3", size=3, x=2.5, y=930)
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(prom.Hac)
-# print(box.prom.Hac, vp=vp)
-# t.test(filter(proms.differential, differential=="contact")$Hacval, filter(proms.differential, differential=="no")$Hacval)
-# 
-# DE.Hac <- ggplot(data=proms.DE) + geom_density(aes(x=Hacval, group=DE, color=DE, y=..scaled..)) + ggtitle("Enrichment of H3K27ac overlapping DE Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27ac peak") + ylab("Density") + scale_color_manual(name="DE?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 3000))
-# boxDE.Hac <- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=Hacval, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("segment", x=1.1, xend=1.9, y=250, yend=250) + annotate("text", x=1.5, y=300, label="1 e -6", size=3)
-# print(DE.Hac)
-# print(boxDE.Hac, vp=vp)
-# t.test(filter(proms.DE, DE=="yes")$Hacval, filter(proms.DE, DE=="no")$Hacval)
-# 
-# DC.Hac <- ggplot(data=proms.DC) + geom_density(aes(x=Hacval, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of H3K27ac overlapping DC Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27ac peak") + ylab("Density") + scale_color_manual(name="DC?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 2500))
-# boxDC.Hac <- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=Hacval, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("segment", x=1.1, xend=1.9, y=400, yend=400) + annotate("text", x=1.5, y=450, label="3 e -4", size=3)
-# print(DC.Hac)
-# print(boxDC.Hac, vp=vp)
-# t.test(filter(proms.DC, DC=="yes")$Hacval, filter(proms.DC, DC=="no")$Hacval)
-# 
-# 
-# ######H3K4Me1 plots!!!
-# all.Hme1 <- ggplot(data=chrom.annos) + geom_density(aes(x=Hme1val, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle("Enrichment of H3K4me1 Overlapping Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me1 peak") + ylab("Density") + scale_color_manual(name="Promoter Contact?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 3000))
-# box.all.Hme1 <- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=Hme1val, group=true.promoter, color=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 3000)) + annotate("segment", x=1.1, xend=1.9, y=1250, yend=1250) + annotate("text", x=1.5, y=1450, label="< 2 e -16", size=3)
-# print(all.Hme1)
-# print(box.all.Hme1, vp=vp)
-# t.test(filter(chrom.annos, true.promoter=="yes")$Hme1val, filter(chrom.annos, true.promoter=="no")$Hme1val)
-# 
-# 
-# prom.Hme1 <- ggplot(data=proms.differential) + geom_density(aes(x=Hme1val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K4me1 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me1 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 6000))
-# box.prom.Hme1 <- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=Hme1val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 6000)) + annotate("segment", x=1.1, xend=1.9, y=1500, yend=1500) + annotate("segment", x=2.1, xend=2.9, y=1500, yend=1500) + annotate("segment", x=3.1, xend=3.9, y=1500, yend=1500) + annotate("segment", x=1.1, xend=2.9, y=3900, yend=3900) + annotate("segment", x=1.1, xend=3.9, y=5100, yend=5100) + annotate("segment", x=2.1, xend=3.9, y=2700, yend=2700) + annotate("text", x=1.5, y=1800, size=3, label="0.03") + annotate("text", x=2.5, y=1800, size=3, label="0.6") + annotate("text", x=3.5, y=1800, size=3, label="0.5") + annotate("text", x=3, y=3000, size=3, label="0.5") + annotate("text", x=2.5, y=5400, size=3, label="0.04") + annotate("text", x=2, y=4200, size=3, label="0.03")
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(prom.Hme1)
-# print(box.prom.Hme1, vp=vp)
-# t.test(filter(proms.differential, differential=="both")$Hme1val, filter(proms.differential, differential=="contact")$Hme1val)
-# 
-# noprom.Hme1 <- ggplot(data=nonproms) + geom_density(aes(x=Hme1, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of H3K4me1 overlapping non-promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me1 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 4000))
-# box.noprom.Hme1 <- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=Hme1, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2200)) + annotate("segment", x=1.1, xend=1.9, y=750, yend=750) + annotate("text", x=1.5, y=860, size=3, label="0.05")
-# print(noprom.Hme1)
-# print(box.noprom.Hme1, vp=vp)
-# t.test(filter(nonproms, DC=="no")$Hme1, filter(nonproms, DC=="yes")$Hme1)
-# 
-# DE.Hme1 <- ggplot(data=proms.DE) + geom_density(aes(x=Hme1val, group=DE, color=DE, y=..scaled..)) + ggtitle("Enrichment of H3K4me1 overlapping DE Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me1 peak") + ylab("Density") + scale_color_manual(name="DE?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 4000))
-# boxDE.Hme1 <- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=Hme1val, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 2200)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("text", x=1.5, y=1360, label="0.9", size=3) + annotate("segment", x=1.1, xend=1.9, y=1250, yend=1250)
-# print(DE.Hme1)
-# print(boxDE.Hme1, vp=vp)
-# t.test(filter(proms.DE, DE=="yes")$Hme1val, filter(proms.DE, DE=="no")$Hme1val)
-# 
-# DC.Hme1 <- ggplot(data=proms.DC) + geom_density(aes(x=Hme1val, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of H3K4me1 overlapping DC Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me1 peak") + ylab("Density") + scale_color_manual(name="DC?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 5000))
-# boxDC.Hme1 <- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=Hme1val, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 2200)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("segment", x=1.1, xend=1.9, y=1200, yend=1200) + annotate("text", x=1.5, y=1310, label="0.7", size=3)
-# print(DC.Hme1)
-# print(boxDC.Hme1, vp=vp)
-# t.test(filter(proms.DC, DC=="yes")$Hme1val, filter(proms.DC, DC=="no")$Hme1val)
-# 
-# ####H3K4Me3 plots!!!
-# all.Hme3 <- ggplot(data=chrom.annos) + geom_density(aes(x=Hme3val, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle("Enrichment of H3K4me3 Overlapping Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me3 peak") + ylab("Density") + scale_color_manual(name="Promoter Contact?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 6000))
-# box.all.Hme3 <- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=Hme3val, group=true.promoter, color=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 4000)) + annotate("segment", x=1.1, xend=1.9, y=2200, yend=2200) + annotate("text", label="< 2 e -16", x=1.5, y=2400, size=3)
-# print(all.Hme3)
-# print(box.all.Hme3, vp=vp)
-# t.test(filter(chrom.annos, true.promoter=="yes")$Hme3val, filter(chrom.annos, true.promoter=="no")$Hme3val)
-# 
-# prom.Hme3 <- ggplot(data=proms.differential) + geom_density(aes(x=Hme3val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K4me3 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me3 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"))
-# box.prom.Hme3 <- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=Hme3val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate("segment", x=1.1, xend=1.9, y=750, yend=750) + annotate("segment", x=2.1, xend=2.9, y=750, yend=750) + annotate("segment", x=3.1, xend=3.9, y=750, yend=750) + annotate("segment", x=2.1, xend=3.9, y=1000, yend=1000) + annotate("segment", x=1.1, xend=2.9, y=1250, yend=1250) + annotate("segment", x=1.1, xend=3.9, y=1500, yend=1500) + annotate("text", x=1.5, y=840, size=3, label="0.2") + annotate("text", x=2.5, y=840, size=3, label="0.02") + annotate("text", x=3.5, y=840, size=3, label="< 2 e -16") + annotate("text", x=3, y=1090, size=3, label="9 e -8") + annotate("text", x=2.7, y=1590, size=3, label="2 e -5") + annotate("text", x=2, y=1340, size=3, label="6 e -3")
-# print(prom.Hme3)
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(box.prom.Hme3, vp=vp)
-# t.test(filter(proms.differential, differential=="contact")$Hme3val, filter(proms.differential, differential=="both")$Hme3val)
-# 
-# noprom.Hme3 <- ggplot(data=nonproms) + geom_density(aes(x=Hme3, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of H3K4me3 overlapping non-promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me3 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 4000))
-# box.noprom.Hme3 <- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=Hme3, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate("segment", x=1.1, xend=1.9, y=250, yend=250) + annotate("text", x=1.5, y=300, size=3, label="< 2 e -16")
-# print(noprom.Hme3)
-# print(box.noprom.Hme3, vp=vp)
-# t.test(filter(nonproms, DC=="no")$Hme3, filter(nonproms, DC=="yes")$Hme3)
-# 
-# DE.Hme3 <- ggplot(data=proms.DE) + geom_density(aes(x=Hme3val, group=DE, color=DE, y=..scaled..)) + ggtitle("Enrichment of H3K4me3 overlapping DE Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me3 peak") + ylab("Density") + scale_color_manual(name="DE?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 4000))
-# boxDE.Hme3 <- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=Hme3val, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("segment", x=1.1, xend=1.9, y=500, yend=500) + annotate("text", x=1.5, y=550, size=3, label="< 2 e -16")
-# print(DE.Hme3)
-# print(boxDE.Hme3, vp=vp)
-# t.test(filter(proms.DE, DE=="yes")$Hme3val, filter(proms.DE, DE=="no")$Hme3val)
-# 
-# DC.Hme3 <- ggplot(data=proms.DC) + geom_density(aes(x=Hme3val, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of H3K4me3 overlapping DC Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me3 peak") + ylab("Density") + scale_color_manual(name="DC?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 6000))
-# boxDC.Hme3 <- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=Hme3val, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 2000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("segment", x=1.1, xend=1.9, y=1000, yend=1000) + annotate("text", x=1.5, y=1090, size=3, label="1 e -9")
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.6)
-# print(DC.Hme3)
-# print(boxDC.Hme3, vp=vp)
-# t.test(filter(proms.DC, DC=="yes")$Hme3val, filter(proms.DC, DC=="no")$Hme3val)
-# 
-# ####H3K27me3 plots!!!
-# all.HK27 <- ggplot(data=chrom.annos) + geom_density(aes(x=HK27val, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle("Enrichment of H3K27me3 Overlapping Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27me3 peak") + ylab("Density") + scale_color_manual(name="Promoter Contact?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 2500))
-# box.all.HK27 <- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=HK27val, group=true.promoter, color=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c("Red", "Blue"), labels=c("No", "Yes"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate("segment", x=1.1, xend=1.9, y=700, yend=700) + annotate("text", label="1 e -14", x=1.5, y=760, size=3)
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.6)
-# print(all.HK27)
-# print(box.all.HK27, vp=vp)
-# t.test(filter(chrom.annos, true.promoter=="yes")$HK27val, filter(chrom.annos, true.promoter=="no")$HK27val)
-# 
-# prom.HK27 <- ggplot(data=proms.differential) + geom_density(aes(x=HK27val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K27me3 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27me3 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian((xlim=c(0, 5000)))
-# box.prom.HK27 <- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=HK27val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate("segment", x=1.1, xend=1.9, y=750, yend=750) + annotate("segment", x=2.1, xend=2.9, y=750, yend=750) + annotate("segment", x=3.1, xend=3.9, y=750, yend=750) + annotate("segment", x=2.1, xend=3.9, y=1000, yend=1000) + annotate("segment", x=1.1, xend=2.9, y=1250, yend=1250) + annotate("segment", x=1.1, xend=3.9, y=1500, yend=1500) + annotate("text", x=1.5, y=840, size=3, label="0.3") + annotate("text", x=2.5, y=840, size=3, label="0.2") + annotate("text", x=3.5, y=840, size=3, label="0.6") + annotate("text", x=3, y=1090, size=3, label="0.2") + annotate("text", x=2.7, y=1590, size=3, label="0.7") + annotate("text", x=2, y=1340, size=3, label="0.8")
-# print(prom.HK27)
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(box.prom.HK27, vp=vp)
-# t.test(filter(proms.differential, differential=="expression")$HK27val, filter(proms.differential, differential=="both")$HK27val)
-# 
-# noprom.HK27 <- ggplot(data=nonproms) + geom_density(aes(x=HK27, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of H3K27me3 overlapping non-promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27me3 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 4000))
-# box.noprom.HK27 <- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=HK27, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Neither", "Contact"), values=c("Red", "Blue"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate("segment", x=1.1, xend=1.9, y=250, yend=250) + annotate("text", x=1.5, y=300, size=3, label="4 e -12")
-# print(noprom.HK27)
-# print(box.noprom.HK27, vp=vp)
-# t.test(filter(nonproms, DC=="no")$HK27, filter(nonproms, DC=="yes")$HK27)
-# 
-# DE.HK27 <- ggplot(data=proms.DE) + geom_density(aes(x=HK27val, group=DE, color=DE, y=..scaled..)) + ggtitle("Enrichment of H3K27me3 overlapping DE Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27me3 peak") + ylab("Density") + scale_color_manual(name="DE?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 4000))
-# boxDE.HK27 <- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=HK27val, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("segment", x=1.1, xend=1.9, y=500, yend=500) + annotate("text", x=1.5, y=550, size=3, label="0.6")
-# print(DE.HK27)
-# print(boxDE.HK27, vp=vp)
-# t.test(filter(proms.DE, DE=="yes")$HK27val, filter(proms.DE, DE=="no")$HK27val)
-# 
-# DC.HK27 <- ggplot(data=proms.DC) + geom_density(aes(x=HK27val, group=DC, color=DC, y=..scaled..)) + ggtitle("Enrichment of H3K27me3 overlapping DC Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27me3 peak") + ylab("Density") + scale_color_manual(name="DC?", labels = c("No", "Yes"), values=c("Red", "Blue")) + coord_cartesian(xlim=c(0, 4000))
-# boxDC.HK27 <- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=HK27val, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c("No", "Yes"), values=c("Red", "Blue"), guide=FALSE) + coord_cartesian(ylim=c(0, 2000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate("segment", x=1.1, xend=1.9, y=1000, yend=1000) + annotate("text", x=1.5, y=1090, size=3, label="0.3")
-# vp <- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.6)
-# print(DC.HK27)
-# print(boxDC.HK27, vp=vp)
-# t.test(filter(proms.DC, DC=="yes")$HK27val, filter(proms.DC, DC=="no")$HK27val)
+#######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
+DE.only.proms.KR <- filter(promoter.contacts.KR, differential=="expression")
+DC.only.proms.KR <- filter(promoter.contacts.KR, differential=="contact")
+DEDC.KR.proms <- filter(promoter.contacts.KR, differential=="both")
+neither.KR.proms <- filter(promoter.contacts.KR, differential=="no")
+DE.only.proms.KR <- DE.only.proms.KR[!duplicated(DE.only.proms.KR$H2),]
+DC.only.proms.KR <- DC.only.proms.KR[!duplicated(DC.only.proms.KR$H2),]
+DEDC.KR.proms <- DEDC.KR.proms[!duplicated(DEDC.KR.proms$H2),]
+neither.KR.proms <- neither.KR.proms[!duplicated(neither.KR.proms$H2),]
+proms.differential.KR <- rbind(DE.only.proms.KR, DC.only.proms.KR, DEDC.KR.proms, neither.KR.proms)
+proms.differential.KR <- proms.differential.KR[order(proms.differential.KR$sp_BH_pval),]
+colnames(proms.differential.KR)[22:26] <- c("DHSval", "Hacval", "Hme1val", "Hme3val", "HK27val")
+
+
+###############################Plots of enrichment for different classes of hits and different marks. Seems like it would be nice to create a function for these but really it'll lead to a huge hassle with having to specify different x and y-axis limits for different marks in different sets, and drawing the segments...since I've already done it out this way, might as well keep it.
+##########DHS plots!!!
+DHS.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.KR, differential=="contact")$DHSval, filter(proms.differential.KR, differential=="expression")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$DHSval, filter(proms.differential.KR, differential=="both")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$DHSval, filter(proms.differential.KR, differential=="no")$DHSval)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential=="expression")$DHSval, filter(proms.differential.KR, differential=="contact")$DHSval)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="expression")$DHSval, filter(proms.differential.KR, differential=="both")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="expression")$DHSval, filter(proms.differential.KR, differential=="no")$DHSval)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential=="both")$DHSval, filter(proms.differential.KR, differential=="contact")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="both")$DHSval, filter(proms.differential.KR, differential=="expression")$DHSval)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="both")$DHSval, filter(proms.differential.KR, differential=="no")$DHSval)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential=="no")$DHSval, filter(proms.differential.KR, differential=="contact")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$DHSval, filter(proms.differential.KR, differential=="expression")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$DHSval, filter(proms.differential.KR, differential=="both")$DHSval)$p.value, 2), 0))
+rownames(DHS.pvals) <- DHS.pvals$differential
+
+prom.DHS <- ggplot(data=proms.differential.KR) + geom_density(aes(x=DHSval, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of DHS overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and DHS peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 1000))
+box.prom.DHS <- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=DHSval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate("text", x=3.5, y=330, label=DHS.pvals["expression", "no"], size=3) + annotate("text", x=2.5, y=330, label=DHS.pvals["contact", "expression"], size=3) + annotate("text", x=1.5, y=460, label=DHS.pvals["contact", "both"], size=3) + annotate("text", label=DHS.pvals["both", "expression"], x=2, y=590, size=3) + annotate("segment", x=1.1, y=400, xend=1.9, yend=400) + annotate("segment", x=2.1, y=270, xend=2.9, yend=270) + annotate("segment", x=3.1, y=270, xend=3.9, yend=270) + annotate("segment", x=1.1, y=530, xend=2.9, yend=530) + annotate("text", x=2.5, y=720, size=3, label=DHS.pvals["both", "no"]) + annotate("segment", x=1.1, y=660, xend=3.9, yend=660) + annotate("text", x=3, y=460, label=DHS.pvals["contact", "no"], size=3) + annotate("segment", x=2.1, xend=3.9, y=400, yend=400)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.DHS)
+print(box.prom.DHS, vp=vp)
+
+##############H3K27Ac plots!!!
+Hac.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.KR, differential=="contact")$Hacval, filter(proms.differential.KR, differential=="expression")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$Hacval, filter(proms.differential.KR, differential=="both")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$Hacval, filter(proms.differential.KR, differential=="no")$Hacval)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential=="expression")$Hacval, filter(proms.differential.KR, differential=="contact")$Hacval)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="expression")$Hacval, filter(proms.differential.KR, differential=="both")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="expression")$Hacval, filter(proms.differential.KR, differential=="no")$Hacval)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential=="both")$Hacval, filter(proms.differential.KR, differential=="contact")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="both")$Hacval, filter(proms.differential.KR, differential=="expression")$Hacval)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="both")$Hacval, filter(proms.differential.KR, differential=="no")$Hacval)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential=="no")$Hacval, filter(proms.differential.KR, differential=="contact")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$Hacval, filter(proms.differential.KR, differential=="expression")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$Hacval, filter(proms.differential.KR, differential=="both")$Hacval)$p.value, 2), 0))
+rownames(Hac.pvals) <- Hac.pvals$differential
+
+prom.Hac <- ggplot(data=proms.differential.KR) + geom_density(aes(x=Hacval, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K27ac overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27ac peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 3500))
+box.prom.Hac <- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=Hacval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75))+ scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank())+ coord_cartesian(ylim=c(0, 1000)) + annotate("segment", x=1.1, xend=1.9, y=430, yend=430) + annotate("segment", x=1.1, xend=2.9, y=700, yend=700) + annotate("segment", x=1.1, xend=3.9, y=880, yend=880) + annotate("segment", x=2.1, xend=2.9, y=430, yend=430) + annotate("segment", x=2.1, xend=3.9, y=560, yend=560) + annotate("segment", x=3.1, xend=3.9, y=430, yend=430) + annotate("text", label=Hac.pvals["both", "contact"], size=3, x=1.5, y=480) + annotate("text", label=Hac.pvals["expression", "contact"], size=3, x=2.5, y=480) + annotate("text", label=Hac.pvals["expression", "no"], size=3, x=3.5, y=480) + annotate("text", label=Hac.pvals["no", "contact"], size=3, x=3, y=610) + annotate("text", label=Hac.pvals["both", "expression"], size=3, x=2, y=750) + annotate("text", label=Hac.pvals["both", "no"], size=3, x=2.5, y=930)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.Hac)
+print(box.prom.Hac, vp=vp)
+t.test(filter(proms.differential.KR, differential=="contact")$Hacval, filter(proms.differential.KR, differential=="no")$Hacval)
+
+######H3K4Me1 plots!!!
+Hme1.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.KR, differential=="contact")$Hme1val, filter(proms.differential.KR, differential=="expression")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$Hme1val, filter(proms.differential.KR, differential=="both")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$Hme1val, filter(proms.differential.KR, differential=="no")$Hme1val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential=="expression")$Hme1val, filter(proms.differential.KR, differential=="contact")$Hme1val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="expression")$Hme1val, filter(proms.differential.KR, differential=="both")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="expression")$Hme1val, filter(proms.differential.KR, differential=="no")$Hme1val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential=="both")$Hme1val, filter(proms.differential.KR, differential=="contact")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="both")$Hme1val, filter(proms.differential.KR, differential=="expression")$Hme1val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="both")$Hme1val, filter(proms.differential.KR, differential=="no")$Hme1val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential=="no")$Hme1val, filter(proms.differential.KR, differential=="contact")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$Hme1val, filter(proms.differential.KR, differential=="expression")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$Hme1val, filter(proms.differential.KR, differential=="both")$Hme1val)$p.value, 2), 0))
+rownames(Hme1.pvals) <- Hme1.pvals$differential
+
+prom.Hme1 <- ggplot(data=proms.differential.KR) + geom_density(aes(x=Hme1val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K4me1 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me1 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 6100))
+box.prom.Hme1 <- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=Hme1val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 6000)) + annotate("segment", x=1.1, xend=1.9, y=1500, yend=1500) + annotate("segment", x=2.1, xend=2.9, y=1500, yend=1500) + annotate("segment", x=3.1, xend=3.9, y=1500, yend=1500) + annotate("segment", x=1.1, xend=2.9, y=3900, yend=3900) + annotate("segment", x=1.1, xend=3.9, y=5100, yend=5100) + annotate("segment", x=2.1, xend=3.9, y=2700, yend=2700) + annotate("text", x=1.5, y=1800, size=3, label=Hme1.pvals["both", "contact"]) + annotate("text", x=2.5, y=1800, size=3, label=Hme1.pvals["expression", "contact"]) + annotate("text", x=3.5, y=1800, size=3, label=Hme1.pvals["expression", "no"]) + annotate("text", x=3, y=3000, size=3, label=Hme1.pvals["no", "contact"]) + annotate("text", x=2.5, y=5400, size=3, label=Hme1.pvals["both", "no"]) + annotate("text", x=2, y=4200, size=3, label=Hme1.pvals["both", "expression"])
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.73)
+print(prom.Hme1)
+print(box.prom.Hme1, vp=vp)
+
+####H3K4Me3 plots!!!
+Hme3.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.KR, differential=="contact")$Hme3val, filter(proms.differential.KR, differential=="expression")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$Hme3val, filter(proms.differential.KR, differential=="both")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$Hme3val, filter(proms.differential.KR, differential=="no")$Hme3val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential=="expression")$Hme3val, filter(proms.differential.KR, differential=="contact")$Hme3val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="expression")$Hme3val, filter(proms.differential.KR, differential=="both")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="expression")$Hme3val, filter(proms.differential.KR, differential=="no")$Hme3val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential=="both")$Hme3val, filter(proms.differential.KR, differential=="contact")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="both")$Hme3val, filter(proms.differential.KR, differential=="expression")$Hme3val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="both")$Hme3val, filter(proms.differential.KR, differential=="no")$Hme3val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential=="no")$Hme3val, filter(proms.differential.KR, differential=="contact")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$Hme3val, filter(proms.differential.KR, differential=="expression")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$Hme3val, filter(proms.differential.KR, differential=="both")$Hme3val)$p.value, 2), 0))
+rownames(Hme3.pvals) <- Hme3.pvals$differential
+
+prom.Hme3 <- ggplot(data=proms.differential.KR) + geom_density(aes(x=Hme3val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K4me3 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me3 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"))
+box.prom.Hme3 <- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=Hme3val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate("segment", x=1.1, xend=1.9, y=750, yend=750) + annotate("segment", x=2.1, xend=2.9, y=750, yend=750) + annotate("segment", x=3.1, xend=3.9, y=750, yend=750) + annotate("segment", x=2.1, xend=3.9, y=1000, yend=1000) + annotate("segment", x=1.1, xend=2.9, y=1250, yend=1250) + annotate("segment", x=1.1, xend=3.9, y=1500, yend=1500) + annotate("text", x=1.5, y=840, size=3, label=Hme3.pvals["both", "contact"]) + annotate("text", x=2.5, y=840, size=3, label=Hme3.pvals["expression", "contact"]) + annotate("text", x=3.5, y=840, size=3, label=Hme3.pvals["expression", "no"]) + annotate("text", x=3, y=1090, size=3, label=Hme3.pvals["no", "contact"]) + annotate("text", x=2.7, y=1590, size=3, label=Hme3.pvals["both", "no"]) + annotate("text", x=2, y=1340, size=3, label=Hme3.pvals["both", "expression"])
+print(prom.Hme3)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(box.prom.Hme3, vp=vp)
+
+####H3K27me3 plots!!!
+HK27.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.KR, differential=="contact")$HK27val, filter(proms.differential.KR, differential=="expression")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$HK27val, filter(proms.differential.KR, differential=="both")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="contact")$HK27val, filter(proms.differential.KR, differential=="no")$HK27val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential=="expression")$HK27val, filter(proms.differential.KR, differential=="contact")$HK27val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="expression")$HK27val, filter(proms.differential.KR, differential=="both")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="expression")$HK27val, filter(proms.differential.KR, differential=="no")$HK27val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential=="both")$HK27val, filter(proms.differential.KR, differential=="contact")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="both")$HK27val, filter(proms.differential.KR, differential=="expression")$HK27val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential=="both")$HK27val, filter(proms.differential.KR, differential=="no")$HK27val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential=="no")$HK27val, filter(proms.differential.KR, differential=="contact")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$HK27val, filter(proms.differential.KR, differential=="expression")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential=="no")$HK27val, filter(proms.differential.KR, differential=="both")$HK27val)$p.value, 2), 0))
+rownames(HK27.pvals) <- HK27.pvals$differential
+
+prom.HK27 <- ggplot(data=proms.differential.KR) + geom_density(aes(x=HK27val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K27me3 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27me3 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian((xlim=c(0, 5000)))
+box.prom.HK27 <- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=HK27val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate("segment", x=1.1, xend=1.9, y=750, yend=750) + annotate("segment", x=2.1, xend=2.9, y=750, yend=750) + annotate("segment", x=3.1, xend=3.9, y=750, yend=750) + annotate("segment", x=2.1, xend=3.9, y=1000, yend=1000) + annotate("segment", x=1.1, xend=2.9, y=1250, yend=1250) + annotate("segment", x=1.1, xend=3.9, y=1500, yend=1500) + annotate("text", x=1.5, y=840, size=3, label=HK27.pvals["both", "contact"]) + annotate("text", x=2.5, y=840, size=3, label=HK27.pvals["expression", "contact"]) + annotate("text", x=3.5, y=840, size=3, label=HK27.pvals["expression", "no"]) + annotate("text", x=3, y=1090, size=3, label=HK27.pvals["no", "contact"]) + annotate("text", x=2.7, y=1590, size=3, label=HK27.pvals["both", "no"]) + annotate("text", x=2, y=1340, size=3, label=HK27.pvals["both", "expression"])
+print(prom.HK27)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(box.prom.HK27, vp=vp)
+
+
+######REPEAT QUANTITATIVE HISTONE ENRICHMENTS FOR VC VALUES
+#######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
+DE.only.proms.VC <- filter(promoter.contacts.VC, differential=="expression")
+DC.only.proms.VC <- filter(promoter.contacts.VC, differential=="contact")
+DEDC.VC.proms <- filter(promoter.contacts.VC, differential=="both")
+neither.VC.proms <- filter(promoter.contacts.VC, differential=="no")
+DE.only.proms.VC <- DE.only.proms.VC[!duplicated(DE.only.proms.VC$H2),]
+DC.only.proms.VC <- DC.only.proms.VC[!duplicated(DC.only.proms.VC$H2),]
+DEDC.VC.proms <- DEDC.VC.proms[!duplicated(DEDC.VC.proms$H2),]
+neither.VC.proms <- neither.VC.proms[!duplicated(neither.VC.proms$H2),]
+proms.differential.VC <- rbind(DE.only.proms.VC, DC.only.proms.VC, DEDC.VC.proms, neither.VC.proms)
+proms.differential.VC <- proms.differential.VC[order(proms.differential.VC$sp_BH_pval),]
+colnames(proms.differential.VC)[22:26] <- c("DHSval", "Hacval", "Hme1val", "Hme3val", "HK27val")
+
+
+###############################Plots of enrichment for different classes of hits and different marks. Seems like it would be nice to create a function for these but really it'll lead to a huge hassle with having to specify different x and y-axis limits for different marks in different sets, and drawing the segments...since I've already done it out this way, might as well keep it.
+##########DHS plots!!!
+DHS.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.VC, differential=="contact")$DHSval, filter(proms.differential.VC, differential=="expression")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$DHSval, filter(proms.differential.VC, differential=="both")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$DHSval, filter(proms.differential.VC, differential=="no")$DHSval)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential=="expression")$DHSval, filter(proms.differential.VC, differential=="contact")$DHSval)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="expression")$DHSval, filter(proms.differential.VC, differential=="both")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="expression")$DHSval, filter(proms.differential.VC, differential=="no")$DHSval)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential=="both")$DHSval, filter(proms.differential.VC, differential=="contact")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="both")$DHSval, filter(proms.differential.VC, differential=="expression")$DHSval)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="both")$DHSval, filter(proms.differential.VC, differential=="no")$DHSval)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential=="no")$DHSval, filter(proms.differential.VC, differential=="contact")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$DHSval, filter(proms.differential.VC, differential=="expression")$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$DHSval, filter(proms.differential.VC, differential=="both")$DHSval)$p.value, 2), 0))
+rownames(DHS.pvals) <- DHS.pvals$differential
+
+prom.DHS <- ggplot(data=proms.differential.VC) + geom_density(aes(x=DHSval, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of DHS overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and DHS peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 1000))
+box.prom.DHS <- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=DHSval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate("text", x=3.5, y=330, label=DHS.pvals["expression", "no"], size=3) + annotate("text", x=2.5, y=330, label=DHS.pvals["contact", "expression"], size=3) + annotate("text", x=1.5, y=460, label=DHS.pvals["contact", "both"], size=3) + annotate("text", label=DHS.pvals["both", "expression"], x=2, y=590, size=3) + annotate("segment", x=1.1, y=400, xend=1.9, yend=400) + annotate("segment", x=2.1, y=270, xend=2.9, yend=270) + annotate("segment", x=3.1, y=270, xend=3.9, yend=270) + annotate("segment", x=1.1, y=530, xend=2.9, yend=530) + annotate("text", x=2.5, y=720, size=3, label=DHS.pvals["both", "no"]) + annotate("segment", x=1.1, y=660, xend=3.9, yend=660) + annotate("text", x=3, y=460, label=DHS.pvals["contact", "no"], size=3) + annotate("segment", x=2.1, xend=3.9, y=400, yend=400)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.DHS)
+print(box.prom.DHS, vp=vp)
+
+##############H3K27Ac plots!!!
+Hac.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.VC, differential=="contact")$Hacval, filter(proms.differential.VC, differential=="expression")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$Hacval, filter(proms.differential.VC, differential=="both")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$Hacval, filter(proms.differential.VC, differential=="no")$Hacval)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential=="expression")$Hacval, filter(proms.differential.VC, differential=="contact")$Hacval)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="expression")$Hacval, filter(proms.differential.VC, differential=="both")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="expression")$Hacval, filter(proms.differential.VC, differential=="no")$Hacval)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential=="both")$Hacval, filter(proms.differential.VC, differential=="contact")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="both")$Hacval, filter(proms.differential.VC, differential=="expression")$Hacval)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="both")$Hacval, filter(proms.differential.VC, differential=="no")$Hacval)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential=="no")$Hacval, filter(proms.differential.VC, differential=="contact")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$Hacval, filter(proms.differential.VC, differential=="expression")$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$Hacval, filter(proms.differential.VC, differential=="both")$Hacval)$p.value, 2), 0))
+rownames(Hac.pvals) <- Hac.pvals$differential
+
+prom.Hac <- ggplot(data=proms.differential.VC) + geom_density(aes(x=Hacval, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K27ac overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27ac peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 3500))
+box.prom.Hac <- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=Hacval, group=differential, color=differential), draw_quantiles = c(0.5))+ scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank())+ coord_cartesian(ylim=c(0, 1000)) + annotate("segment", x=1.1, xend=1.9, y=430, yend=430) + annotate("segment", x=1.1, xend=2.9, y=700, yend=700) + annotate("segment", x=1.1, xend=3.9, y=880, yend=880) + annotate("segment", x=2.1, xend=2.9, y=430, yend=430) + annotate("segment", x=2.1, xend=3.9, y=560, yend=560) + annotate("segment", x=3.1, xend=3.9, y=430, yend=430) + annotate("text", label=Hac.pvals["both", "contact"], size=3, x=1.5, y=480) + annotate("text", label=Hac.pvals["expression", "contact"], size=3, x=2.5, y=480) + annotate("text", label=Hac.pvals["expression", "no"], size=3, x=3.5, y=480) + annotate("text", label=Hac.pvals["no", "contact"], size=3, x=3, y=610) + annotate("text", label=Hac.pvals["both", "expression"], size=3, x=2, y=750) + annotate("text", label=Hac.pvals["both", "no"], size=3, x=2.5, y=930)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.Hac)
+print(box.prom.Hac, vp=vp)
+t.test(filter(proms.differential.VC, differential=="contact")$Hacval, filter(proms.differential.VC, differential=="no")$Hacval)
+
+######H3K4Me1 plots!!!
+Hme1.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.VC, differential=="contact")$Hme1val, filter(proms.differential.VC, differential=="expression")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$Hme1val, filter(proms.differential.VC, differential=="both")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$Hme1val, filter(proms.differential.VC, differential=="no")$Hme1val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential=="expression")$Hme1val, filter(proms.differential.VC, differential=="contact")$Hme1val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="expression")$Hme1val, filter(proms.differential.VC, differential=="both")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="expression")$Hme1val, filter(proms.differential.VC, differential=="no")$Hme1val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential=="both")$Hme1val, filter(proms.differential.VC, differential=="contact")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="both")$Hme1val, filter(proms.differential.VC, differential=="expression")$Hme1val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="both")$Hme1val, filter(proms.differential.VC, differential=="no")$Hme1val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential=="no")$Hme1val, filter(proms.differential.VC, differential=="contact")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$Hme1val, filter(proms.differential.VC, differential=="expression")$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$Hme1val, filter(proms.differential.VC, differential=="both")$Hme1val)$p.value, 2), 0))
+rownames(Hme1.pvals) <- Hme1.pvals$differential
+
+prom.Hme1 <- ggplot(data=proms.differential.VC) + geom_density(aes(x=Hme1val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K4me1 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me1 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian(xlim=c(0, 6100))
+box.prom.Hme1 <- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=Hme1val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 6000)) + annotate("segment", x=1.1, xend=1.9, y=1500, yend=1500) + annotate("segment", x=2.1, xend=2.9, y=1500, yend=1500) + annotate("segment", x=3.1, xend=3.9, y=1500, yend=1500) + annotate("segment", x=1.1, xend=2.9, y=3900, yend=3900) + annotate("segment", x=1.1, xend=3.9, y=5100, yend=5100) + annotate("segment", x=2.1, xend=3.9, y=2700, yend=2700) + annotate("text", x=1.5, y=1800, size=3, label=Hme1.pvals["both", "contact"]) + annotate("text", x=2.5, y=1800, size=3, label=Hme1.pvals["expression", "contact"]) + annotate("text", x=3.5, y=1800, size=3, label=Hme1.pvals["expression", "no"]) + annotate("text", x=3, y=3000, size=3, label=Hme1.pvals["no", "contact"]) + annotate("text", x=2.5, y=5400, size=3, label=Hme1.pvals["both", "no"]) + annotate("text", x=2, y=4200, size=3, label=Hme1.pvals["both", "expression"])
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.73)
+print(prom.Hme1)
+print(box.prom.Hme1, vp=vp)
+
+####H3K4Me3 plots!!!
+Hme3.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.VC, differential=="contact")$Hme3val, filter(proms.differential.VC, differential=="expression")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$Hme3val, filter(proms.differential.VC, differential=="both")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$Hme3val, filter(proms.differential.VC, differential=="no")$Hme3val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential=="expression")$Hme3val, filter(proms.differential.VC, differential=="contact")$Hme3val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="expression")$Hme3val, filter(proms.differential.VC, differential=="both")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="expression")$Hme3val, filter(proms.differential.VC, differential=="no")$Hme3val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential=="both")$Hme3val, filter(proms.differential.VC, differential=="contact")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="both")$Hme3val, filter(proms.differential.VC, differential=="expression")$Hme3val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="both")$Hme3val, filter(proms.differential.VC, differential=="no")$Hme3val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential=="no")$Hme3val, filter(proms.differential.VC, differential=="contact")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$Hme3val, filter(proms.differential.VC, differential=="expression")$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$Hme3val, filter(proms.differential.VC, differential=="both")$Hme3val)$p.value, 2), 0))
+rownames(Hme3.pvals) <- Hme3.pvals$differential
+
+prom.Hme3 <- ggplot(data=proms.differential.VC) + geom_density(aes(x=Hme3val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K4me3 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K4me3 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"))
+box.prom.Hme3 <- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=Hme3val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate("segment", x=1.1, xend=1.9, y=750, yend=750) + annotate("segment", x=2.1, xend=2.9, y=750, yend=750) + annotate("segment", x=3.1, xend=3.9, y=750, yend=750) + annotate("segment", x=2.1, xend=3.9, y=1000, yend=1000) + annotate("segment", x=1.1, xend=2.9, y=1250, yend=1250) + annotate("segment", x=1.1, xend=3.9, y=1500, yend=1500) + annotate("text", x=1.5, y=840, size=3, label=Hme3.pvals["both", "contact"]) + annotate("text", x=2.5, y=840, size=3, label=Hme3.pvals["expression", "contact"]) + annotate("text", x=3.5, y=840, size=3, label=Hme3.pvals["expression", "no"]) + annotate("text", x=3, y=1090, size=3, label=Hme3.pvals["no", "contact"]) + annotate("text", x=2.7, y=1590, size=3, label=Hme3.pvals["both", "no"]) + annotate("text", x=2, y=1340, size=3, label=Hme3.pvals["both", "expression"])
+print(prom.Hme3)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(box.prom.Hme3, vp=vp)
+
+####H3K27me3 plots!!!
+HK27.pvals <- data.frame(differential=c("contact", "expression", "both", "no"), contact=c(0, signif(t.test(filter(proms.differential.VC, differential=="contact")$HK27val, filter(proms.differential.VC, differential=="expression")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$HK27val, filter(proms.differential.VC, differential=="both")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="contact")$HK27val, filter(proms.differential.VC, differential=="no")$HK27val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential=="expression")$HK27val, filter(proms.differential.VC, differential=="contact")$HK27val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="expression")$HK27val, filter(proms.differential.VC, differential=="both")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="expression")$HK27val, filter(proms.differential.VC, differential=="no")$HK27val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential=="both")$HK27val, filter(proms.differential.VC, differential=="contact")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="both")$HK27val, filter(proms.differential.VC, differential=="expression")$HK27val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential=="both")$HK27val, filter(proms.differential.VC, differential=="no")$HK27val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential=="no")$HK27val, filter(proms.differential.VC, differential=="contact")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$HK27val, filter(proms.differential.VC, differential=="expression")$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential=="no")$HK27val, filter(proms.differential.VC, differential=="both")$HK27val)$p.value, 2), 0))
+rownames(HK27.pvals) <- HK27.pvals$differential
+
+prom.HK27 <- ggplot(data=proms.differential.VC) + geom_density(aes(x=HK27val, group=differential, color=differential, y=..scaled..)) + ggtitle("Enrichment of H3K27me3 overlapping Promoter Hi-C Bins") + xlab("Length of overlap b/t bin and H3K27me3 peak") + ylab("Density") + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple")) + coord_cartesian((xlim=c(0, 5000)))
+box.prom.HK27 <- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=HK27val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name="Species Differential:", labels = c("Both", "Contact", "Expression", "Neither"), values=c("Red", "Blue", "Green", "Purple"), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate("segment", x=1.1, xend=1.9, y=750, yend=750) + annotate("segment", x=2.1, xend=2.9, y=750, yend=750) + annotate("segment", x=3.1, xend=3.9, y=750, yend=750) + annotate("segment", x=2.1, xend=3.9, y=1000, yend=1000) + annotate("segment", x=1.1, xend=2.9, y=1250, yend=1250) + annotate("segment", x=1.1, xend=3.9, y=1500, yend=1500) + annotate("text", x=1.5, y=840, size=3, label=HK27.pvals["both", "contact"]) + annotate("text", x=2.5, y=840, size=3, label=HK27.pvals["expression", "contact"]) + annotate("text", x=3.5, y=840, size=3, label=HK27.pvals["expression", "no"]) + annotate("text", x=3, y=1090, size=3, label=HK27.pvals["no", "contact"]) + annotate("text", x=2.7, y=1590, size=3, label=HK27.pvals["both", "no"]) + annotate("text", x=2, y=1340, size=3, label=HK27.pvals["both", "expression"])
+print(prom.HK27)
+vp <- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(box.prom.HK27, vp=vp)
 ```
 
 
