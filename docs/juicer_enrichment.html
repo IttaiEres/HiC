@@ -318,7 +318,7 @@ shared across the workflowr files. -->
 <p><strong>Last updated:</strong> 2018-09-27</p>
 <!-- Insert the code version (Git commit SHA1) if Git repository exists and R
  package git2r is installed -->
-<p><strong>Code version:</strong> 6aa9881</p>
+<p><strong>Code version:</strong> 605d922</p>
 <!-- Add your analysis here -->
 <!-- Add your analysis here -->
 <div id="reading-in-the-data-reformatting-for-enrichment-analyses" class="section level3">
@@ -340,7 +340,7 @@ data.VC$C1 &lt;- paste(data.VC$Cchr, data.VC$C1, sep=&quot;-&quot;)
 data.VC$C2 &lt;- paste(data.VC$Cchr, data.VC$C2, sep=&quot;-&quot;)
 
 #Now, prepare a bedPE file from my filtered data! Here I construct a function to do this in case I ever want to do it again. The H1 and H2 columns are good to use for this.
-bedpe.prep &lt;- function(homersigdf, res, species){ #Also is the BEDPE format!
+bedpe.prep &lt;- function(homersigdf, res, species){ #Also is the BEDPE format! All this currently does is ensure first mate is always lower--it should deduplicate!!!
   if(species==&quot;human&quot;){
   H1 &lt;- homersigdf$H1
   H2 &lt;- homersigdf$H2
@@ -368,9 +368,18 @@ bedpe.prep &lt;- function(homersigdf, res, species){ #Also is the BEDPE format!
 #I&#39;ll make and save the chimp bin files here, just for the sake of having them in case we get epigenetic data on chimps in the future. For the time being, these are mostly useless as I have nothing to overlap with them.
 humpairsKR &lt;- bedpe.prep(data.KR, 10000 ,&quot;human&quot;)
 chimpairsKR &lt;- bedpe.prep(data.KR, 10000, &quot;chimp&quot;)
+hbin1.KR.bed &lt;- humpairsKR[!duplicated(humpairsKR[,1:3]),1:3]
+hbin2.KR.bed &lt;- humpairsKR[!duplicated(humpairsKR[,4:6]),4:6]
 
 humpairsVC &lt;- bedpe.prep(data.VC, 10000 ,&quot;human&quot;)
 chimpairsVC &lt;- bedpe.prep(data.VC, 10000, &quot;chimp&quot;)
+hbin1.VC.bed &lt;- humpairsVC[!duplicated(humpairsVC[,1:3]),1:3]
+hbin2.VC.bed &lt;- humpairsVC[!duplicated(humpairsVC[,4:6]),4:6]
+
+fwrite(hbin1.KR.bed, &quot;~/Desktop/Hi-C/pgltoolswork/juicer/hbin1.KR.bed&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = FALSE, row.names=FALSE)
+fwrite(hbin2.KR.bed, &quot;~/Desktop/Hi-C/pgltoolswork/juicer/hbin2.KR.bed&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = FALSE, row.names=FALSE)
+fwrite(hbin1.VC.bed, &quot;~/Desktop/Hi-C/pgltoolswork/juicer/hbin1.VC.bed&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = FALSE, row.names=FALSE)
+fwrite(hbin2.VC.bed, &quot;~/Desktop/Hi-C/pgltoolswork/juicer/hbin2.VC.bed&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = FALSE, row.names=FALSE)
 
 fwrite(humpairsKR, &quot;~/Desktop/Hi-C/pgltoolswork/juicer/filt.bins.humans.KR.bedPE&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = TRUE, row.names=FALSE)
 fwrite(chimpairsKR, &quot;~/Desktop/Hi-C/pgltoolswork/juicer/filt.bins.chimps.KR.bedPE&quot;, quote = FALSE, sep = &quot;\t&quot;, col.names = TRUE, row.names=FALSE)
@@ -714,402 +723,6 @@ for(row in 1:nrow(weighter)){
   weighter$chromstate[row] &lt;- colnames(weighter)[which.max(weighter[row,])]
 }</code></pre>
 <pre><code>Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
 
 Warning in which.max(weighter[row, ]): NAs introduced by coercion
 
@@ -60479,544 +60092,6 @@ Warning in which.max(weighter[row, ]): NAs introduced by coercion
 
 Warning in which.max(weighter[row, ]): NAs introduced by coercion
 
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
-Warning in which.max(weighter[row, ]): NAs introduced by coercion
-
 Warning in which.max(weighter[row, ]): NAs introduced by coercion</code></pre>
 <pre class="r"><code>weighter$chromstate &lt;- as.factor(weighter$chromstate)
 levels(weighter$chromstate)</code></pre>
@@ -61119,8 +60194,8 @@ proms.KR.assigns &lt;- proms.KR.assigns[!is.na(proms.KR.assigns)]
 nonproms.KR.assigns &lt;- nonproms.KR.assigns[!is.na(nonproms.KR.assigns)] #Get rid of NA values
 
 #Now, make a table of whether they have any of the enhancer-associated annotations (Enh, EnhG, MAYBE EnhBiv if it looks good and can include BivFlnk if I want to...)
-proms.KR.assigns.enh &lt;- ifelse(proms.KR.assigns==&quot;12_EnhBiv&quot;, &quot;yes&quot;, &quot;no&quot;)
-nonproms.KR.assigns.enh &lt;- ifelse(nonproms.KR.assigns==&quot;12_EnhBiv&quot;, &quot;yes&quot;, &quot;no&quot;)
+proms.KR.assigns.enh &lt;- ifelse(proms.KR.assigns==&quot;7_Enh&quot;, &quot;yes&quot;, &quot;no&quot;)
+nonproms.KR.assigns.enh &lt;- ifelse(nonproms.KR.assigns==&quot;7_Enh&quot;, &quot;yes&quot;, &quot;no&quot;)
 
 table2test &lt;- data.frame(no=c(sum(nonproms.KR.assigns.enh==&quot;no&quot;), sum(proms.KR.assigns.enh==&quot;no&quot;)), yes=c(sum(nonproms.KR.assigns.enh==&quot;yes&quot;), sum(proms.KR.assigns.enh==&quot;yes&quot;)))
 
@@ -61132,7 +60207,7 @@ chisq.test(table2test) #For Enh+EnhG, don&#39;t get a good p-value and get a rel
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table2test
-X-squared = 0.13891, df = 1, p-value = 0.7094</code></pre>
+X-squared = 0.23149, df = 1, p-value = 0.6304</code></pre>
 <pre class="r"><code>###Now see if I can replicate that result on DC vs. non-DC regions...
 #First need to create the appropriate DFs because don&#39;t have de-dupped ones for this binary division from the weighted info.
 wt.KR.DC &lt;- filter(chromwtrich.KR, DC==&quot;yes&quot;) %&gt;% deduplicator()
@@ -61143,8 +60218,8 @@ nonDC.assigns.KR &lt;- c(as.character(wt.KR.nonDC$bin1.HMM), as.character(wt.KR.
 DC.assigns.KR &lt;- DC.assigns.KR[!is.na(DC.assigns.KR)]
 nonDC.assigns.KR &lt;- nonDC.assigns.KR[!is.na(nonDC.assigns.KR)]
 
-DC.assigns.enh.KR &lt;- ifelse(DC.assigns.KR==&quot;12_EnhBiv&quot;, &quot;yes&quot;, &quot;no&quot;)
-nonDC.assigns.enh.KR &lt;- ifelse(nonDC.assigns.KR==&quot;12_EnhBiv&quot;, &quot;yes&quot;, &quot;no&quot;)
+DC.assigns.enh.KR &lt;- ifelse(DC.assigns.KR==&quot;7_Enh&quot;, &quot;yes&quot;, &quot;no&quot;)
+nonDC.assigns.enh.KR &lt;- ifelse(nonDC.assigns.KR==&quot;7_Enh&quot;, &quot;yes&quot;, &quot;no&quot;)
 
 table2test &lt;- data.frame(no=c(sum(nonDC.assigns.enh.KR==&quot;no&quot;), sum(DC.assigns.enh.KR==&quot;no&quot;)), yes=c(sum(nonDC.assigns.enh.KR==&quot;yes&quot;), sum(DC.assigns.enh.KR==&quot;yes&quot;)))
 
@@ -61156,7 +60231,7 @@ chisq.test(table2test) #Gets a good p-value, and has the right direction of effe
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table2test
-X-squared = 2.5688, df = 1, p-value = 0.109</code></pre>
+X-squared = 7.8509e-27, df = 1, p-value = 1</code></pre>
 <pre class="r"><code>#####Poor results for Enh_G on KR data, check VC data now:
 proms.VC.assigns &lt;- wt.mates.proms.VC.full$bin2.HMM
 nonproms.VC.assigns &lt;- c(as.character(wt.full.no.proms.VC$bin1.HMM), as.character(wt.full.no.proms.VC$bin2.HMM))
@@ -61164,8 +60239,8 @@ proms.VC.assigns &lt;- proms.VC.assigns[!is.na(proms.VC.assigns)]
 nonproms.VC.assigns &lt;- nonproms.VC.assigns[!is.na(nonproms.VC.assigns)] #Get rid of NA values
 
 #Now, make a table of whether they have any of the enhancer-associated annotations (Enh, EnhG, MAYBE EnhBiv if it looks good and can include BivFlnk if I want to...)
-proms.VC.assigns.enh &lt;- ifelse(proms.VC.assigns==&quot;12_EnhBiv&quot;, &quot;yes&quot;, &quot;no&quot;)
-nonproms.VC.assigns.enh &lt;- ifelse(nonproms.VC.assigns==&quot;12_EnhBiv&quot;, &quot;yes&quot;, &quot;no&quot;)
+proms.VC.assigns.enh &lt;- ifelse(proms.VC.assigns==&quot;7_Enh&quot;, &quot;yes&quot;, &quot;no&quot;)
+nonproms.VC.assigns.enh &lt;- ifelse(nonproms.VC.assigns==&quot;7_Enh&quot;, &quot;yes&quot;, &quot;no&quot;)
 
 table2test &lt;- data.frame(no=c(sum(nonproms.VC.assigns.enh==&quot;no&quot;), sum(proms.VC.assigns.enh==&quot;no&quot;)), yes=c(sum(nonproms.VC.assigns.enh==&quot;yes&quot;), sum(proms.VC.assigns.enh==&quot;yes&quot;)))
 
@@ -61177,7 +60252,7 @@ chisq.test(table2test) #For Enh+EnhG, don&#39;t get a good p-value and get a rel
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table2test
-X-squared = 0.0020242, df = 1, p-value = 0.9641</code></pre>
+X-squared = 0.17683, df = 1, p-value = 0.6741</code></pre>
 <pre class="r"><code>###Now see if I can replicate that result on DC vs. non-DC regions...
 #First need to create the appropriate DFs because don&#39;t have de-dupped ones for this binary division from the weighted info.
 wt.VC.DC &lt;- filter(chromwtrich.VC, DC==&quot;yes&quot;) %&gt;% deduplicator()
@@ -61188,8 +60263,8 @@ nonDC.assigns.VC &lt;- c(as.character(wt.VC.nonDC$bin1.HMM), as.character(wt.VC.
 DC.assigns.VC &lt;- DC.assigns.VC[!is.na(DC.assigns.VC)]
 nonDC.assigns.VC &lt;- nonDC.assigns.VC[!is.na(nonDC.assigns.VC)]
 
-DC.assigns.enh.VC &lt;- ifelse(DC.assigns.VC==&quot;12_EnhBiv&quot;, &quot;yes&quot;, &quot;no&quot;)
-nonDC.assigns.enh.VC &lt;- ifelse(nonDC.assigns.VC==&quot;12_EnhBiv&quot;, &quot;yes&quot;, &quot;no&quot;)
+DC.assigns.enh.VC &lt;- ifelse(DC.assigns.VC==&quot;7_Enh&quot;, &quot;yes&quot;, &quot;no&quot;)
+nonDC.assigns.enh.VC &lt;- ifelse(nonDC.assigns.VC==&quot;7_Enh&quot;, &quot;yes&quot;, &quot;no&quot;)
 
 table2test &lt;- data.frame(no=c(sum(nonDC.assigns.enh.VC==&quot;no&quot;), sum(DC.assigns.enh.VC==&quot;no&quot;)), yes=c(sum(nonDC.assigns.enh.VC==&quot;yes&quot;), sum(DC.assigns.enh.VC==&quot;yes&quot;)))
 
@@ -61201,9 +60276,9 @@ chisq.test(table2test) #Gets a good p-value, and has the right direction of effe
     Pearson&#39;s Chi-squared test with Yates&#39; continuity correction
 
 data:  table2test
-X-squared = 0.24824, df = 1, p-value = 0.6183</code></pre>
-<pre class="r"><code>###6_EnhG doesn&#39;t work well or get a pretty result with EITHER of our normalization schemes--can try some other ones too...
-###DOESN&#39;T LOOK GOOD with 7_Enh or 12_EnhBiv either; could do one last thing and try combining them if chromHMM visualization ends up being poor--leave for now.</code></pre>
+X-squared = 0.27047, df = 1, p-value = 0.603</code></pre>
+<pre class="r"><code>###7_Enh doesn&#39;t work well or get a pretty result with EITHER of our normalization schemes--can try some other ones too...
+###DOESN&#39;T LOOK GOOD with 7_Enh or 7_Enh either; could do one last thing and try combining them if chromHMM visualization ends up being poor--leave for now.</code></pre>
 </div>
 </div>
 <div id="chromhmm-visualization" class="section level3">
@@ -61251,10 +60326,10 @@ ggnoprom &lt;- melt(nonprom.props.KR, id=&quot;bin&quot;) #Only take the first ~
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
 ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, Promoter-Contacting Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of bins assigned to annotation&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE) + coord_cartesian((xlim=c(0, 1750)))</code></pre>
-<pre><code>Warning: Removed 2760 rows containing missing values (position_stack).</code></pre>
+<pre><code>Warning: Removed 1432 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/juicer_enrichment.Rmd/chromHMM%20Visualization-1.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, non-Promoter-Contacting Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of bins assigned to annotation&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE) + coord_cartesian((xlim=c(0, 1750)))</code></pre>
-<pre><code>Warning: Removed 1215 rows containing missing values (position_stack).</code></pre>
+<pre><code>Warning: Removed 2100 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/juicer_enrichment.Rmd/chromHMM%20Visualization-2.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#Read in, format properly, and visualize these same dynamics for promoter bins, split between those that were or were not DE/DC.
 prom.DE.props.KR &lt;- readRDS(&quot;~/Desktop/Hi-C/enrichdfs/juicer/weights/results/mates.proms.KR.DE.RDS.result.RDS&quot;)
@@ -61269,10 +60344,10 @@ ggpromDE &lt;- melt(prom.DE.props.KR, id=&quot;bin&quot;)
 ggprom.noDE &lt;- melt(prom.noDE.KR, id=&quot;bin&quot;)
 
 ggplot(data=ggpromDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM Annotations, DE Promoter-Contacting Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of bins assigned to annotation&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE) + coord_cartesian((xlim=c(0, 500)))</code></pre>
-<pre><code>Warning: Removed 1530 rows containing missing values (position_stack).</code></pre>
+<pre><code>Warning: Removed 1450 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/juicer_enrichment.Rmd/chromHMM%20Visualization-3.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM Annotations, non-DE Promoter-Contacting Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of bins assigned to annotation&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE) + coord_cartesian((xlim=c(0, 500)))</code></pre>
-<pre><code>Warning: Removed 2916 rows containing missing values (position_stack).</code></pre>
+<pre><code>Warning: Removed 1840 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/juicer_enrichment.Rmd/chromHMM%20Visualization-4.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>####CHROM HMM PLOTS VC NORMALIZATION
 prom.props.VC &lt;- readRDS(&quot;~/Desktop/Hi-C/enrichdfs/juicer/weights/results/mates.proms.VC.full.RDS.result.RDS&quot;)
@@ -61295,10 +60370,10 @@ ggnoprom &lt;- melt(nonprom.props.VC, id=&quot;bin&quot;) #Only take the first ~
 
 #Visualize chromHMM annotation dynamics across FDR for promoter bins and non-promoter bins.
 ggplot(data=ggprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, Promoter-Contacting Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of bins assigned to annotation&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE) + coord_cartesian((xlim=c(0, 2500)))</code></pre>
-<pre><code>Warning: Removed 2443 rows containing missing values (position_stack).</code></pre>
+<pre><code>Warning: Removed 1291 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/juicer_enrichment.Rmd/chromHMM%20Visualization-5.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=ggnoprom, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM, non-Promoter-Contacting Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of bins assigned to annotation&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE) + coord_cartesian((xlim=c(0, 2500)))</code></pre>
-<pre><code>Warning: Removed 2540 rows containing missing values (position_stack).</code></pre>
+<pre><code>Warning: Removed 1740 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/juicer_enrichment.Rmd/chromHMM%20Visualization-6.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#Read in, format properly, and visualize these same dynamics for promoter bins, split between those that were or were not DE/DC.
 prom.DE.props.VC &lt;- readRDS(&quot;~/Desktop/Hi-C/enrichdfs/juicer/weights/results/mates.proms.VC.DE.RDS.result.RDS&quot;)
@@ -61313,10 +60388,10 @@ ggpromDE &lt;- melt(prom.DE.props.VC, id=&quot;bin&quot;)
 ggprom.noDE &lt;- melt(prom.noDE.VC, id=&quot;bin&quot;)
 
 ggplot(data=ggpromDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM Annotations, DE Promoter-Contacting Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of bins assigned to annotation&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE) + coord_cartesian((xlim=c(0, 650)))</code></pre>
-<pre><code>Warning: Removed 1578 rows containing missing values (position_stack).</code></pre>
+<pre><code>Warning: Removed 1627 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/juicer_enrichment.Rmd/chromHMM%20Visualization-7.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>ggplot(data=ggprom.noDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(position=&quot;fill&quot;) + ggtitle(&quot;chromHMM Annotations, non-DE Promoter-Contacting Bins&quot;) + xlab(&quot;Decreasing Significance from Hi-C LM&quot;) + ylab(&quot;Proportion of bins assigned to annotation&quot;) + guides(fill=guide_legend(title=&quot;Annotations&quot;)) + scale_fill_manual(values=HMM.colors, labels=HMM.marks, drop=FALSE) + coord_cartesian((xlim=c(0, 650)))</code></pre>
-<pre><code>Warning: Removed 2042 rows containing missing values (position_stack).</code></pre>
+<pre><code>Warning: Removed 2036 rows containing missing values (position_stack).</code></pre>
 <p><img src="figure/juicer_enrichment.Rmd/chromHMM%20Visualization-8.png" width="672" style="display: block; margin: auto;" /></p>
 <pre class="r"><code>#HOMER COMMENTARY
 #Again unfortunately p-values line up terribly, for instance max at the DC promoters is 5% and nonDC promoters 15% at the same rank (1200). At the smaller ranges (~250), it&#39;s even worse (.1% to 7%). In the DE case, at 4000 rank it&#39;s 65% and 29% DE to no DE, and around areas of extreme change (~250) it&#39;s 4.6% to .17%, and at 100 rank it&#39;s .47% to .06%...
@@ -61565,214 +60640,161 @@ ggplot(data=ggpromDE, aes(x=bin, group=bin, fill=variable, y=value)) + geom_col(
 <div id="quantitative-histone-mark-enrichments" class="section level3">
 <h3>Quantitative histone mark enrichments</h3>
 <p>Now, I look at the quantitative enrichment of histone mark peaks from other studies on iPSCs, examining the overlap of these peaks with different classes of Hi-C significant bins.</p>
-<pre class="r"><code># 
-# 
-# #######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
-# 
-# #First the non-promoter DF, looking at DC/not DC. Remember the promoter/not promoter was created in the first chunk (chrom.annos).
-# DC.non.proms &lt;- filter(full.annotations, true.promoter==&quot;no&quot;, DC==&quot;yes&quot;) %&gt;% deduplicator(.)
-# non.DC.non.proms &lt;- filter(full.annotations, true.promoter==&quot;no&quot;, DC==&quot;no&quot;) %&gt;% deduplicator(.)
-# 
-# #After deduplicating, combine so that there&#39;s one column per histone mark I&#39;m interested in, and a column showing DC status.
-# nonproms &lt;- data.frame(H1=c(DC.non.proms$H1, DC.non.proms$H2, non.DC.non.proms$H1, non.DC.non.proms$H2), sp_BH_pval=c(rep(DC.non.proms$sp_BH_pval, 2), rep(non.DC.non.proms$sp_BH_pval, 2)), sp_beta=c(rep(DC.non.proms$sp_beta, 2), rep(non.DC.non.proms$sp_beta, 2)), HMM=c(as.character(DC.non.proms$bin1.HMM), as.character(DC.non.proms$bin2.HMM), as.character(non.DC.non.proms$bin1.HMM), as.character(non.DC.non.proms$bin2.HMM)), DHS=c(DC.non.proms$bin1.DHSval, DC.non.proms$bin2.DHSval, non.DC.non.proms$bin1.DHSval, non.DC.non.proms$bin2.DHSval), Hac=c(DC.non.proms$bin1.Hacval, DC.non.proms$bin2.Hacval, non.DC.non.proms$bin1.Hacval, non.DC.non.proms$bin2.Hacval), Hme1=c(DC.non.proms$bin1.Hme1val, DC.non.proms$bin2.Hme1val, non.DC.non.proms$bin1.Hme1val, non.DC.non.proms$bin2.Hme1val), Hme3=c(DC.non.proms$bin1.Hme3val, DC.non.proms$bin2.Hme3val, non.DC.non.proms$bin1.Hme3val, non.DC.non.proms$bin2.Hme3val), HK27=c(DC.non.proms$bin1.HK27val, DC.non.proms$bin2.HK27val, non.DC.non.proms$bin1.HK27val, non.DC.non.proms$bin2.HK27val), DC=c(rep(DC.non.proms$DC, 2), rep(non.DC.non.proms$DC, 2)))
-# 
-# #Now, looking within promoter-contacting Hi-C bins, at which are DC and which are not. Should be fairly simple, and in these analyses, we are focusing on the bins making contact with a promoter (promoter.contacts df has excluded the promoters themselves here). In these cases, after the deduplication is done, it&#39;s as simple as rbinding the two filtered dfs, since they have the same number of columns and only a single value for each mark. Dedup function doesn&#39;t work here beacause only a single column; simpler case.
-# DC.proms &lt;- filter(promoter.contacts, DC==&quot;yes&quot;)
-# DC.proms &lt;- DC.proms[!duplicated(DC.proms$H2),]
-# nonDC.proms &lt;- filter(promoter.contacts, DC==&quot;no&quot;)
-# nonDC.proms &lt;- nonDC.proms[!duplicated(nonDC.proms$H2),]
-# proms.DC &lt;- rbind(DC.proms, nonDC.proms)
-# proms.DC &lt;- proms.DC[order(proms.DC$sp_BH_pval),] #Should be complete!
-# 
-# DE.proms &lt;- filter(promoter.contacts, DE==&quot;yes&quot;)
-# DE.proms &lt;- DE.proms[!duplicated(DE.proms$H2),]
-# nonDE.proms &lt;- filter(promoter.contacts, DE==&quot;no&quot;)
-# nonDE.proms &lt;- nonDE.proms[!duplicated(nonDE.proms$H2),]
-# proms.DE &lt;- rbind(DE.proms, nonDE.proms)
-# proms.DE &lt;- proms.DE[order(proms.DE$sp_BH_pval),]
-# 
-# DE.only.proms &lt;- filter(promoter.contacts, differential==&quot;expression&quot;)
-# DC.only.proms &lt;- filter(promoter.contacts, differential==&quot;contact&quot;)
-# DEDC.proms &lt;- filter(promoter.contacts, differential==&quot;both&quot;)
-# neither.proms &lt;- filter(promoter.contacts, differential==&quot;no&quot;)
-# DE.only.proms &lt;- DE.only.proms[!duplicated(DE.only.proms$H2),]
-# DC.only.proms &lt;- DC.only.proms[!duplicated(DC.only.proms$H2),]
-# DEDC.proms &lt;- DEDC.proms[!duplicated(DEDC.proms$H2),]
-# neither.proms &lt;- neither.proms[!duplicated(neither.proms$H2),]
-# proms.differential &lt;- rbind(DE.only.proms, DC.only.proms, DEDC.proms, neither.proms)
-# proms.differential &lt;- proms.differential[order(proms.differential$sp_BH_pval),]
-# colnames(proms.differential) &lt;- colnames(proms.DE) &lt;- colnames(proms.DC) &lt;- colnames(chrom.annos)[1:31]
-# 
-# 
-# 
-# ###############################Plots of enrichment for different classes of hits and different marks. Seems like it would be nice to create a function for these but really it&#39;ll lead to a huge hassle with having to specify different x and y-axis limits for different marks in different sets, and drawing the segments...since I&#39;ve already done it out this way, might as well keep it.
-# ##########DHS plots!!!
-# all.DHS &lt;- ggplot(data=chrom.annos) + geom_density(aes(x=DHSval, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 1000))
-# box.all.DHS &lt;- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=DHSval, group=true.promoter, color=true.promoter), draw_quantiles =c(0.25, 0.5, 0.75) ) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 500)) + annotate(&quot;text&quot;, x=1.5, y=300, label=&quot;&lt; 2 e -16&quot;, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=270, yend=270)
-# print(all.DHS)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-# print(box.all.DHS, vp=vp)
-# t.test(chrom.annos$DHS[which(chrom.annos$true.promoter==&quot;yes&quot;)], chrom.annos$DHS[which(chrom.annos$true.promoter==&quot;no&quot;)])
-# 
-# noprom.DHS &lt;- ggplot(data=nonproms) + geom_density(aes(x=DHS, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 1000))
-# box.noprom.DHS &lt;- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=DHS, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 500)) + annotate(&quot;text&quot;, x=1.5, y=300, label=&quot;&lt; 2 e -16&quot;, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=270, yend=270)
-# print(noprom.DHS)
-# print(box.noprom.DHS, vp=vp)
-# t.test(filter(nonproms, DC==&quot;no&quot;)$DHS, filter(nonproms, DC==&quot;yes&quot;)$DHS)
-# 
-# prom.DHS &lt;- ggplot(data=proms.differential) + geom_density(aes(x=DHSval, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 1000))
-# box.prom.DHS &lt;- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=DHSval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 600)) + annotate(&quot;text&quot;, x=3.5, y=300, label=&quot;5 e -12&quot;, size=3) + annotate(&quot;text&quot;, x=2.5, y=300, label=&quot;0.2&quot;, size=3) + annotate(&quot;text&quot;, x=1.5, y=400, label=&quot;4 e -2&quot;, size=3) + annotate(&quot;text&quot;, label=&quot;2 e -3&quot;, x=2, y=480, size=3) + annotate(&quot;segment&quot;, x=1.1, y=370, xend=1.9, yend=370) + annotate(&quot;segment&quot;, x=2.1, y=270, xend=2.9, yend=270) + annotate(&quot;segment&quot;, x=3.1, y=270, xend=3.9, yend=270) + annotate(&quot;segment&quot;, x=1.1, y=450, xend=2.9, yend=450) + annotate(&quot;text&quot;, x=2.5, y=550, size=3, label=&quot;1 e -5&quot;) + annotate(&quot;segment&quot;, x=1.1, y=520, xend=3.9, yend=520) + annotate(&quot;text&quot;, x=3, y=400, label=&quot;3 e -4&quot;, size=3) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=370, yend=370)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
-# print(prom.DHS)
-# print(box.prom.DHS, vp=vp)
-# t.test(filter(proms.differential, differential==&quot;contact&quot;)$DHSval, filter(proms.differential, differential==&quot;expression&quot;)$DHSval)
-# 
-# DE.DHS &lt;- ggplot(data=proms.DE) + geom_density(aes(x=DHSval, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 1000))
-# boxDE.DHS &lt;- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=DHSval, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=400, label=&quot;6 e -13&quot;, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=350, yend=350)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.5)
-# print(DE.DHS)
-# print(boxDE.DHS, vp=vp)
-# t.test(filter(proms.DE, DE==&quot;yes&quot;)$DHSval, filter(proms.DE, DE==&quot;no&quot;)$DHSval)
-# 
-# DC.DHS &lt;- ggplot(data=proms.DC) + geom_density(aes(x=DHSval, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 1000))
-# boxDC.DHS &lt;- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=DHSval, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, label=&quot;2 e -6&quot;, size=3, x=1.5, y=400) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=350, yend=350)#+ geom_text(aes(x=1.5, y=2000, label=&quot;0.2901&quot;), show.legend=FALSE, size=3)
-# print(DC.DHS)
-# print(boxDC.DHS, vp=vp)
-# t.test(filter(proms.DC, DC==&quot;yes&quot;)$DHSval, filter(proms.DC, DC==&quot;no&quot;)$DHSval)
-# 
-# ##############H3K27Ac plots!!!
-# all.Hac &lt;- ggplot(data=chrom.annos) + geom_density(aes(x=Hacval, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 2500))
-# box.all.Hac &lt;- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=Hacval, group=true.promoter, color=true.promoter)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;text&quot;, label=&quot;&lt; 2 e -16&quot;, x=1.5, y=400, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=350, yend=350)# Throws an error when draw_quantiles is added to geom_violin, because of NAs that exist in the data so the quantile call fails? Or...?
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(all.Hac)
-# print(box.all.Hac, vp=vp)
-# t.test(filter(chrom.annos, true.promoter==&quot;yes&quot;)$Hacval, filter(chrom.annos, true.promoter==&quot;no&quot;)$Hacval)
-# 
-# noprom.Hac &lt;- ggplot(data=nonproms) + geom_density(aes(x=Hac, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 2000))
-# box.noprom.Hac &lt;- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=Hac, group=DC, color=DC)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;text&quot;, label=&quot;1 e -4&quot;, x=1.5, y=400, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=350, yend=350) # Once again throws an error in draw_quantiles due to the NAs in the data (I believe).
-# print(noprom.Hac)
-# print(box.noprom.Hac, vp=vp)
-# t.test(filter(nonproms, DC==&quot;yes&quot;)$Hac, filter(nonproms, DC==&quot;no&quot;)$Hac)
-# 
-# prom.Hac &lt;- ggplot(data=proms.differential) + geom_density(aes(x=Hacval, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 3500))
-# box.prom.Hac &lt;- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=Hacval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75))+ scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank())+ coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=430, yend=430) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=700, yend=700) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=880, yend=880) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=430, yend=430) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=560, yend=560) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=430, yend=430) + annotate(&quot;text&quot;, label=&quot;0.4&quot;, size=3, x=1.5, y=480) + annotate(&quot;text&quot;, label=&quot;0.1&quot;, size=3, x=2.5, y=480) + annotate(&quot;text&quot;, label=&quot;1 e -3&quot;, size=3, x=3.5, y=480) + annotate(&quot;text&quot;, label=&quot;2 e -6&quot;, size=3, x=3, y=610) + annotate(&quot;text&quot;, label=&quot;0.08&quot;, size=3, x=2, y=750) + annotate(&quot;text&quot;, label=&quot;8 e -3&quot;, size=3, x=2.5, y=930)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(prom.Hac)
-# print(box.prom.Hac, vp=vp)
-# t.test(filter(proms.differential, differential==&quot;contact&quot;)$Hacval, filter(proms.differential, differential==&quot;no&quot;)$Hacval)
-# 
-# DE.Hac &lt;- ggplot(data=proms.DE) + geom_density(aes(x=Hacval, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 3000))
-# boxDE.Hac &lt;- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=Hacval, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=250, yend=250) + annotate(&quot;text&quot;, x=1.5, y=300, label=&quot;1 e -6&quot;, size=3)
-# print(DE.Hac)
-# print(boxDE.Hac, vp=vp)
-# t.test(filter(proms.DE, DE==&quot;yes&quot;)$Hacval, filter(proms.DE, DE==&quot;no&quot;)$Hacval)
-# 
-# DC.Hac &lt;- ggplot(data=proms.DC) + geom_density(aes(x=Hacval, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 2500))
-# boxDC.Hac &lt;- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=Hacval, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=400, yend=400) + annotate(&quot;text&quot;, x=1.5, y=450, label=&quot;3 e -4&quot;, size=3)
-# print(DC.Hac)
-# print(boxDC.Hac, vp=vp)
-# t.test(filter(proms.DC, DC==&quot;yes&quot;)$Hacval, filter(proms.DC, DC==&quot;no&quot;)$Hacval)
-# 
-# 
-# ######H3K4Me1 plots!!!
-# all.Hme1 &lt;- ggplot(data=chrom.annos) + geom_density(aes(x=Hme1val, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 3000))
-# box.all.Hme1 &lt;- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=Hme1val, group=true.promoter, color=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 3000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1250, yend=1250) + annotate(&quot;text&quot;, x=1.5, y=1450, label=&quot;&lt; 2 e -16&quot;, size=3)
-# print(all.Hme1)
-# print(box.all.Hme1, vp=vp)
-# t.test(filter(chrom.annos, true.promoter==&quot;yes&quot;)$Hme1val, filter(chrom.annos, true.promoter==&quot;no&quot;)$Hme1val)
-# 
-# 
-# prom.Hme1 &lt;- ggplot(data=proms.differential) + geom_density(aes(x=Hme1val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 6000))
-# box.prom.Hme1 &lt;- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=Hme1val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 6000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=3900, yend=3900) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=5100, yend=5100) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=2700, yend=2700) + annotate(&quot;text&quot;, x=1.5, y=1800, size=3, label=&quot;0.03&quot;) + annotate(&quot;text&quot;, x=2.5, y=1800, size=3, label=&quot;0.6&quot;) + annotate(&quot;text&quot;, x=3.5, y=1800, size=3, label=&quot;0.5&quot;) + annotate(&quot;text&quot;, x=3, y=3000, size=3, label=&quot;0.5&quot;) + annotate(&quot;text&quot;, x=2.5, y=5400, size=3, label=&quot;0.04&quot;) + annotate(&quot;text&quot;, x=2, y=4200, size=3, label=&quot;0.03&quot;)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(prom.Hme1)
-# print(box.prom.Hme1, vp=vp)
-# t.test(filter(proms.differential, differential==&quot;both&quot;)$Hme1val, filter(proms.differential, differential==&quot;contact&quot;)$Hme1val)
-# 
-# noprom.Hme1 &lt;- ggplot(data=nonproms) + geom_density(aes(x=Hme1, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
-# box.noprom.Hme1 &lt;- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=Hme1, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2200)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;text&quot;, x=1.5, y=860, size=3, label=&quot;0.05&quot;)
-# print(noprom.Hme1)
-# print(box.noprom.Hme1, vp=vp)
-# t.test(filter(nonproms, DC==&quot;no&quot;)$Hme1, filter(nonproms, DC==&quot;yes&quot;)$Hme1)
-# 
-# DE.Hme1 &lt;- ggplot(data=proms.DE) + geom_density(aes(x=Hme1val, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
-# boxDE.Hme1 &lt;- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=Hme1val, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 2200)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;text&quot;, x=1.5, y=1360, label=&quot;0.9&quot;, size=3) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1250, yend=1250)
-# print(DE.Hme1)
-# print(boxDE.Hme1, vp=vp)
-# t.test(filter(proms.DE, DE==&quot;yes&quot;)$Hme1val, filter(proms.DE, DE==&quot;no&quot;)$Hme1val)
-# 
-# DC.Hme1 &lt;- ggplot(data=proms.DC) + geom_density(aes(x=Hme1val, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 5000))
-# boxDC.Hme1 &lt;- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=Hme1val, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 2200)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1200, yend=1200) + annotate(&quot;text&quot;, x=1.5, y=1310, label=&quot;0.7&quot;, size=3)
-# print(DC.Hme1)
-# print(boxDC.Hme1, vp=vp)
-# t.test(filter(proms.DC, DC==&quot;yes&quot;)$Hme1val, filter(proms.DC, DC==&quot;no&quot;)$Hme1val)
-# 
-# ####H3K4Me3 plots!!!
-# all.Hme3 &lt;- ggplot(data=chrom.annos) + geom_density(aes(x=Hme3val, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 6000))
-# box.all.Hme3 &lt;- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=Hme3val, group=true.promoter, color=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 4000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=2200, yend=2200) + annotate(&quot;text&quot;, label=&quot;&lt; 2 e -16&quot;, x=1.5, y=2400, size=3)
-# print(all.Hme3)
-# print(box.all.Hme3, vp=vp)
-# t.test(filter(chrom.annos, true.promoter==&quot;yes&quot;)$Hme3val, filter(chrom.annos, true.promoter==&quot;no&quot;)$Hme3val)
-# 
-# prom.Hme3 &lt;- ggplot(data=proms.differential) + geom_density(aes(x=Hme3val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;))
-# box.prom.Hme3 &lt;- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=Hme3val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=1000, yend=1000) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=1250, yend=1250) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;text&quot;, x=1.5, y=840, size=3, label=&quot;0.2&quot;) + annotate(&quot;text&quot;, x=2.5, y=840, size=3, label=&quot;0.02&quot;) + annotate(&quot;text&quot;, x=3.5, y=840, size=3, label=&quot;&lt; 2 e -16&quot;) + annotate(&quot;text&quot;, x=3, y=1090, size=3, label=&quot;9 e -8&quot;) + annotate(&quot;text&quot;, x=2.7, y=1590, size=3, label=&quot;2 e -5&quot;) + annotate(&quot;text&quot;, x=2, y=1340, size=3, label=&quot;6 e -3&quot;)
-# print(prom.Hme3)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(box.prom.Hme3, vp=vp)
-# t.test(filter(proms.differential, differential==&quot;contact&quot;)$Hme3val, filter(proms.differential, differential==&quot;both&quot;)$Hme3val)
-# 
-# noprom.Hme3 &lt;- ggplot(data=nonproms) + geom_density(aes(x=Hme3, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
-# box.noprom.Hme3 &lt;- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=Hme3, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=250, yend=250) + annotate(&quot;text&quot;, x=1.5, y=300, size=3, label=&quot;&lt; 2 e -16&quot;)
-# print(noprom.Hme3)
-# print(box.noprom.Hme3, vp=vp)
-# t.test(filter(nonproms, DC==&quot;no&quot;)$Hme3, filter(nonproms, DC==&quot;yes&quot;)$Hme3)
-# 
-# DE.Hme3 &lt;- ggplot(data=proms.DE) + geom_density(aes(x=Hme3val, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
-# boxDE.Hme3 &lt;- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=Hme3val, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=500, yend=500) + annotate(&quot;text&quot;, x=1.5, y=550, size=3, label=&quot;&lt; 2 e -16&quot;)
-# print(DE.Hme3)
-# print(boxDE.Hme3, vp=vp)
-# t.test(filter(proms.DE, DE==&quot;yes&quot;)$Hme3val, filter(proms.DE, DE==&quot;no&quot;)$Hme3val)
-# 
-# DC.Hme3 &lt;- ggplot(data=proms.DC) + geom_density(aes(x=Hme3val, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 6000))
-# boxDC.Hme3 &lt;- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=Hme3val, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 2000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1000, yend=1000) + annotate(&quot;text&quot;, x=1.5, y=1090, size=3, label=&quot;1 e -9&quot;)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.6)
-# print(DC.Hme3)
-# print(boxDC.Hme3, vp=vp)
-# t.test(filter(proms.DC, DC==&quot;yes&quot;)$Hme3val, filter(proms.DC, DC==&quot;no&quot;)$Hme3val)
-# 
-# ####H3K27me3 plots!!!
-# all.HK27 &lt;- ggplot(data=chrom.annos) + geom_density(aes(x=HK27val, group=true.promoter, color=true.promoter, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 Overlapping Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Promoter Contact?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 2500))
-# box.all.HK27 &lt;- ggplot(data=chrom.annos) + geom_violin(aes(x=true.promoter, y=HK27val, group=true.promoter, color=true.promoter), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(values=c(&quot;Red&quot;, &quot;Blue&quot;), labels=c(&quot;No&quot;, &quot;Yes&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=700, yend=700) + annotate(&quot;text&quot;, label=&quot;1 e -14&quot;, x=1.5, y=760, size=3)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.6)
-# print(all.HK27)
-# print(box.all.HK27, vp=vp)
-# t.test(filter(chrom.annos, true.promoter==&quot;yes&quot;)$HK27val, filter(chrom.annos, true.promoter==&quot;no&quot;)$HK27val)
-# 
-# prom.HK27 &lt;- ggplot(data=proms.differential) + geom_density(aes(x=HK27val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian((xlim=c(0, 5000)))
-# box.prom.HK27 &lt;- ggplot(data=proms.differential) + geom_violin(aes(x=differential, y=HK27val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=1000, yend=1000) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=1250, yend=1250) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;text&quot;, x=1.5, y=840, size=3, label=&quot;0.3&quot;) + annotate(&quot;text&quot;, x=2.5, y=840, size=3, label=&quot;0.2&quot;) + annotate(&quot;text&quot;, x=3.5, y=840, size=3, label=&quot;0.6&quot;) + annotate(&quot;text&quot;, x=3, y=1090, size=3, label=&quot;0.2&quot;) + annotate(&quot;text&quot;, x=2.7, y=1590, size=3, label=&quot;0.7&quot;) + annotate(&quot;text&quot;, x=2, y=1340, size=3, label=&quot;0.8&quot;)
-# print(prom.HK27)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
-# print(box.prom.HK27, vp=vp)
-# t.test(filter(proms.differential, differential==&quot;expression&quot;)$HK27val, filter(proms.differential, differential==&quot;both&quot;)$HK27val)
-# 
-# noprom.HK27 &lt;- ggplot(data=nonproms) + geom_density(aes(x=HK27, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping non-promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
-# box.noprom.HK27 &lt;- ggplot(data=nonproms) + geom_violin(aes(x=DC, y=HK27, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Neither&quot;, &quot;Contact&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=250, yend=250) + annotate(&quot;text&quot;, x=1.5, y=300, size=3, label=&quot;4 e -12&quot;)
-# print(noprom.HK27)
-# print(box.noprom.HK27, vp=vp)
-# t.test(filter(nonproms, DC==&quot;no&quot;)$HK27, filter(nonproms, DC==&quot;yes&quot;)$HK27)
-# 
-# DE.HK27 &lt;- ggplot(data=proms.DE) + geom_density(aes(x=HK27val, group=DE, color=DE, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping DE Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DE?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
-# boxDE.HK27 &lt;- ggplot(data=proms.DE) + geom_violin(aes(x=DE, y=HK27val, group=DE, color=DE), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 1000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=500, yend=500) + annotate(&quot;text&quot;, x=1.5, y=550, size=3, label=&quot;0.6&quot;)
-# print(DE.HK27)
-# print(boxDE.HK27, vp=vp)
-# t.test(filter(proms.DE, DE==&quot;yes&quot;)$HK27val, filter(proms.DE, DE==&quot;no&quot;)$HK27val)
-# 
-# DC.HK27 &lt;- ggplot(data=proms.DC) + geom_density(aes(x=HK27val, group=DC, color=DC, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping DC Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;DC?&quot;, labels = c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;)) + coord_cartesian(xlim=c(0, 4000))
-# boxDC.HK27 &lt;- ggplot(data=proms.DC) + geom_violin(aes(x=DC, y=HK27val, group=DC, color=DC), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(labels=c(&quot;No&quot;, &quot;Yes&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;), guide=FALSE) + coord_cartesian(ylim=c(0, 2000)) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1000, yend=1000) + annotate(&quot;text&quot;, x=1.5, y=1090, size=3, label=&quot;0.3&quot;)
-# vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.6, y=0.6)
-# print(DC.HK27)
-# print(boxDC.HK27, vp=vp)
-# t.test(filter(proms.DC, DC==&quot;yes&quot;)$HK27val, filter(proms.DC, DC==&quot;no&quot;)$HK27val)</code></pre>
+<pre class="r"><code>#######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
+DE.only.proms.KR &lt;- filter(promoter.contacts.KR, differential==&quot;expression&quot;)
+DC.only.proms.KR &lt;- filter(promoter.contacts.KR, differential==&quot;contact&quot;)
+DEDC.KR.proms &lt;- filter(promoter.contacts.KR, differential==&quot;both&quot;)
+neither.KR.proms &lt;- filter(promoter.contacts.KR, differential==&quot;no&quot;)
+DE.only.proms.KR &lt;- DE.only.proms.KR[!duplicated(DE.only.proms.KR$H2),]
+DC.only.proms.KR &lt;- DC.only.proms.KR[!duplicated(DC.only.proms.KR$H2),]
+DEDC.KR.proms &lt;- DEDC.KR.proms[!duplicated(DEDC.KR.proms$H2),]
+neither.KR.proms &lt;- neither.KR.proms[!duplicated(neither.KR.proms$H2),]
+proms.differential.KR &lt;- rbind(DE.only.proms.KR, DC.only.proms.KR, DEDC.KR.proms, neither.KR.proms)
+proms.differential.KR &lt;- proms.differential.KR[order(proms.differential.KR$sp_BH_pval),]
+colnames(proms.differential.KR)[22:26] &lt;- c(&quot;DHSval&quot;, &quot;Hacval&quot;, &quot;Hme1val&quot;, &quot;Hme3val&quot;, &quot;HK27val&quot;)
+
+
+###############################Plots of enrichment for different classes of hits and different marks. Seems like it would be nice to create a function for these but really it&#39;ll lead to a huge hassle with having to specify different x and y-axis limits for different marks in different sets, and drawing the segments...since I&#39;ve already done it out this way, might as well keep it.
+##########DHS plots!!!
+DHS.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;expression&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;both&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;no&quot;)$DHSval)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;contact&quot;)$DHSval)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;both&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;no&quot;)$DHSval)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;contact&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;expression&quot;)$DHSval)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;no&quot;)$DHSval)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;contact&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;expression&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$DHSval, filter(proms.differential.KR, differential==&quot;both&quot;)$DHSval)$p.value, 2), 0))
+rownames(DHS.pvals) &lt;- DHS.pvals$differential
+
+prom.DHS &lt;- ggplot(data=proms.differential.KR) + geom_density(aes(x=DHSval, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 1000))
+box.prom.DHS &lt;- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=DHSval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;text&quot;, x=3.5, y=330, label=DHS.pvals[&quot;expression&quot;, &quot;no&quot;], size=3) + annotate(&quot;text&quot;, x=2.5, y=330, label=DHS.pvals[&quot;contact&quot;, &quot;expression&quot;], size=3) + annotate(&quot;text&quot;, x=1.5, y=460, label=DHS.pvals[&quot;contact&quot;, &quot;both&quot;], size=3) + annotate(&quot;text&quot;, label=DHS.pvals[&quot;both&quot;, &quot;expression&quot;], x=2, y=590, size=3) + annotate(&quot;segment&quot;, x=1.1, y=400, xend=1.9, yend=400) + annotate(&quot;segment&quot;, x=2.1, y=270, xend=2.9, yend=270) + annotate(&quot;segment&quot;, x=3.1, y=270, xend=3.9, yend=270) + annotate(&quot;segment&quot;, x=1.1, y=530, xend=2.9, yend=530) + annotate(&quot;text&quot;, x=2.5, y=720, size=3, label=DHS.pvals[&quot;both&quot;, &quot;no&quot;]) + annotate(&quot;segment&quot;, x=1.1, y=660, xend=3.9, yend=660) + annotate(&quot;text&quot;, x=3, y=460, label=DHS.pvals[&quot;contact&quot;, &quot;no&quot;], size=3) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=400, yend=400)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.DHS)
+print(box.prom.DHS, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>##############H3K27Ac plots!!!
+Hac.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;both&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;no&quot;)$Hacval)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hacval)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;both&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;no&quot;)$Hacval)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hacval)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;no&quot;)$Hacval)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;both&quot;)$Hacval)$p.value, 2), 0))
+rownames(Hac.pvals) &lt;- Hac.pvals$differential
+
+prom.Hac &lt;- ggplot(data=proms.differential.KR) + geom_density(aes(x=Hacval, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 3500))
+box.prom.Hac &lt;- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=Hacval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75))+ scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank())+ coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=430, yend=430) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=700, yend=700) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=880, yend=880) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=430, yend=430) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=560, yend=560) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=430, yend=430) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;both&quot;, &quot;contact&quot;], size=3, x=1.5, y=480) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;expression&quot;, &quot;contact&quot;], size=3, x=2.5, y=480) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;expression&quot;, &quot;no&quot;], size=3, x=3.5, y=480) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;no&quot;, &quot;contact&quot;], size=3, x=3, y=610) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;both&quot;, &quot;expression&quot;], size=3, x=2, y=750) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;both&quot;, &quot;no&quot;], size=3, x=2.5, y=930)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.Hac)
+print(box.prom.Hac, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hacval, filter(proms.differential.KR, differential==&quot;no&quot;)$Hacval)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(proms.differential.KR, differential == &quot;contact&quot;)$Hacval and filter(proms.differential.KR, differential == &quot;no&quot;)$Hacval
+t = -0.29372, df = 77.002, p-value = 0.7698
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -153.6821  114.1720
+sample estimates:
+mean of x mean of y 
+ 171.5000  191.2551 </code></pre>
+<pre class="r"><code>######H3K4Me1 plots!!!
+Hme1.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;both&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;no&quot;)$Hme1val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme1val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;both&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;no&quot;)$Hme1val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme1val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;no&quot;)$Hme1val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hme1val, filter(proms.differential.KR, differential==&quot;both&quot;)$Hme1val)$p.value, 2), 0))
+rownames(Hme1.pvals) &lt;- Hme1.pvals$differential
+
+prom.Hme1 &lt;- ggplot(data=proms.differential.KR) + geom_density(aes(x=Hme1val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 6100))
+box.prom.Hme1 &lt;- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=Hme1val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 6000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=3900, yend=3900) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=5100, yend=5100) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=2700, yend=2700) + annotate(&quot;text&quot;, x=1.5, y=1800, size=3, label=Hme1.pvals[&quot;both&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.5, y=1800, size=3, label=Hme1.pvals[&quot;expression&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=3.5, y=1800, size=3, label=Hme1.pvals[&quot;expression&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=3, y=3000, size=3, label=Hme1.pvals[&quot;no&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.5, y=5400, size=3, label=Hme1.pvals[&quot;both&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=2, y=4200, size=3, label=Hme1.pvals[&quot;both&quot;, &quot;expression&quot;])
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.73)
+print(prom.Hme1)
+print(box.prom.Hme1, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-3.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>####H3K4Me3 plots!!!
+Hme3.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;both&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;no&quot;)$Hme3val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme3val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;both&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;no&quot;)$Hme3val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme3val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;no&quot;)$Hme3val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;contact&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;expression&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$Hme3val, filter(proms.differential.KR, differential==&quot;both&quot;)$Hme3val)$p.value, 2), 0))
+rownames(Hme3.pvals) &lt;- Hme3.pvals$differential
+
+prom.Hme3 &lt;- ggplot(data=proms.differential.KR) + geom_density(aes(x=Hme3val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;))
+box.prom.Hme3 &lt;- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=Hme3val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=1000, yend=1000) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=1250, yend=1250) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;text&quot;, x=1.5, y=840, size=3, label=Hme3.pvals[&quot;both&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.5, y=840, size=3, label=Hme3.pvals[&quot;expression&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=3.5, y=840, size=3, label=Hme3.pvals[&quot;expression&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=3, y=1090, size=3, label=Hme3.pvals[&quot;no&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.7, y=1590, size=3, label=Hme3.pvals[&quot;both&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=2, y=1340, size=3, label=Hme3.pvals[&quot;both&quot;, &quot;expression&quot;])
+print(prom.Hme3)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(box.prom.Hme3, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-4.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>####H3K27me3 plots!!!
+HK27.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;expression&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;both&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;contact&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;no&quot;)$HK27val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;contact&quot;)$HK27val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;both&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;expression&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;no&quot;)$HK27val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;contact&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;expression&quot;)$HK27val)$p.value, 2), 0, signif(t.test(filter(proms.differential.KR, differential==&quot;both&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;no&quot;)$HK27val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;contact&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;expression&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.KR, differential==&quot;no&quot;)$HK27val, filter(proms.differential.KR, differential==&quot;both&quot;)$HK27val)$p.value, 2), 0))
+rownames(HK27.pvals) &lt;- HK27.pvals$differential
+
+prom.HK27 &lt;- ggplot(data=proms.differential.KR) + geom_density(aes(x=HK27val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian((xlim=c(0, 5000)))
+box.prom.HK27 &lt;- ggplot(data=proms.differential.KR) + geom_violin(aes(x=differential, y=HK27val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=1000, yend=1000) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=1250, yend=1250) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;text&quot;, x=1.5, y=840, size=3, label=HK27.pvals[&quot;both&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.5, y=840, size=3, label=HK27.pvals[&quot;expression&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=3.5, y=840, size=3, label=HK27.pvals[&quot;expression&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=3, y=1090, size=3, label=HK27.pvals[&quot;no&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.7, y=1590, size=3, label=HK27.pvals[&quot;both&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=2, y=1340, size=3, label=HK27.pvals[&quot;both&quot;, &quot;expression&quot;])
+print(prom.HK27)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(box.prom.HK27, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-5.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>######REPEAT QUANTITATIVE HISTONE ENRICHMENTS FOR VC VALUES
+#######Make a doubled-down data frame for single columns of quantitative enrichments. Really, will need to do differential status-level de-duplication here first, then recombine those to make this simple with ggplot2. Create one huge for looking at differential statuses, and one big one separating out promoters/non promoters (chrom.annos). Also need polarizing ones for DC/not and DE/not, without exclusivity in the case of both. chrom.annos is what was created in the previous chunk for separating out promoters/non promoters. Now, undertake the same process to create the other necessary dfs:
+DE.only.proms.VC &lt;- filter(promoter.contacts.VC, differential==&quot;expression&quot;)
+DC.only.proms.VC &lt;- filter(promoter.contacts.VC, differential==&quot;contact&quot;)
+DEDC.VC.proms &lt;- filter(promoter.contacts.VC, differential==&quot;both&quot;)
+neither.VC.proms &lt;- filter(promoter.contacts.VC, differential==&quot;no&quot;)
+DE.only.proms.VC &lt;- DE.only.proms.VC[!duplicated(DE.only.proms.VC$H2),]
+DC.only.proms.VC &lt;- DC.only.proms.VC[!duplicated(DC.only.proms.VC$H2),]
+DEDC.VC.proms &lt;- DEDC.VC.proms[!duplicated(DEDC.VC.proms$H2),]
+neither.VC.proms &lt;- neither.VC.proms[!duplicated(neither.VC.proms$H2),]
+proms.differential.VC &lt;- rbind(DE.only.proms.VC, DC.only.proms.VC, DEDC.VC.proms, neither.VC.proms)
+proms.differential.VC &lt;- proms.differential.VC[order(proms.differential.VC$sp_BH_pval),]
+colnames(proms.differential.VC)[22:26] &lt;- c(&quot;DHSval&quot;, &quot;Hacval&quot;, &quot;Hme1val&quot;, &quot;Hme3val&quot;, &quot;HK27val&quot;)
+
+
+###############################Plots of enrichment for different classes of hits and different marks. Seems like it would be nice to create a function for these but really it&#39;ll lead to a huge hassle with having to specify different x and y-axis limits for different marks in different sets, and drawing the segments...since I&#39;ve already done it out this way, might as well keep it.
+##########DHS plots!!!
+DHS.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;expression&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;both&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;no&quot;)$DHSval)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;contact&quot;)$DHSval)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;both&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;no&quot;)$DHSval)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;contact&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;expression&quot;)$DHSval)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;no&quot;)$DHSval)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;contact&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;expression&quot;)$DHSval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$DHSval, filter(proms.differential.VC, differential==&quot;both&quot;)$DHSval)$p.value, 2), 0))
+rownames(DHS.pvals) &lt;- DHS.pvals$differential
+
+prom.DHS &lt;- ggplot(data=proms.differential.VC) + geom_density(aes(x=DHSval, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of DHS overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and DHS peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 1000))
+box.prom.DHS &lt;- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=DHSval, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;text&quot;, x=3.5, y=330, label=DHS.pvals[&quot;expression&quot;, &quot;no&quot;], size=3) + annotate(&quot;text&quot;, x=2.5, y=330, label=DHS.pvals[&quot;contact&quot;, &quot;expression&quot;], size=3) + annotate(&quot;text&quot;, x=1.5, y=460, label=DHS.pvals[&quot;contact&quot;, &quot;both&quot;], size=3) + annotate(&quot;text&quot;, label=DHS.pvals[&quot;both&quot;, &quot;expression&quot;], x=2, y=590, size=3) + annotate(&quot;segment&quot;, x=1.1, y=400, xend=1.9, yend=400) + annotate(&quot;segment&quot;, x=2.1, y=270, xend=2.9, yend=270) + annotate(&quot;segment&quot;, x=3.1, y=270, xend=3.9, yend=270) + annotate(&quot;segment&quot;, x=1.1, y=530, xend=2.9, yend=530) + annotate(&quot;text&quot;, x=2.5, y=720, size=3, label=DHS.pvals[&quot;both&quot;, &quot;no&quot;]) + annotate(&quot;segment&quot;, x=1.1, y=660, xend=3.9, yend=660) + annotate(&quot;text&quot;, x=3, y=460, label=DHS.pvals[&quot;contact&quot;, &quot;no&quot;], size=3) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=400, yend=400)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.DHS)
+print(box.prom.DHS, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-6.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>##############H3K27Ac plots!!!
+Hac.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;both&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;no&quot;)$Hacval)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hacval)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;both&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;no&quot;)$Hacval)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hacval)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;no&quot;)$Hacval)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hacval)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;both&quot;)$Hacval)$p.value, 2), 0))
+rownames(Hac.pvals) &lt;- Hac.pvals$differential
+
+prom.Hac &lt;- ggplot(data=proms.differential.VC) + geom_density(aes(x=Hacval, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27ac overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27ac peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 3500))
+box.prom.Hac &lt;- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=Hacval, group=differential, color=differential), draw_quantiles = c(0.5))+ scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank())+ coord_cartesian(ylim=c(0, 1000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=430, yend=430) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=700, yend=700) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=880, yend=880) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=430, yend=430) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=560, yend=560) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=430, yend=430) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;both&quot;, &quot;contact&quot;], size=3, x=1.5, y=480) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;expression&quot;, &quot;contact&quot;], size=3, x=2.5, y=480) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;expression&quot;, &quot;no&quot;], size=3, x=3.5, y=480) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;no&quot;, &quot;contact&quot;], size=3, x=3, y=610) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;both&quot;, &quot;expression&quot;], size=3, x=2, y=750) + annotate(&quot;text&quot;, label=Hac.pvals[&quot;both&quot;, &quot;no&quot;], size=3, x=2.5, y=930)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(prom.Hac)
+print(box.prom.Hac, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-7.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hacval, filter(proms.differential.VC, differential==&quot;no&quot;)$Hacval)</code></pre>
+<pre><code>
+    Welch Two Sample t-test
+
+data:  filter(proms.differential.VC, differential == &quot;contact&quot;)$Hacval and filter(proms.differential.VC, differential == &quot;no&quot;)$Hacval
+t = -0.016757, df = 174.54, p-value = 0.9866
+alternative hypothesis: true difference in means is not equal to 0
+95 percent confidence interval:
+ -96.14372  94.52483
+sample estimates:
+mean of x mean of y 
+ 189.5600  190.3694 </code></pre>
+<pre class="r"><code>######H3K4Me1 plots!!!
+Hme1.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;both&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;no&quot;)$Hme1val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme1val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;both&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;no&quot;)$Hme1val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme1val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;no&quot;)$Hme1val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme1val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hme1val, filter(proms.differential.VC, differential==&quot;both&quot;)$Hme1val)$p.value, 2), 0))
+rownames(Hme1.pvals) &lt;- Hme1.pvals$differential
+
+prom.Hme1 &lt;- ggplot(data=proms.differential.VC) + geom_density(aes(x=Hme1val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me1 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me1 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian(xlim=c(0, 6100))
+box.prom.Hme1 &lt;- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=Hme1val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 6000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=3900, yend=3900) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=5100, yend=5100) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=2700, yend=2700) + annotate(&quot;text&quot;, x=1.5, y=1800, size=3, label=Hme1.pvals[&quot;both&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.5, y=1800, size=3, label=Hme1.pvals[&quot;expression&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=3.5, y=1800, size=3, label=Hme1.pvals[&quot;expression&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=3, y=3000, size=3, label=Hme1.pvals[&quot;no&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.5, y=5400, size=3, label=Hme1.pvals[&quot;both&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=2, y=4200, size=3, label=Hme1.pvals[&quot;both&quot;, &quot;expression&quot;])
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.73)
+print(prom.Hme1)
+print(box.prom.Hme1, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-8.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>####H3K4Me3 plots!!!
+Hme3.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;both&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;no&quot;)$Hme3val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme3val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;both&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;no&quot;)$Hme3val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme3val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;no&quot;)$Hme3val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;contact&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;expression&quot;)$Hme3val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$Hme3val, filter(proms.differential.VC, differential==&quot;both&quot;)$Hme3val)$p.value, 2), 0))
+rownames(Hme3.pvals) &lt;- Hme3.pvals$differential
+
+prom.Hme3 &lt;- ggplot(data=proms.differential.VC) + geom_density(aes(x=Hme3val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K4me3 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K4me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;))
+box.prom.Hme3 &lt;- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=Hme3val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=1000, yend=1000) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=1250, yend=1250) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;text&quot;, x=1.5, y=840, size=3, label=Hme3.pvals[&quot;both&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.5, y=840, size=3, label=Hme3.pvals[&quot;expression&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=3.5, y=840, size=3, label=Hme3.pvals[&quot;expression&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=3, y=1090, size=3, label=Hme3.pvals[&quot;no&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.7, y=1590, size=3, label=Hme3.pvals[&quot;both&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=2, y=1340, size=3, label=Hme3.pvals[&quot;both&quot;, &quot;expression&quot;])
+print(prom.Hme3)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.7)
+print(box.prom.Hme3, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-9.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>####H3K27me3 plots!!!
+HK27.pvals &lt;- data.frame(differential=c(&quot;contact&quot;, &quot;expression&quot;, &quot;both&quot;, &quot;no&quot;), contact=c(0, signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;expression&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;both&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;contact&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;no&quot;)$HK27val)$p.value, 2)), expression=c(signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;contact&quot;)$HK27val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;both&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;expression&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;no&quot;)$HK27val)$p.value, 2)), both=c(signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;contact&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;expression&quot;)$HK27val)$p.value, 2), 0, signif(t.test(filter(proms.differential.VC, differential==&quot;both&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;no&quot;)$HK27val)$p.value, 2)), no=c(signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;contact&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;expression&quot;)$HK27val)$p.value, 2), signif(t.test(filter(proms.differential.VC, differential==&quot;no&quot;)$HK27val, filter(proms.differential.VC, differential==&quot;both&quot;)$HK27val)$p.value, 2), 0))
+rownames(HK27.pvals) &lt;- HK27.pvals$differential
+
+prom.HK27 &lt;- ggplot(data=proms.differential.VC) + geom_density(aes(x=HK27val, group=differential, color=differential, y=..scaled..)) + ggtitle(&quot;Enrichment of H3K27me3 overlapping Promoter Hi-C Bins&quot;) + xlab(&quot;Length of overlap b/t bin and H3K27me3 peak&quot;) + ylab(&quot;Density&quot;) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;)) + coord_cartesian((xlim=c(0, 5000)))
+box.prom.HK27 &lt;- ggplot(data=proms.differential.VC) + geom_violin(aes(x=differential, y=HK27val, group=differential, color=differential), draw_quantiles = c(0.25, 0.5, 0.75)) + scale_color_manual(name=&quot;Species Differential:&quot;, labels = c(&quot;Both&quot;, &quot;Contact&quot;, &quot;Expression&quot;, &quot;Neither&quot;), values=c(&quot;Red&quot;, &quot;Blue&quot;, &quot;Green&quot;, &quot;Purple&quot;), guide=FALSE) + theme(axis.title.x = element_blank(), axis.text.x=element_blank(), axis.title.y=element_blank()) + coord_cartesian(ylim=c(0, 2000)) + annotate(&quot;segment&quot;, x=1.1, xend=1.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=2.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=3.1, xend=3.9, y=750, yend=750) + annotate(&quot;segment&quot;, x=2.1, xend=3.9, y=1000, yend=1000) + annotate(&quot;segment&quot;, x=1.1, xend=2.9, y=1250, yend=1250) + annotate(&quot;segment&quot;, x=1.1, xend=3.9, y=1500, yend=1500) + annotate(&quot;text&quot;, x=1.5, y=840, size=3, label=HK27.pvals[&quot;both&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.5, y=840, size=3, label=HK27.pvals[&quot;expression&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=3.5, y=840, size=3, label=HK27.pvals[&quot;expression&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=3, y=1090, size=3, label=HK27.pvals[&quot;no&quot;, &quot;contact&quot;]) + annotate(&quot;text&quot;, x=2.7, y=1590, size=3, label=HK27.pvals[&quot;both&quot;, &quot;no&quot;]) + annotate(&quot;text&quot;, x=2, y=1340, size=3, label=HK27.pvals[&quot;both&quot;, &quot;expression&quot;])
+print(prom.HK27)
+vp &lt;- grid::viewport(width=0.4, height=0.4, x=0.5, y=0.5)
+print(box.prom.HK27, vp=vp)</code></pre>
+<p><img src="figure/juicer_enrichment.Rmd/Other%20quantitative%20enrichments-10.png" width="672" style="display: block; margin: auto;" /></p>
 </div>
 <div id="session-information" class="section level2">
 <h2>Session information</h2>
