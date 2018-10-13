@@ -50,6 +50,7 @@ library(vashr)
 library(medinome)
 library(glmnet)
 enableJIT(3)
+library(VennDiagram)
 ```
 ###Preparing the gene expression data
 Here I read in a dataframe of counts summarized at the gene-level, then do some pre-processing and normalization to obtain a voom object to later run linear modeling analyses on.
@@ -1562,6 +1563,771 @@ chisq.summarizer(full.annotations, "diff.TAD.interrupt.2", 2)
 chisq.summarizer(full.annotations, "diff.TAD.interrupt.3", 3)
 chisq.summarizer(full.annotations, "diff.TAD.interrupt.4", 4)
 ```
+
+####OCT 18 TAD ANALYSIS
+```{r New TOPDOM Comparisons}
+########### 10 KB ##########
+####Within-species TOPDOM Comparisons here:
+hunion.TADs <- fread("~/Desktop/Hbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(hunion.TADs) <-c("Hchr", "H1", "H2", "indi", "Ichr", "I1", "I2", "Cchr", "C1", "C2")
+cunion.TADs <- fread("~/Desktop/Cbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(cunion.TADs) <-c("Cchr", "C1", "C2", "indi", "Ichr", "I1", "I2", "Hchr", "H1", "H2")
+hunion.TADs$ID <- paste(hunion.TADs$Hchr, hunion.TADs$H1, hunion.TADs$H2, sep="-")
+cunion.TADs$ID <- paste(cunion.TADs$Cchr, cunion.TADs$C1, cunion.TADs$C2, sep="-")
+
+group_by(hunion.TADs, ID) %>% summarise(individuals=n(), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2)) -> hunions
+group_by(cunion.TADs, ID) %>% summarise(individuals=n(), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2)) -> cunions
+
+#Due to some unfortunate boundary variances between individuals, this method has sometimes led to having a given boundary appear in "more than" 4 individuals, i.e. in one or more individuals what has been merged to be a full boundary acros the full set of individuals spans two separate, non-mergable boundaries within an individual--just throw these cases out for now, to make life easier (can also argue that those boundaries are ones where we don't have robust detection capability, since we see that kind of variance).
+hunions <- filter(hunions, individuals<=4) #Represents 22 total hits here
+cunions <- filter(cunions, individuals<=4) #Represents 4 total hits here
+
+group_by(hunions, individuals) %>% summarise(count=n()) -> hunions.ct
+hunions.ct$species <- "Human"
+group_by(cunions, individuals) %>% summarise(count=n()) -> cunions.ct
+cunions.ct$species <- "Chimpanzee"
+bunions <- rbind(hunions.ct, cunions.ct)
+
+ggplot(data=bunions, aes(x=species, group=species, y=count, fill=as.factor(individuals))) + geom_bar(stat="identity") + ggtitle("Within-species TAD Boundary Conservation, 200kb Window") + xlab("Species") + ylab("Count") + guides(fill=guide_legend(title="Individuals with Boundary")) + annotate(geom="text", x=1, y=500, label=paste(signif(100*(904/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1100, label=paste(signif(100*(403/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1500, label=paste(signif(100*(411/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1750, label=paste(signif(100*(4/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=500, label=paste(signif(100*(983/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1150, label=paste(signif(100*(355/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1450, label=paste(signif(100*(196/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1625, label=paste(signif(100*(175/1709), 2), "%", sep=""), size=3) + theme(plot.title=element_text(hjust=0.25))
+
+hunions$species <- "Human"
+cunions$species <- "Chimpanzee"
+fwrite(hunions, "~/Desktop/Hi-C/TADOVERLAPS/H1s.bed", quote = FALSE, sep="\t")
+fwrite(cunions, "~/Desktop/Hi-C/TADOVERLAPS/C1s.bed", quote=FALSE, sep="\t")
+
+
+########Now use these fixed union files within each species to do cross-species TAD boundary sharing calculations:
+htest <- fread("~/Desktop/Hi-C/TADOVERLAPS/H1s.hg38.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V5) #Can see that some discoveries were disjoint, with humans or chimps having it "discovered" twice due to overlaps (manually checked as well). They represent only 37 of the total here, so discount them and accept that our percentage could be better with +37 in num/denom sometimes:
+hfinal <- htest[-which(htest$V5!="Chimpanzee"&htest$V5!="Human"&htest$V5!="Human,Chimpanzee"&htest$V5!="Chimpanzee,Human"),]
+sum(hfinal$V5!="Human"&hfinal$V5!="Chimpanzee")/nrow(hfinal) #See that ~24.8% of the boundaries are actually shared across species here.
+sum(hfinal$V5=="Human")/nrow(hfinal) #36.8% human-specific
+sum(hfinal$V5=="Chimpanzee")/nrow(hfinal) #38.4% chimp-specific
+unique(hfinal$V4)
+#For an estimate of sharing on 2, we only want columns where 2 or more individuals had a boundary in common. Can just add V4 together somehow and any sum greater than 2 is good to go?
+# hfinal$indisID <- as.numeric(ifelse(nchar(hfinal$V4)==1,substr(hfinal$V4, 1, 1), as.numeric(substr(hfinal$V4, 1, 1))+as.numeric(substr(hfinal$V4, 3, 3))))
+# hfinal.2s <- filter(hfinal, indisID>=2)
+# sum(hfinal.2s$V5!="Human"&hfinal.2s$V5!="Chimpanzee")/nrow(hfinal.2s)
+# hfinal.3s <- filter(hfinal, indisID>=3)
+# sum(hfinal.3s$V5!="Human"&hfinal.3s$V5!="Chimpanzee")/nrow(hfinal.3s)
+# hfinal.4s <- filter(hfinal, indisID>=4)
+# sum(hfinal.4s$V5!="Human"&hfinal.4s$V5!="Chimpanzee")/nrow(hfinal.4s)
+
+###Now see what this looks like when we do a more stringent restriction of needing it in at least 2 or 3 or 4 of the same species. This is what we'll actually want to do, to select for boundaries that are likely to be real (discovery across 2, 3, etc. individuals across species is not really robust, it's more technical):
+H2s <- filter(hfinal, V4=="2"|V4=="2,3"|V4=="3"|V4=="4"|V4=="4,3"|V4=="2,2"|V4=="2,1"|V4=="2,4"|V4=="3,3"|V4=="3,1"|V4=="3,2"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,2"|V4=="1,3"|V4=="1,4")
+sum(H2s$V5!="Human"&H2s$V5!="Chimpanzee")/nrow(H2s) #41% shared
+sum(H2s$V5=="Human")/nrow(H2s) #24% human-specific
+sum(H2s$V5=="Chimpanzee")/nrow(H2s) #35% chimp-specific
+H3s <- filter(hfinal, V4=="2,3"|V4=="3"|V4=="4"|V4=="4,3"|V4=="2,4"|V4=="3,3"|V4=="3,1"|V4=="3,2"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,3"|V4=="1,4")
+sum(H3s$V5!="Human"&H3s$V5!="Chimpanzee")/nrow(H3s) #51% shared
+sum(H3s$V5=="Human")/nrow(H3s) #17% human-specific
+sum(H3s$V5=="Chimpanzee")/nrow(H3s) #32% chimp-specific
+H4s <- filter(hfinal, V4=="4"|V4=="4,3"|V4=="2,4"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,4")
+sum(H4s$V5!="Human"&H4s$V5!="Chimpanzee")/nrow(H4s) #67% shared
+sum(H4s$V5=="Human")/nrow(H4s) #25.6% human-specific
+sum(H4s$V5=="Chimpanzee")/nrow(H4s) #7.4% chimp-specific
+
+#Visualize these cross-species comparisons in a nice way:
+ggcross <- data.frame(stringency=rep(1:4, 3), species=c(rep("Human", 4), rep("Chimpanzee", 4), rep("Shared", 4)), count=c(sum(hfinal$V5=="Human") ,sum(H2s$V5=="Human"), sum(H3s$V5=="Human"), sum(H4s$V5=="Human"), sum(hfinal$V5=="Chimpanzee") ,sum(H2s$V5=="Chimpanzee"), sum(H3s$V5=="Chimpanzee"), sum(H4s$V5=="Chimpanzee"), sum(hfinal$V5!="Human"&hfinal$V5!="Chimpanzee") ,sum(H2s$V5!="Human"&H2s$V5!="Chimpanzee"), sum(H3s$V5!="Human"&H3s$V5!="Chimpanzee"), sum(H4s$V5!="Human"&H4s$V5!="Chimpanzee")))
+
+ggplot(data=ggcross, aes(x=stringency, y=count, fill=species)) + geom_bar(stat="identity") + ggtitle("TopDom TAD Boundary Conservation Across Species, 200kb Window") + ylab("Boundaries Discovered, RBHLO Union List") + xlab ("# of Individuals TAD Boundary Independently Discovered") + guides(fill=guide_legend(title="Species of Discovery")) + theme(axis.title.x=element_text(hjust=0.1),  plot.title=element_text(hjust=0.25)) + annotate(geom="text", x=1, y=100, label="24.8%", size=3) + annotate(geom="text", x=2, y=100, label="41%", size=3) + annotate(geom="text", x=3, y=100, label="51%", size=3) + annotate(geom="text", x=4, y=55, label="67%", size=3) + annotate(geom="text", x=1, y=1100, label="36.8%", size=3) + annotate(geom="text", x=1, y=2100, label="38.4%", size=3) + annotate(geom="text", x=2, y=650, label="24%", size=3) + annotate(geom="text", x=2, y=1000, label="35%", size=3) + annotate(geom="text", x=3, y=390, label="17%", size=3) + annotate(geom="text", x=3, y=550, label="32%", size=3) + annotate(geom="text", x=4, y=250, label="25.6% H", size=3) + annotate(geom="text", x=4, y=350, label="7.4% C", size=3)
+
+###I've removed the code here, but also checked all this against the chimp file and found extraordinarily similar results (unsurprising)
+###NOW REPEAT ALL THESE ANALYSES on TopDom calls with window 20 and Hi-C matrix res=25kb:
+
+########### 25 KB ##########
+####Within-species TOPDOM Comparisons here:
+hunion.TADs <- fread("~/Desktop/Hi-C/TADOVERLAPS/25kb/Hbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(hunion.TADs) <-c("Hchr", "H1", "H2", "indi", "Ichr", "I1", "I2", "Cchr", "C1", "C2")
+cunion.TADs <- fread("~/Desktop/Hi-C/TADOVERLAPS/25kb/Cbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(cunion.TADs) <-c("Cchr", "C1", "C2", "indi", "Ichr", "I1", "I2", "Hchr", "H1", "H2")
+hunion.TADs$ID <- paste(hunion.TADs$Hchr, hunion.TADs$H1, hunion.TADs$H2, sep="-")
+cunion.TADs$ID <- paste(cunion.TADs$Cchr, cunion.TADs$C1, cunion.TADs$C2, sep="-")
+
+group_by(hunion.TADs, ID) %>% summarise(individuals=n(), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2)) -> hunions
+group_by(cunion.TADs, ID) %>% summarise(individuals=n(), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2)) -> cunions
+
+#Due to some unfortunate boundary variances between individuals, this method has sometimes led to having a given boundary appear in "more than" 4 individuals, i.e. in one or more individuals what has been merged to be a full boundary across the full set of individuals spans two separate, non-mergable boundaries within an individual--just throw these cases out for now, to make life easier (can also argue that those boundaries are ones where we don't have robust detection capability, since we see that kind of variance).
+hunions <- filter(hunions, individuals<=4) #Represents 23 total hits here
+cunions <- filter(cunions, individuals<=4) #Represents 13 total hits here
+
+group_by(hunions, individuals) %>% summarise(count=n()) -> hunions.ct
+hunions.ct$species <- "Human"
+group_by(cunions, individuals) %>% summarise(count=n()) -> cunions.ct
+cunions.ct$species <- "Chimpanzee"
+bunions <- rbind(hunions.ct, cunions.ct)
+
+ggplot(data=bunions, aes(x=species, group=species, y=count, fill=as.factor(individuals))) + geom_bar(stat="identity") + ggtitle("Within-species TopDom TAD Boundary Conservation, 500kb Window") + xlab("Species") + ylab("Count") + guides(fill=guide_legend(title="Individuals with Boundary")) + annotate(geom="text", x=2, y=100, label=paste(signif(100*(231/677), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=300, label=paste(signif(100*(141/677), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=450, label=paste(signif(100*(113/677), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=625, label=paste(signif(100*(192/677), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=100, label=paste(signif(100*(204/656), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=300, label=paste(signif(100*(152/656), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=450, label=paste(signif(100*(230/656), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=625, label=paste(signif(100*(70/656), 2), "%", sep=""), size=3) + theme(plot.title=element_text(hjust=0.2))
+
+hunions$species <- "Human"
+cunions$species <- "Chimpanzee"
+fwrite(hunions, "~/Desktop/Hi-C/TADOVERLAPS/25kb/H1s.bed", quote = FALSE, sep="\t")
+fwrite(cunions, "~/Desktop/Hi-C/TADOVERLAPS/25kb/C1s.bed", quote=FALSE, sep="\t")
+
+
+########Now use these fixed union files within each species to do cross-species TAD boundary sharing calculations:
+htest <- fread("~/Desktop/Hi-C/TADOVERLAPS/25kb/H1s.hg38.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V5) #Can see that some discoveries were disjoint, with humans or chimps having it "discovered" twice due to overlaps (manually checked as well). They represent only 19 of the total here, so discount them and accept that our percentage could be better with +37 in num/denom sometimes:
+hfinal <- htest[-which(htest$V5!="Chimpanzee"&htest$V5!="Human"&htest$V5!="Human,Chimpanzee"&htest$V5!="Chimpanzee,Human"),]
+sum(hfinal$V5!="Human"&hfinal$V5!="Chimpanzee")/nrow(hfinal) #See that ~36.4% of the boundaries are actually shared across species here.
+sum(hfinal$V5=="Human")/nrow(hfinal) #33% human-specific
+sum(hfinal$V5=="Chimpanzee")/nrow(hfinal) #30.7% chimp-specific
+unique(hfinal$V4)
+
+###Now see what this looks like when we do a more stringent restriction of needing it in at least 2 or 3 or 4 of the same species. This is what we'll actually want to do, to select for boundaries that are likely to be real (discovery across 2, 3, etc. individuals across species is not really robust, it's more technical):
+H2s <- filter(hfinal, V4=="2"|V4=="2,3"|V4=="3"|V4=="4"|V4=="4,3"|V4=="2,2"|V4=="2,1"|V4=="2,4"|V4=="3,3"|V4=="3,1"|V4=="3,2"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,2"|V4=="1,3"|V4=="1,4")
+sum(H2s$V5!="Human"&H2s$V5!="Chimpanzee")/nrow(H2s) #49.8% shared
+sum(H2s$V5=="Human")/nrow(H2s) #24% human-specific
+sum(H2s$V5=="Chimpanzee")/nrow(H2s) #26.3% chimp-specific
+H3s <- filter(hfinal, V4=="2,3"|V4=="3"|V4=="4"|V4=="4,3"|V4=="2,4"|V4=="3,3"|V4=="3,1"|V4=="3,2"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,3"|V4=="1,4")
+sum(H3s$V5!="Human"&H3s$V5!="Chimpanzee")/nrow(H3s) #56.2% shared
+sum(H3s$V5=="Human")/nrow(H3s) #19.7% human-specific
+sum(H3s$V5=="Chimpanzee")/nrow(H3s) #24.1% chimp-specific
+H4s <- filter(hfinal, V4=="4"|V4=="4,3"|V4=="2,4"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,4")
+sum(H4s$V5!="Human"&H4s$V5!="Chimpanzee")/nrow(H4s) #68.5% shared
+sum(H4s$V5=="Human")/nrow(H4s) #24.5% human-specific
+sum(H4s$V5=="Chimpanzee")/nrow(H4s) #6.9% chimp-specific
+
+#Visualize these cross-species comparisons in a nice way:
+ggcross <- data.frame(stringency=rep(1:4, 3), species=c(rep("Human", 4), rep("Chimpanzee", 4), rep("Shared", 4)), count=c(sum(hfinal$V5=="Human") ,sum(H2s$V5=="Human"), sum(H3s$V5=="Human"), sum(H4s$V5=="Human"), sum(hfinal$V5=="Chimpanzee") ,sum(H2s$V5=="Chimpanzee"), sum(H3s$V5=="Chimpanzee"), sum(H4s$V5=="Chimpanzee"), sum(hfinal$V5!="Human"&hfinal$V5!="Chimpanzee") ,sum(H2s$V5!="Human"&H2s$V5!="Chimpanzee"), sum(H3s$V5!="Human"&H3s$V5!="Chimpanzee"), sum(H4s$V5!="Human"&H4s$V5!="Chimpanzee")))
+
+ggplot(data=ggcross, aes(x=stringency, y=count, fill=species)) + geom_bar(stat="identity") + ggtitle("TopDom TAD Boundary Conservation Across Species, 500kb Window") + ylab("Boundaries Discovered, RBHLO Union List") + xlab ("# of Individuals TAD Boundary Independently Discovered") + guides(fill=guide_legend(title="Species of Discovery")) + theme(axis.title.x=element_text(hjust=0.1),  plot.title=element_text(hjust=0.25)) + annotate(geom="text", x=1, y=100, label="36.4%", size=3) + annotate(geom="text", x=2, y=100, label="49.8%", size=3) + annotate(geom="text", x=3, y=100, label="56.2%", size=3) + annotate(geom="text", x=4, y=100, label="68.5%", size=3) + annotate(geom="text", x=1, y=450, label="33%", size=3) + annotate(geom="text", x=1, y=800, label="30.7%", size=3) + annotate(geom="text", x=2, y=400, label="24%", size=3) + annotate(geom="text", x=2, y=550, label="35%", size=3) + annotate(geom="text", x=3, y=290, label="19.7%", size=3) + annotate(geom="text", x=3, y=400, label="24.1%", size=3) + annotate(geom="text", x=4, y=175, label="24.5%", size=3) + annotate(geom="text", x=4, y=235, label="6.9% C", size=3)
+
+
+#####DOMAINS###########
+###NOW LOOK AT TOPDOM ACTUAL DOMAIN SHARING AND SIZES
+####Within-species TOPDOM Comparisons here:
+hunion.TADs <- fread("~/Desktop/Hi-C/TADOVERLAPS/domains/10kb/Hdomains.overlaps.ortho.full", data.table=FALSE)
+colnames(hunion.TADs) <-c("Hchr", "H1", "H2", "indi", "Ichr", "I1", "I2", "Cchr", "C1", "C2")
+cunion.TADs <- fread("~/Desktop/Hi-C/TADOVERLAPS/domains/10kb/Cdomains.overlaps.ortho.full", data.table=FALSE)
+colnames(cunion.TADs) <-c("Cchr", "C1", "C2", "indi", "Ichr", "I1", "I2", "Hchr", "H1", "H2")
+hunion.TADs$ID <- paste(hunion.TADs$Hchr, hunion.TADs$H1, hunion.TADs$H2, sep="-")
+cunion.TADs$ID <- paste(cunion.TADs$Cchr, cunion.TADs$C1, cunion.TADs$C2, sep="-")
+
+group_by(hunion.TADs, ID) %>% summarise(individuals=n(), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2),inditest=length(unique(indi))) -> hunions #If you just count individuals here, you get more than 4 often, because of disjoint TADs in some
+group_by(cunion.TADs, ID) %>% summarise(individuals=n(), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), inditest=length(unique(indi))) -> cunions
+
+#Keeping the TADs that are discovered across more than 4 individuals basically indicates what was called as a TAD in one individual shows up as multiple in others; for simplicity's and conservativeness' sake, filter those out here!
+hunions <- filter(hunions, individuals<=4)
+cunions <- filter(cunions, individuals<=4)
+
+#Again, to be conservative, also filter out the rows where we have a different number for number of individuals a TAD had overlap with (individuals) and number of unique individuals a TAD had overlap (inditest).
+hunions <- hunions[-which(hunions$individuals!=hunions$inditest),]
+cunions <- cunions[-which(cunions$individuals!=cunions$inditest),]
+
+#Get rid of that inditest column, to make sure this works in my other pipelines:
+hunions <- hunions[,-9]
+cunions <- cunions[,-9]
+
+group_by(hunions, individuals) %>% summarise(count=n()) -> hunions.ct
+hunions.ct$species <- "Human"
+group_by(cunions, individuals) %>% summarise(count=n()) -> cunions.ct
+cunions.ct$species <- "Chimpanzee"
+bunions <- rbind(hunions.ct, cunions.ct)
+
+ggplot(data=bunions, aes(x=species, group=species, y=count, fill=as.factor(individuals))) + geom_bar(stat="identity") + ggtitle("Within-species TopDom TAD Conservation, 200kb Window") + xlab("Species") + ylab("Count") + guides(fill=guide_legend(title="Individuals with Domain")) + theme(plot.title=element_text(hjust=0.2))#+ annotate(geom="text", x=1, y=500, label=paste(signif(100*(904/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1100, label=paste(signif(100*(403/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1500, label=paste(signif(100*(411/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1750, label=paste(signif(100*(4/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=500, label=paste(signif(100*(983/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1150, label=paste(signif(100*(355/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1450, label=paste(signif(100*(196/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1625, label=paste(signif(100*(175/1709), 2), "%", sep=""), size=3)
+
+hunions$species <- "Human"
+cunions$species <- "Chimpanzee"
+
+hunions$size <- hunions$H2-hunions$H1
+cunions$size <- cunions$C2-cunions$C1
+  
+fwrite(hunions, "~/Desktop/Hi-C/TADOVERLAPS/domains/10kb/H1s.bed", quote = FALSE, sep="\t")
+fwrite(cunions, "~/Desktop/Hi-C/TADOVERLAPS/domains/10kb/C1s.bed", quote=FALSE, sep="\t")
+
+
+########Now use these fixed union files within each species to do cross-species TAD boundary sharing calculations:
+htest <- fread("~/Desktop/Hi-C/TADOVERLAPS/domains/10kb/H1s.hg38.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V5) #Can see that many discoveries were very disjoint, part of what makes this difficult here--remove any discoveries that were disjoint in this way:
+htest <- htest[which(nchar(htest$V4)<=3),]
+htest <- htest[-which(htest$V5=="Chimpanzee,Chimpanzee"),]#Get rid of this relatively small number of confusing hits!
+
+#Get columns into this data frame that look at human and chimpanzee sizes separately.
+htest$Hsize <- as.numeric(ifelse(htest$V5=="Human", htest$V6, ifelse(htest$V5=="Chimpanzee", NA, ifelse(htest$V5=="Human,Chimpanzee", gsub(",.*", "", htest$V6), gsub(".*,", "", htest$V6)))))
+htest$Csize <- as.numeric(ifelse(htest$V5=="Chimpanzee", htest$V6, ifelse(htest$V5=="Human", NA, ifelse(htest$V5=="Chimpanzee,Human", gsub(",.*", "", htest$V6), gsub(".*,", "", htest$V6)))))
+
+
+#just separate out into the human-only and chimp-only hits, vs. the shared in any capacity hits, and compare size dist'ns:
+sum(htest$V5!="Human"&htest$V5!="Chimpanzee")/nrow(htest) #See that ~7% of the domains are actually shared across species here.
+sum(htest$V5=="Human")/nrow(htest) #9.2% human-specific
+sum(htest$V5=="Chimpanzee")/nrow(htest) #83% chimp-specific
+unique(htest$V4)
+
+htest$group <- ifelse(htest$V5=="Chimpanzee,Human"|htest$V5=="Human,Chimpanzee", "Shared", ifelse(htest$V5=="Human", "Human", "Chimpanzee"))
+
+htest$size <- htest$V3-htest$V2
+
+ggplot(data=htest, aes(group=group, x=size, color=group)) + geom_density(aes(y=..scaled..)) + coord_cartesian(xlim=c(0, 3500000)) + xlab("TAD Size") + ylab("Density") + guides(color=guide_legend(title="Species of Discovery")) + ggtitle("Orthologous TopDom TAD Size, 200kb Window") + annotate(geom="text", x=2000000, y=0.7, label="Chimp-Human t-test: N.S.") + annotate(geom="text", x=2000000, y=0.8, label="Shared vs. Chimpanzee t-test: 0.01") + annotate(geom="text", x=2000000, y=0.9, label="Shared vs. Human t-test: 0.06")
+
+t.test(filter(htest, group=="Shared")$Hsize, filter(htest, group=="Shared")$Csize)
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Shared")$size)
+
+ggshareTAD <- data.frame(size=c(htest$Hsize, htest$Csize), species=c(rep("Human", nrow(htest)), rep("Chimpanzee", nrow(htest))))
+ggplot(ggshareTAD, aes(group=species, x=size, color=species)) + geom_density(aes(y=..scaled..)) + coord_cartesian(xlim=c(0, 3500000)) + xlab("TAD Size, BP") + ylab("Density") + guides(color=guide_legend(title="Species' Size")) + ggtitle("Orthologous TopDom SHARED TAD Sizes, 200kb Window") + annotate(geom="text", x=2000000, y=0.7, label="Chimp-Human t-test: 9.6 e -5") + theme(plot.title=element_text(hjust=0.2))
+
+
+
+#####DOMAINS THEMSELVES @ 25 KB#########
+###Results are EXTREMELY similar when looking at stringency metrics, move on to 25kb matrix analysis:###
+hunion.TADs <- fread("~/Desktop/Hi-C/TADOVERLAPS/domains/25kb/Hdomains.overlaps.ortho.full", data.table=FALSE)
+colnames(hunion.TADs) <-c("Hchr", "H1", "H2", "indi", "Ichr", "I1", "I2", "Cchr", "C1", "C2")
+cunion.TADs <- fread("~/Desktop/Hi-C/TADOVERLAPS/domains/25kb/Cdomains.overlaps.ortho.full", data.table=FALSE)
+colnames(cunion.TADs) <-c("Cchr", "C1", "C2", "indi", "Ichr", "I1", "I2", "Hchr", "H1", "H2")
+hunion.TADs$ID <- paste(hunion.TADs$Hchr, hunion.TADs$H1, hunion.TADs$H2, sep="-")
+cunion.TADs$ID <- paste(cunion.TADs$Cchr, cunion.TADs$C1, cunion.TADs$C2, sep="-")
+
+group_by(hunion.TADs, ID) %>% summarise(individuals=n(), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2),inditest=length(unique(indi))) -> hunions #If you just count individuals here, you get more than 4 often, because of disjoint TADs in some
+group_by(cunion.TADs, ID) %>% summarise(individuals=n(), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), inditest=length(unique(indi))) -> cunions
+
+#Keeping the TADs that are discovered across more than 4 individuals basically indicates what was called as a TAD in one individual shows up as multiple in others; for simplicity's and conservativeness' sake, filter those out here!
+hunions <- filter(hunions, individuals<=4)
+cunions <- filter(cunions, individuals<=4)
+
+#Again, to be conservative, also filter out the rows where we have a different number for number of individuals a TAD had overlap with (individuals) and number of unique individuals a TAD had overlap (inditest).
+#hunions <- hunions[-which(hunions$individuals!=hunions$inditest),] #In this case don't have any of these class, so no need to do this filtering.
+cunions <- cunions[-which(cunions$individuals!=cunions$inditest),]
+
+#Get rid of that inditest column, to make sure this works in my other pipelines:
+hunions <- hunions[,-9]
+cunions <- cunions[,-9]
+
+group_by(hunions, individuals) %>% summarise(count=n()) -> hunions.ct
+hunions.ct$species <- "Human"
+group_by(cunions, individuals) %>% summarise(count=n()) -> cunions.ct
+cunions.ct$species <- "Chimpanzee"
+bunions <- rbind(hunions.ct, cunions.ct)
+
+ggplot(data=bunions, aes(x=species, group=species, y=count, fill=as.factor(individuals))) + geom_bar(stat="identity") + ggtitle("Within-species TopDom TAD Overlap, 500kb Window") + xlab("Species") + ylab("Count") + guides(fill=guide_legend(title="Individuals with Domain")) + theme(plot.title=element_text(hjust=0.2))#+ annotate(geom="text", x=1, y=500, label=paste(signif(100*(904/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1100, label=paste(signif(100*(403/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1500, label=paste(signif(100*(411/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1750, label=paste(signif(100*(4/1759), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=500, label=paste(signif(100*(983/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1150, label=paste(signif(100*(355/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1450, label=paste(signif(100*(196/1709), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1625, label=paste(signif(100*(175/1709), 2), "%", sep=""), size=3)
+
+hunions$species <- "Human"
+cunions$species <- "Chimpanzee"
+
+hunions$size <- hunions$H2-hunions$H1
+cunions$size <- cunions$C2-cunions$C1
+
+fwrite(hunions, "~/Desktop/Hi-C/TADOVERLAPS/domains/25kb/H1s.bed", quote = FALSE, sep="\t")
+fwrite(cunions, "~/Desktop/Hi-C/TADOVERLAPS/domains/25kb/C1s.bed", quote=FALSE, sep="\t")
+
+########Now use these fixed union files within each species to do cross-species TAD boundary sharing calculations:
+htest <- fread("~/Desktop/Hi-C/TADOVERLAPS/domains/25kb/H1s.hg38.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V5) #Can see that many discoveries were very disjoint, part of what makes this difficult here--remove any discoveries that were disjoint in this way:
+htest <- htest[which(nchar(htest$V4)<=3),]
+htest <- htest[-which(htest$V5=="Chimpanzee,Chimpanzee"),] #Get rid of this pesky hit again
+
+#just separate out into the human-only and chimp-only hits, vs. the shared in any capacity hits, and compare size dist'ns:
+sum(htest$V5!="Human"&htest$V5!="Chimpanzee")/nrow(htest) #See that ~11.7% of the domains are actually shared across species here.
+sum(htest$V5=="Human")/nrow(htest) #25% human-specific
+sum(htest$V5=="Chimpanzee")/nrow(htest) #63% chimp-specific
+unique(htest$V4)
+
+#Get columns into this data frame that look at human and chimpanzee sizes separately.
+htest$Hsize <- as.numeric(ifelse(htest$V5=="Human", htest$V6, ifelse(htest$V5=="Chimpanzee", NA, ifelse(htest$V5=="Human,Chimpanzee", gsub(",.*", "", htest$V6), gsub(".*,", "", htest$V6)))))
+htest$Csize <- as.numeric(ifelse(htest$V5=="Chimpanzee", htest$V6, ifelse(htest$V5=="Human", NA, ifelse(htest$V5=="Chimpanzee,Human", gsub(",.*", "", htest$V6), gsub(".*,", "", htest$V6)))))
+
+htest$size <- htest$V3-htest$V2
+htest$group <- ifelse(htest$V5!="Human"&htest$V5!="Chimpanzee", "Shared", ifelse(htest$V5!="Human", "Chimpanzee", "Human"))
+
+ggplot(data=htest, aes(group=group, x=size, color=group)) + geom_density(aes(y=..scaled..)) + coord_cartesian(xlim=c(0, 7000000)) + xlab("TAD Size") + ylab("Density") + guides(color=guide_legend(title="Species of Discovery")) + ggtitle("Orthologous TopDom TAD Size, 500kb Window") + annotate(geom="text", x=4500000, y=0.7, label="Chimp-Human t-test: N.S.") + annotate(geom="text", x=4200000, y=0.8, label="Shared vs. Chimpanzee t-test: 0.05") + annotate(geom="text", x=4500000, y=0.9, label="Shared vs. Human t-test: 0.02")
+
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Chimpanzee")$size)
+t.test(filter(htest, group=="Chimpanzee")$size, filter(htest, group=="Shared")$size)
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Shared")$size)
+
+t.test(filter(htest, group=="Shared")$Hsize, filter(htest, group=="Shared")$Csize)
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Shared")$size)
+
+ggshareTAD <- data.frame(size=c(htest$Hsize, htest$Csize), species=c(rep("Human", nrow(htest)), rep("Chimpanzee", nrow(htest))))
+ggplot(ggshareTAD, aes(group=species, x=size, color=species)) + geom_density(aes(y=..scaled..)) + coord_cartesian(xlim=c(0, 5500000)) + xlab("TAD Size, BP") + ylab("Density") + guides(color=guide_legend(title="Species' Size")) + ggtitle("Orthologous TopDom SHARED TAD Sizes, 500kb Window") + annotate(geom="text", x=3000000, y=0.7, label="Chimp-Human t-test: 0.03") + theme(plot.title=element_text(hjust=0.2))
+#I get very similar results if I use the chimpanzee file, so I am assuaged of the concern differences might be driven by the LO procedure.
+```
+
+#Same as above, but this time on ARROWHEAD
+```{r ARROWHEAD Oct 18 TAD Analysis}
+########### 10 KB ##########
+####Within-species ARROWHEAD Comparisons here:
+hunion.TADs <- fread("~/Desktop/Hi-C/ARROWTADs/oct18/Hbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(hunion.TADs) <-c("Hchr", "H1", "H2", "indi", "Ichr", "I1", "I2", "Cchr", "C1", "C2", "score")
+cunion.TADs <- fread("~/Desktop/Hi-C/ARROWTADs/oct18/Cbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(cunion.TADs) <-c("Cchr", "C1", "C2", "indi", "Ichr", "I1", "I2", "Hchr", "H1", "H2", "score")
+hunion.TADs$ID <- paste(hunion.TADs$Hchr, hunion.TADs$H1, hunion.TADs$H2, sep="-")
+cunion.TADs$ID <- paste(cunion.TADs$Cchr, cunion.TADs$C1, cunion.TADs$C2, sep="-")
+
+group_by(hunion.TADs, ID) %>% summarise(individuals=n(), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2), score=mean(score)) -> hunions
+group_by(cunion.TADs, ID) %>% summarise(individuals=n(), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), score=mean(score)) -> cunions
+
+#Due to some unfortunate boundary variances between individuals, this method has sometimes led to having a given boundary appear in "more than" 4 individuals, i.e. in one or more individuals what has been merged to be a full boundary acros the full set of individuals spans two separate, non-mergable boundaries within an individual--just throw these cases out for now, to make life easier (can also argue that those boundaries are ones where we don't have robust detection capability, since we see that kind of variance).
+hunions <- filter(hunions, individuals<=4) #Represents 22 total hits here
+cunions <- filter(cunions, individuals<=4) #Represents 4 total hits here
+
+group_by(hunions, individuals) %>% summarise(count=n()) -> hunions.ct
+hunions.ct$species <- "Human"
+group_by(cunions, individuals) %>% summarise(count=n()) -> cunions.ct
+cunions.ct$species <- "Chimpanzee"
+bunions <- rbind(hunions.ct, cunions.ct)
+
+ggplot(data=bunions, aes(x=species, group=species, y=count, fill=as.factor(individuals))) + geom_bar(stat="identity") + ggtitle("Within-species TAD Boundary Conservation, Arrowhead @ 10kb") + xlab("Species") + ylab("Count") + guides(fill=guide_legend(title="Individuals with Boundary")) + annotate(geom="text", x=1, y=1200, label=paste(signif(100*(as.numeric(hunions.ct[1,2])/nrow(hunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=2200, label=paste(signif(100*(as.numeric(hunions.ct[2,2])/nrow(hunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=3200, label=paste(signif(100*(as.numeric(hunions.ct[3,2])/nrow(hunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=5000, label=paste(signif(100*(as.numeric(hunions.ct[4,2])/nrow(hunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1200, label=paste(signif(100*(as.numeric(cunions.ct[1,2])/nrow(cunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=2500, label=paste(signif(100*(as.numeric(cunions.ct[2,2])/nrow(cunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=3700, label=paste(signif(100*(as.numeric(cunions.ct[3,2])/nrow(cunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=6000, label=paste(signif(100*(as.numeric(cunions.ct[4,2])/nrow(cunions)), 2), "%", sep=""), size=3) + theme(plot.title=element_text(hjust=0.25))
+
+hunions$species <- "Human"
+cunions$species <- "Chimpanzee"
+fwrite(hunions, "~/Desktop/Hi-C/ARROWTADs/oct18//H1s.bed", quote = FALSE, sep="\t")
+fwrite(cunions, "~/Desktop/Hi-C/ARROWTADs/oct18/C1s.bed", quote=FALSE, sep="\t")
+
+
+########Now use these fixed union files within each species to do cross-species TAD boundary sharing calculations:
+htest <- fread("~/Desktop/Hi-C/ARROWTADs/oct18/H1s.hg38.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V6) #Can see that some discoveries were disjoint, with humans or chimps having it "discovered" twice due to overlaps (manually checked as well). They represent only 264 of the total (12046) here, so discount them and accept that our percentage could be better with +264 in num/denom sometimes:
+hfinal <- htest[-which(htest$V6!="Chimpanzee"&htest$V6!="Human"&htest$V6!="Human,Chimpanzee"&htest$V6!="Chimpanzee,Human"),]
+sum(hfinal$V6!="Human"&hfinal$V6!="Chimpanzee")/nrow(hfinal) #See that ~24.8% of the boundaries are actually shared across species here.
+sum(hfinal$V6=="Human")/nrow(hfinal) #36.8% human-specific
+sum(hfinal$V6=="Chimpanzee")/nrow(hfinal) #38.4% chimp-specific
+unique(hfinal$V4)
+
+###Now see what this looks like when we do a more stringent restriction of needing it in at least 2 or 3 or 4 of the same species. This is what we'll actually want to do, to select for boundaries that are likely to be real (discovery across 2, 3, etc. individuals across species is not really robust, it's more technical):
+H2s <- filter(hfinal, V4=="2"|V4=="2,3"|V4=="3"|V4=="4"|V4=="4,3"|V4=="2,2"|V4=="2,1"|V4=="2,4"|V4=="3,3"|V4=="3,1"|V4=="3,2"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,2"|V4=="1,3"|V4=="1,4")
+sum(H2s$V6!="Human"&H2s$V6!="Chimpanzee")/nrow(H2s) #41% shared
+sum(H2s$V6=="Human")/nrow(H2s) #24% human-specific
+sum(H2s$V6=="Chimpanzee")/nrow(H2s) #35% chimp-specific
+H3s <- filter(hfinal, V4=="2,3"|V4=="3"|V4=="4"|V4=="4,3"|V4=="2,4"|V4=="3,3"|V4=="3,1"|V4=="3,2"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,3"|V4=="1,4")
+sum(H3s$V6!="Human"&H3s$V6!="Chimpanzee")/nrow(H3s) #51% shared
+sum(H3s$V6=="Human")/nrow(H3s) #17% human-specific
+sum(H3s$V6=="Chimpanzee")/nrow(H3s) #32% chimp-specific
+H4s <- filter(hfinal, V4=="4"|V4=="4,3"|V4=="2,4"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,4")
+sum(H4s$V6!="Human"&H4s$V6!="Chimpanzee")/nrow(H4s) #67% shared
+sum(H4s$V6=="Human")/nrow(H4s) #25.6% human-specific
+sum(H4s$V6=="Chimpanzee")/nrow(H4s) #7.4% chimp-specific
+
+#Visualize these cross-species comparisons in a nice way:
+ggcross <- data.frame(stringency=rep(1:4, 3), species=c(rep("Human", 4), rep("Chimpanzee", 4), rep("Shared", 4)), count=c(sum(hfinal$V6=="Human") ,sum(H2s$V6=="Human"), sum(H3s$V6=="Human"), sum(H4s$V6=="Human"), sum(hfinal$V6=="Chimpanzee") ,sum(H2s$V6=="Chimpanzee"), sum(H3s$V6=="Chimpanzee"), sum(H4s$V6=="Chimpanzee"), sum(hfinal$V6!="Human"&hfinal$V6!="Chimpanzee") ,sum(H2s$V6!="Human"&H2s$V6!="Chimpanzee"), sum(H3s$V6!="Human"&H3s$V6!="Chimpanzee"), sum(H4s$V6!="Human"&H4s$V6!="Chimpanzee")))
+
+ggcross$perc <- NA
+ggcross$perc[c(1, 5, 9)] <- ggcross$count[c(1, 5, 9)]/sum(ggcross$count[c(1, 5, 9)])
+ggcross$perc[c(2, 6, 10)] <- ggcross$count[c(2, 6, 10)]/sum(ggcross$count[c(2, 6, 10)])
+ggcross$perc[c(3, 7, 11)] <- ggcross$count[c(3, 7, 11)]/sum(ggcross$count[c(3, 7, 11)])
+ggcross$perc[c(4, 8, 12)] <- ggcross$count[c(4, 8, 12)]/sum(ggcross$count[c(4, 8, 12)])
+ggcross$percentage <- paste(signif(100*ggcross$perc, 2), "%", sep="")
+
+ggplot(data=ggcross, aes(x=stringency, y=count, fill=species)) + geom_bar(stat="identity") + ggtitle("TAD Boundary Conservation Across Species, Arrowhead, 10kb") + ylab("Boundaries Discovered, RBHLO Union List") + xlab ("# of Individuals TAD Boundary Independently Discovered") + guides(fill=guide_legend(title="Species of Discovery")) + theme(axis.title.x=element_text(hjust=0.1),  plot.title=element_text(hjust=0.3)) + annotate(geom="text", x=1, y=3000, label=ggcross[9,5], size=3) + annotate(geom="text", x=2, y=3000, label=ggcross[10,5], size=3) + annotate(geom="text", x=3, y=3000, label=ggcross[11,5], size=3) + annotate(geom="text", x=4, y=3000, label=ggcross[12,5], size=3) + annotate(geom="text", x=1, y=7000, label=ggcross[1,5], size=3)  + annotate(geom="text", x=2, y=6000, label=ggcross[2,5], size=3) + annotate(geom="text", x=3, y=5300, label=ggcross[3,5], size=3) + annotate(geom="text", x=4, y=4500, label=ggcross[4,5], size=3) + annotate(geom="text", x=1, y=10000, label=ggcross[5,5], size=3) + annotate(geom="text", x=2, y=8000, label=ggcross[6,5], size=3) + annotate(geom="text", x=3, y=7100, label=ggcross[7,5], size=3) + annotate(geom="text", x=4, y=6000, label=ggcross[8,5], size=3)
+
+######### 25 KB ###########
+####Within-species ARROWHEAD Comparisons here:
+hunion.TADs <- fread("~/Desktop/Hi-C/ARROWTADs/oct18/25kb/Hbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(hunion.TADs) <-c("Hchr", "H1", "H2", "indi", "Ichr", "I1", "I2", "Cchr", "C1", "C2", "score")
+cunion.TADs <- fread("~/Desktop/Hi-C/ARROWTADs/oct18/25kb/Cbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(cunion.TADs) <-c("Cchr", "C1", "C2", "indi", "Ichr", "I1", "I2", "Hchr", "H1", "H2", "score")
+hunion.TADs$ID <- paste(hunion.TADs$Hchr, hunion.TADs$H1, hunion.TADs$H2, sep="-")
+cunion.TADs$ID <- paste(cunion.TADs$Cchr, cunion.TADs$C1, cunion.TADs$C2, sep="-")
+
+group_by(hunion.TADs, ID) %>% summarise(individuals=n(), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2), score=mean(score)) -> hunions
+group_by(cunion.TADs, ID) %>% summarise(individuals=n(), Cchr=unique(Cchr), C1=unique(C1), C2=unique(C2), Hchr=unique(Hchr), H1=unique(H1), H2=unique(H2), score=mean(score)) -> cunions
+
+#Due to some unfortunate boundary variances between individuals, this method has sometimes led to having a given boundary appear in "more than" 4 individuals, i.e. in one or more individuals what has been merged to be a full boundary acros the full set of individuals spans two separate, non-mergable boundaries within an individual--just throw these cases out for now, to make life easier (can also argue that those boundaries are ones where we don't have robust detection capability, since we see that kind of variance).
+hunions <- filter(hunions, individuals<=4) #Represents 22 total hits here
+cunions <- filter(cunions, individuals<=4) #Represents 4 total hits here
+
+group_by(hunions, individuals) %>% summarise(count=n()) -> hunions.ct
+hunions.ct$species <- "Human"
+group_by(cunions, individuals) %>% summarise(count=n()) -> cunions.ct
+cunions.ct$species <- "Chimpanzee"
+bunions <- rbind(hunions.ct, cunions.ct)
+
+ggplot(data=bunions, aes(x=species, group=species, y=count, fill=as.factor(individuals))) + geom_bar(stat="identity") + ggtitle("Within-species TAD Boundary Conservation, Arrowhead, 25kb") + xlab("Species") + ylab("Count") + guides(fill=guide_legend(title="Individuals with Boundary")) + annotate(geom="text", x=2, y=350, label=paste(signif(100*(as.numeric(hunions.ct[1,2])/nrow(hunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=900, label=paste(signif(100*(as.numeric(hunions.ct[2,2])/nrow(hunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=1300, label=paste(signif(100*(as.numeric(hunions.ct[3,2])/nrow(hunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=2, y=3000, label=paste(signif(100*(as.numeric(hunions.ct[4,2])/nrow(hunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=350, label=paste(signif(100*(as.numeric(cunions.ct[1,2])/nrow(cunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=800, label=paste(signif(100*(as.numeric(cunions.ct[2,2])/nrow(cunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=1150, label=paste(signif(100*(as.numeric(cunions.ct[3,2])/nrow(cunions)), 2), "%", sep=""), size=3) + annotate(geom="text", x=1, y=3000, label=paste(signif(100*(as.numeric(cunions.ct[4,2])/nrow(cunions)), 2), "%", sep=""), size=3) + theme(plot.title=element_text(hjust=0.2))
+
+hunions$species <- "Human"
+cunions$species <- "Chimpanzee"
+fwrite(hunions, "~/Desktop/Hi-C/ARROWTADs/oct18/25kb/H1s.bed", quote = FALSE, sep="\t")
+fwrite(cunions, "~/Desktop/Hi-C/ARROWTADs/oct18/25kb/C1s.bed", quote=FALSE, sep="\t")
+
+
+########Now use these fixed union files within each species to do cross-species TAD boundary sharing calculations:
+htest <- fread("~/Desktop/Hi-C/ARROWTADs/oct18/25kb/H1s.hg38.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V6) #Can see that some discoveries were disjoint, with humans or chimps having it "discovered" twice due to overlaps (manually checked as well). They represent only 82 of the total (5915) here, so discount them and accept that our percentage could be better with +82 in num/denom sometimes:
+hfinal <- htest[-which(htest$V6!="Chimpanzee"&htest$V6!="Human"&htest$V6!="Human,Chimpanzee"&htest$V6!="Chimpanzee,Human"),]
+sum(hfinal$V6!="Human"&hfinal$V6!="Chimpanzee")/nrow(hfinal) #See that ~54% of the boundaries are actually shared across species here.
+sum(hfinal$V6=="Human")/nrow(hfinal) #36.8% human-specific
+sum(hfinal$V6=="Chimpanzee")/nrow(hfinal) #38.4% chimp-specific
+unique(hfinal$V4)
+
+###Now see what this looks like when we do a more stringent restriction of needing it in at least 2 or 3 or 4 of the same species. This is what we'll actually want to do, to select for boundaries that are likely to be real (discovery across 2, 3, etc. individuals across species is not really robust, it's more technical):
+H2s <- filter(hfinal, V4=="2"|V4=="2,3"|V4=="3"|V4=="4"|V4=="4,3"|V4=="2,2"|V4=="2,1"|V4=="2,4"|V4=="3,3"|V4=="3,1"|V4=="3,2"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,2"|V4=="1,3"|V4=="1,4")
+sum(H2s$V6!="Human"&H2s$V6!="Chimpanzee")/nrow(H2s) #41% shared
+sum(H2s$V6=="Human")/nrow(H2s) #24% human-specific
+sum(H2s$V6=="Chimpanzee")/nrow(H2s) #35% chimp-specific
+H3s <- filter(hfinal, V4=="2,3"|V4=="3"|V4=="4"|V4=="4,3"|V4=="2,4"|V4=="3,3"|V4=="3,1"|V4=="3,2"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,3"|V4=="1,4")
+sum(H3s$V6!="Human"&H3s$V6!="Chimpanzee")/nrow(H3s) #51% shared
+sum(H3s$V6=="Human")/nrow(H3s) #17% human-specific
+sum(H3s$V6=="Chimpanzee")/nrow(H3s) #32% chimp-specific
+H4s <- filter(hfinal, V4=="4"|V4=="4,3"|V4=="2,4"|V4=="3,4"|V4=="4,4"|V4=="4,1"|V4=="4,2"|V4=="1,4")
+sum(H4s$V6!="Human"&H4s$V6!="Chimpanzee")/nrow(H4s) #67% shared
+sum(H4s$V6=="Human")/nrow(H4s) #25.6% human-specific
+sum(H4s$V6=="Chimpanzee")/nrow(H4s) #7.4% chimp-specific
+
+#Visualize these cross-species comparisons in a nice way:
+ggcross <- data.frame(stringency=rep(1:4, 3), species=c(rep("Human", 4), rep("Chimpanzee", 4), rep("Shared", 4)), count=c(sum(hfinal$V6=="Human") ,sum(H2s$V6=="Human"), sum(H3s$V6=="Human"), sum(H4s$V6=="Human"), sum(hfinal$V6=="Chimpanzee") ,sum(H2s$V6=="Chimpanzee"), sum(H3s$V6=="Chimpanzee"), sum(H4s$V6=="Chimpanzee"), sum(hfinal$V6!="Human"&hfinal$V6!="Chimpanzee") ,sum(H2s$V6!="Human"&H2s$V6!="Chimpanzee"), sum(H3s$V6!="Human"&H3s$V6!="Chimpanzee"), sum(H4s$V6!="Human"&H4s$V6!="Chimpanzee")))
+
+ggcross$perc <- NA
+ggcross$perc[c(1, 5, 9)] <- ggcross$count[c(1, 5, 9)]/sum(ggcross$count[c(1, 5, 9)])
+ggcross$perc[c(2, 6, 10)] <- ggcross$count[c(2, 6, 10)]/sum(ggcross$count[c(2, 6, 10)])
+ggcross$perc[c(3, 7, 11)] <- ggcross$count[c(3, 7, 11)]/sum(ggcross$count[c(3, 7, 11)])
+ggcross$perc[c(4, 8, 12)] <- ggcross$count[c(4, 8, 12)]/sum(ggcross$count[c(4, 8, 12)])
+ggcross$percentage <- paste(signif(100*ggcross$perc, 2), "%", sep="")
+
+ggplot(data=ggcross, aes(x=stringency, y=count, fill=species)) + geom_bar(stat="identity") + ggtitle("TAD Boundary Conservation Across Species, Arrowhead, 25kb") + ylab("Boundaries Discovered, RBHLO Union List") + xlab ("# of Individuals TAD Boundary Independently Discovered") + guides(fill=guide_legend(title="Species of Discovery")) + theme(axis.title.x=element_text(hjust=0.1),  plot.title=element_text(hjust=0.25)) + annotate(geom="text", x=1, y=1200, label=ggcross[9,5], size=3) + annotate(geom="text", x=2, y=1200, label=ggcross[10,5], size=3) + annotate(geom="text", x=3, y=1200, label=ggcross[11,5], size=3) + annotate(geom="text", x=4, y=1200, label=ggcross[12,5], size=3) + annotate(geom="text", x=1, y=3800, label=ggcross[1,5], size=3)  + annotate(geom="text", x=2, y=3550, label=ggcross[2,5], size=3) + annotate(geom="text", x=3, y=3400, label=ggcross[3,5], size=3) + annotate(geom="text", x=4, y=3100, label=ggcross[4,5], size=3) + annotate(geom="text", x=1, y=5200, label=ggcross[5,5], size=3) + annotate(geom="text", x=2, y=4500, label=ggcross[6,5], size=3) + annotate(geom="text", x=3, y=4100, label=ggcross[7,5], size=3) + annotate(geom="text", x=4, y=3800, label=ggcross[8,5], size=3)
+```
+
+####NOW, looking at TAD boundaries and domains themselves in our juicer_mega calls, as well as from Rao et al.
+```{r JUICER MEGA OCT18}
+Hbounds <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/Hbounds.overlaps.ortho.full", data.table=FALSE)
+Cbounds <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/Cbounds.overlaps.ortho.full", data.table=FALSE)
+Rbounds <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/RaoHbounds.overlaps.ortho.full", data.table=FALSE)
+colnames(Hbounds) <- colnames(Rbounds) <- c("Hchr", "H1", "H2", "Cchr", "C1", "C2", "score")
+colnames(Cbounds) <- c("Cchr", "C1", "C2", "Hchr", "H1", "H2", "score")
+
+Hbounds$ID <- paste(Hbounds$Hchr, Hbounds$H1, Hbounds$H2, sep="-")
+Rbounds$ID <- paste(Rbounds$Hchr, Rbounds$H1, Rbounds$H2, sep="-")
+Cbounds$ID <- paste(Cbounds$Cchr, Cbounds$C1, Cbounds$C2, sep="-")
+
+Hbounds$species <- "Human"
+Rbounds$species <- "Rao"
+Cbounds$species <- "Chimpanzee"
+
+#Not really necessary here, they should all be 15kb--we set it that way in this case, per Rao's comment online: https://groups.google.com/forum/#!searchin/3d-genomics/boundary|sort:date/3d-genomics/IUZBBse7UsY/ADH3WV6uAgAJ
+Hbounds$size <- Hbounds$H2-Hbounds$H1
+Rbounds$size <- Rbounds$H2-Rbounds$H1
+Cbounds$size <- Cbounds$H2-Cbounds$H1
+
+fwrite(Hbounds, "~/Desktop/Hi-C/juicer_mega/ARROWHEAD/H1s.bed", quote=FALSE, sep="\t")
+fwrite(Rbounds, "~/Desktop/Hi-C/juicer_mega/ARROWHEAD/R1s.bed", quote=FALSE, sep="\t")
+fwrite(Cbounds, "~/Desktop/Hi-C/juicer_mega/ARROWHEAD/C1s.bed", quote=F, sep="\t")
+
+ggdists <- data.frame(score=c(Hbounds$score, Cbounds$score, Rbounds$score), species=c(Hbounds$species, Cbounds$species, Rbounds$species))
+ggplot(ggdists) + geom_density(aes(x=score, color=species)) + xlab("Juicer TAD Boundary Confidence Score") + ylab("Density") + ggtitle("Chimpanzee Boundaries are Lower-Confidence")
+t.test(filter(ggdists, species=="Chimpanzee")$score, filter(ggdists, species=="Human")$score)$p.val
+t.test(filter(ggdists, species=="Rao")$score, filter(ggdists, species=="Human")$score)$p.val
+t.test(filter(ggdists, species=="Rao")$score, filter(ggdists, species=="Chimpanzee")$score)$p.val
+
+
+###BOUNDARY CONSERVATION###
+#I think it would be better to do this pairwise.
+human.rao <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/H1.HR.merged.bed", data.table=FALSE)
+unique(human.rao$V5)
+sum(human.rao$V5!="Human"&human.rao$V5!="Rao"&human.rao$V5!="Human,Rao"&human.rao$V5!="Rao,Human") #Only 351/23309 (1.5%) of hits don't fall into one of these categories, so just get rid of them to avoid confusion:
+human.rao <- human.rao[-which(human.rao$V5!="Human"&human.rao$V5!="Rao"&human.rao$V5!="Human,Rao"&human.rao$V5!="Rao,Human"),]
+
+dim(human.rao)
+sum(human.rao$V5=="Human,Rao"|human.rao$V5=="Rao,Human")/nrow(human.rao) #Only 12% of our TAD boundaries are shared with Rao data?!
+sum(human.rao$V5=="Human")/nrow(human.rao) #We discover more boundaries than in Rao, 53% of the union list!
+sum(human.rao$V5=="Rao")/nrow(human.rao) #Rao has 38% of the union list hits from GM12872 cells
+
+#Now to repeat this for Human-chimp and then chimp-Rao comparison
+#I think it would be better to do this pairwise.
+human.chimp <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/H1.HC.merged.bed", data.table=FALSE)
+unique(human.chimp$V5)
+sum(human.chimp$V5!="Human"&human.chimp$V5!="Chimpanzee"&human.chimp$V5!="Human,Chimpanzee"&human.chimp$V5!="Chimpanzee,Human") #Only 811/19183 (4.2%) of hits don't fall into one of these categories, so just get rid of them to avoid confusion:
+human.chimp <- human.chimp[-which(human.chimp$V5!="Human"&human.chimp$V5!="Chimpanzee"&human.chimp$V5!="Human,Chimpanzee"&human.chimp$V5!="Chimpanzee,Human"),]
+
+dim(human.chimp)
+sum(human.chimp$V5=="Human,Chimpanzee"|human.chimp$V5=="Chimpanzee,Human")/nrow(human.chimp) #In this comparison 46% of our TAD boundaries are conserved across species. More than with the Rao data of a different cell type!
+sum(human.chimp$V5=="Human")/nrow(human.chimp) #Humans have 32% of the union list
+sum(human.chimp$V5=="Chimpanzee")/nrow(human.chimp) #Chimpanzee has 22% of the union list hits 
+
+#Chimp-Rao
+rao.chimp <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/H1.RC.merged.bed", data.table=FALSE)
+unique(rao.chimp$V5)
+sum(rao.chimp$V5!="Rao"&rao.chimp$V5!="Chimpanzee"&rao.chimp$V5!="Rao,Chimpanzee"&rao.chimp$V5!="Chimpanzee,Rao") #Only 811/19183 (4.2%) of hits don't fall into one of these categories, so just get rid of them to avoid confusion:
+rao.chimp <- rao.chimp[-which(rao.chimp$V5!="Rao"&rao.chimp$V5!="Chimpanzee"&rao.chimp$V5!="Rao,Chimpanzee"&rao.chimp$V5!="Chimpanzee,Rao"),]
+
+dim(rao.chimp)
+sum(rao.chimp$V5=="Rao,Chimpanzee"|rao.chimp$V5=="Chimpanzee,Rao")/nrow(rao.chimp) #In this comparison 11% of Rao's TAD boundaries are conserved across species. Far less than with our data of a matching cell type!
+sum(rao.chimp$V5=="Rao")/nrow(rao.chimp) #Raos have 39% of the union list
+sum(rao.chimp$V5=="Chimpanzee")/nrow(rao.chimp) #Chimpanzee has 50% of the union list hits
+
+###VISUALIZED###
+ggbounds <- data.frame(species=c("iPSC-Human", "iPSC-Chimpanzee", "Shared", "iPSC-Human", "GM12878-Rao", "Shared", "GM12878-Rao", "iPSC-Chimpanzee", "Shared"), count=c(nrow(filter(human.chimp, V5=="Human")), nrow(filter(human.chimp, V5=="Chimpanzee")), nrow(filter(human.chimp, V5=="Human,Chimpanzee"|V5=="Chimpanzee,Human")), nrow(filter(human.rao, V5=="Human")), nrow(filter(human.rao, V5=="Rao")), nrow(filter(human.rao, V5=="Human,Rao"|V5=="Rao,Human")), nrow(filter(rao.chimp, V5=="Rao")), nrow(filter(rao.chimp, V5=="Chimpanzee")), nrow(filter(rao.chimp, V5=="Rao,Chimpanzee"|V5=="Chimpanzee,Rao"))), comparison=rep(1:3, each=3), size=rep(c(nrow(human.chimp), nrow(human.rao), nrow(rao.chimp)), each=3))
+ggbounds$perc <- signif(100*(ggbounds$count/ggbounds$size), 2)
+
+ggbounds <- ggbounds[c(3,6,9,1,4,2,8,5,7),]
+
+ggplot(ggbounds, aes(x=comparison, group=comparison, y=count, fill=species)) + geom_bar(stat="identity") #+ ggtitle("TAD Boundary Conservation Across Species, Arrowhead, 25kb") + ylab("Boundaries Discovered, RBHLO Union List") + xlab ("# of Individuals TAD Boundary Independently Discovered")
+
+###What about when running a 3-way comparison? I also checked this against doing it with chinmp coordinates with very little differences (<5 things moving)
+HRC <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/H1.HRC.merged.bed", data.table=FALSE)
+unique(HRC$V5) #Save myself some time and typing by pulling out only the ones I want
+goodtypes <- unique(HRC$V5)[c(1:3,5:10,12:14,16,17,20)] #Manually checked that I got all 15 combinations by printing this out.
+sum(HRC$V5 %in% goodtypes) #There are 1164/26213 (4.4%) of hits that are disjoint discoveries repeatedly across data sets, so just get rid of them to avoid confusion:
+HRC <- HRC[which(HRC$V5 %in% goodtypes),]
+
+#A venn diagram is what will be most useful and informative here for the three-way comparison. Make that here, and consider what I made above for pairwise comparisons complete:
+colnames(HRC)[5] <- "species"
+
+draw.triple.venn(nrow(filter(HRC, species %in% goodtypes[c(2,4:11,13,15)])), nrow(filter(HRC, species %in% goodtypes[c(3:5,8:15)])), nrow(filter(HRC, species %in% goodtypes[c(1, 4, 6:7, 9:15)])), nrow(filter(HRC, species %in% goodtypes[c(5,8, 4, 9:11, 13, 15)])), nrow(filter(HRC, species %in% goodtypes[c(12,14, 4, 9:11, 13, 15)])), nrow(filter(HRC, species %in% goodtypes[c(6:7, 4,9:11,13,15)])), nrow(filter(HRC, species %in% goodtypes[c(4,9:11,13,15)])), category = c("iPSC-Human", "iPSC-Chimpanzee", "GM12878-Rao"), euler.d =TRUE, scaled = TRUE, cat.dist=c(.05, .05, .05), fill=c("#00BFC4", "#7CAE00", "#F8766D"), alpha=rep(0.7, 3), cat.cex=c(1.1,1.1,1.1))
+#####I already repeated all the above on the chimpanzee coordinates instead and came up with identical results.
+
+
+#######Exploration of juicer_mega TAD sizes and conservation!##########
+Hdomains <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/Hdomains.overlaps.ortho.full", data.table=FALSE)
+Cdomains <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/Cdomains.overlaps.ortho.full", data.table=FALSE)
+Rdomains <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/RaoHdomains.overlaps.ortho.full", data.table=FALSE)
+colnames(Hdomains) <- colnames(Rdomains) <- c("Hchr", "H1", "H2", "Cchr", "C1", "C2", "score")
+colnames(Cdomains) <- c("Cchr", "C1", "C2", "Hchr", "H1", "H2", "score")
+
+Hdomains$ID <- paste(Hdomains$Hchr, Hdomains$H1, Hdomains$H2, sep="-")
+Rdomains$ID <- paste(Rdomains$Hchr, Rdomains$H1, Rdomains$H2, sep="-")
+Cdomains$ID <- paste(Cdomains$Cchr, Cdomains$C1, Cdomains$C2, sep="-")
+
+Hdomains$species <- "Human"
+Rdomains$species <- "Rao"
+Cdomains$species <- "Chimpanzee"
+
+Hdomains$size <- Hdomains$H2-Hdomains$H1
+Rdomains$size <- Rdomains$H2-Rdomains$H1
+Cdomains$size <- Cdomains$C2-Cdomains$C1
+
+fwrite(Hdomains, "~/Desktop/Hi-C/juicer_mega/ARROWHEAD/H1s.domains.bed", quote=FALSE, sep="\t", col.names=FALSE)
+fwrite(Rdomains, "~/Desktop/Hi-C/juicer_mega/ARROWHEAD/R1s.domains.bed", quote=FALSE, sep="\t", col.names=FALSE)
+fwrite(Cdomains, "~/Desktop/Hi-C/juicer_mega/ARROWHEAD/C1s.domains.bed", quote=F, sep="\t", col.names=FALSE)
+
+#What do these sizes already look like here, pre-filtering for sharing or not?
+sizeframe <- data.frame(size=c(Hdomains$size, Cdomains$size, Rdomains$size), species=c(Hdomains$species, Cdomains$species, Rdomains$species))
+ggplot(sizeframe, aes(x=size, group=species, color=species)) + geom_density() + coord_cartesian(xlim=c(0, 1250000))
+t.test(filter(sizeframe, species=="Human")$size, filter(sizeframe, species=="Chimpanzee")$size)
+t.test(filter(sizeframe, species=="Rao")$size, filter(sizeframe, species=="Chimpanzee")$size)
+t.test(filter(sizeframe, species=="Human")$size, filter(sizeframe, species=="Rao")$size)
+#Pretty different although not nearly as much as I once believed.
+
+#Before moving on to the overall size distributions check, do a quick look at number of TADs in each file that can be found in either of the others. This is all being done in bedtools pretty much, but I'm writing it manually here so I can visualize it:
+ggtadlap <- data.frame(comparison=c(rep(c("iPSC-Human", "GM12878-Rao", "iPSC-Chimpanzee"), each=3)), species=c("Chimpanzee", "Rao", "Total", "Chimpanzee", "Human", "Total", "Human", "Rao", "Total"), values=c(9280, 8615, 10662, 6713, 7276, 7720, 8785, 7465, 9286))
+#ggplot(ggtadlap, aes(x=comparison, group=comparison, y=values, fill=species)) + geom_bar(stat="identity") 
+ggplot(filter(ggtadlap, species=="Total"), aes(group=comparison, x=comparison, y=values, fill=species)) + geom_bar(stat="identity") + scale_fill_manual(values=c("#7CAE00", "#00BFC4", "#F8766D", "#C77CFF")) + geom_bar(data=filter(ggtadlap, species=="Human"), aes(group=comparison, x=comparison, y=values, fill=species), stat="identity", width=0.75) + geom_bar(data=filter(ggtadlap, species=="Chimpanzee"), aes(group=comparison, x=comparison, y=values, fill=species), stat="identity", width=0.75) + geom_bar(data=filter(ggtadlap, species=="Rao"), aes(group=comparison, x=comparison, y=values, fill=species), stat="identity", width=0.75) + xlab("Data in Which TADs Were Identified") + ylab("Count of TADs") + ggtitle("Conservation of Arrowhead TADs across Datasets")
+
+
+#Move on to overall TAD size distributions check, as was done before but more simply now because don't have many individuals:
+htest <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/HC.domain.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V4) #Can see that many discoveries were very disjoint, part of what makes this difficult here--remove any discoveries that were disjoint in this way:
+sum(htest$V4!="Human"&htest$V4!="Chimpanzee"&htest$V4!="Human,Chimpanzee"&htest$V4!="Chimpanzee,Human") #Appears about half of these hits have nested TADs, just get rid of them though because there's not really any other good way to go about doing this...
+htest <- htest[-which(htest$V4!="Human"&htest$V4!="Chimpanzee"&htest$V4!="Human,Chimpanzee"&htest$V4!="Chimpanzee,Human"),]
+
+#just separate out into the human-only and chimp-only hits, vs. the shared in any capacity hits, and compare size dist'ns:
+sum(htest$V4!="Human"&htest$V4!="Chimpanzee")/nrow(htest) #See that ~65% of the domains are actually shared across species here.
+sum(htest$V4=="Human")/nrow(htest) #21% human-specific
+sum(htest$V4=="Chimpanzee")/nrow(htest) #14% chimp-specific
+unique(htest$V4)
+
+#Get columns into this data frame that look at human and chimpanzee sizes separately.
+htest$Hsize <- as.numeric(ifelse(htest$V4=="Human", htest$V5, ifelse(htest$V4=="Chimpanzee", NA, ifelse(htest$V4=="Human,Chimpanzee", gsub(",.*", "", htest$V5), gsub(".*,", "", htest$V5)))))
+htest$Csize <- as.numeric(ifelse(htest$V4=="Chimpanzee", htest$V5, ifelse(htest$V4=="Human", NA, ifelse(htest$V4=="Chimpanzee,Human", gsub(",.*", "", htest$V5), gsub(".*,", "", htest$V5)))))
+
+htest$size <- htest$V3-htest$V2
+htest$group <- ifelse(htest$V4!="Human"&htest$V4!="Chimpanzee", "Shared", ifelse(htest$V4!="Human", "Chimpanzee", "Human"))
+
+ggplot(data=htest, aes(group=group, x=size, color=group)) + geom_density(aes(y=..scaled..)) + coord_cartesian(xlim=c(0, 1600000)) + xlab("TAD Size") + ylab("Density") + guides(color=guide_legend(title="Species of Discovery")) + ggtitle("Orthologous Arrowhead TAD Size, 500kb Window") + annotate(geom="text", x=1000000, y=0.7, label="Chimp-Human t-test: N.S.", size=3.5) + annotate(geom="text", x=1000000, y=0.8, label="Shared vs. Chimpanzee t-test: 1.8 e -7", size=3.5) + annotate(geom="text", x=1000000, y=0.9, label="Shared vs. Human t-test: 1.8 e -9", size=3.5)
+
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Chimpanzee")$size)
+t.test(filter(htest, group=="Chimpanzee")$size, filter(htest, group=="Shared")$size)
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Shared")$size)
+
+t.test(filter(htest, group=="Shared")$Hsize, filter(htest, group=="Shared")$Csize)
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Shared")$size)
+
+#This next comparison of the human and chimpanzee TAD sizes within the shared class doesn't produce a significant result and is fraught with issues, so forget about it:
+hshare <- filter(htest, group=="Shared")
+ggshareTAD <- data.frame(size=c(hshare$Hsize, hshare$Csize), species=c(rep("Human", nrow(hshare)), rep("Chimpanzee", nrow(hshare))))
+ggplot(ggshareTAD, aes(group=species, x=size, color=species)) + geom_density() + xlab("TAD Size, BP") + ylab("Density") + guides(color=guide_legend(title="Species' Size")) + ggtitle("Orthologous TopDom SHARED TAD Sizes, 500kb Window") #+ annotate(geom="text", x=3000000, y=0.7, label="Chimp-Human t-test: 0.03") + theme(plot.title=element_text(hjust=0.2))
+#I get very similar results if I use the chimpanzee file, so I am assuaged of the concern differences might be driven by the LO procedure.
+
+#Now, simply repeat the first part of this analysis with the Human-Rao comparison and Chimp-Rao comparison:
+htest <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/HR.domain.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V4) #Can see that many discoveries were very disjoint, part of what makes this difficult here--remove any discoveries that were disjoint in this way:
+sum(htest$V4!="Human"&htest$V4!="Rao"&htest$V4!="Human,Rao"&htest$V4!="Rao,Human") #Appears about half of these hits have nested TADs, just get rid of them though because there's not really any other good way to go about doing this...
+htest <- htest[-which(htest$V4!="Human"&htest$V4!="Rao"&htest$V4!="Human,Rao"&htest$V4!="Rao,Human"),]
+
+#just separate out into the human-only and chimp-only hits, vs. the shared in any capacity hits, and compare size dist'ns:
+sum(htest$V4!="Human"&htest$V4!="Rao")/nrow(htest) #See that ~65% of the domains are actually shared across species here.
+sum(htest$V4=="Human")/nrow(htest) #21% human-specific
+sum(htest$V4=="Rao")/nrow(htest) #14% chimp-specific
+unique(htest$V4)
+
+#Get columns into this data frame that look at human and chimpanzee sizes separately.
+htest$Hsize <- as.numeric(ifelse(htest$V4=="Human", htest$V5, ifelse(htest$V4=="Rao", NA, ifelse(htest$V4=="Human,Rao", gsub(",.*", "", htest$V5), gsub(".*,", "", htest$V5)))))
+htest$Csize <- as.numeric(ifelse(htest$V4=="Rao", htest$V5, ifelse(htest$V4=="Human", NA, ifelse(htest$V4=="Rao,Human", gsub(",.*", "", htest$V5), gsub(".*,", "", htest$V5)))))
+
+htest$size <- htest$V3-htest$V2
+htest$group <- ifelse(htest$V4!="Human"&htest$V4!="Rao", "Shared", ifelse(htest$V4!="Human", "Rao", "Human"))
+
+ggplot(data=htest, aes(group=group, x=size, color=group)) + geom_density(aes(y=..scaled..)) + coord_cartesian(xlim=c(0, 1600000)) + xlab("TAD Size") + ylab("Density") + guides(color=guide_legend(title="Dataset of Discovery")) + ggtitle("Orthologous Arrowhead TAD Size") + annotate(geom="text", x=1000000, y=0.7, label="Rao vs. hiPSC t-test: 3.8 e -27", size=3.5) + annotate(geom="text", x=1000000, y=0.8, label="Shared vs. Rao t-test: 5.6 e -28", size=3.5) + annotate(geom="text", x=1000000, y=0.9, label="Shared vs. Human t-test: 3.3 e -7", size=3.5)
+
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Rao")$size)$p.val
+t.test(filter(htest, group=="Rao")$size, filter(htest, group=="Shared")$size)$p.val
+t.test(filter(htest, group=="Human")$size, filter(htest, group=="Shared")$size)
+
+#And finally, to also check this with the comparison between Rao and chimpanzees from my data:
+htest <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/RC.domain.merged.bed", data.table=FALSE)
+#Want to get the proportion of hits that are shared amongst the whole set; this will be all those hits that have more than simply "human" or "chimpanzee" in their species identification column, based on bedtools merging and column collapsing.
+unique(htest$V4) #Can see that many discoveries were very disjoint, part of what makes this difficult here--remove any discoveries that were disjoint in this way:
+sum(htest$V4!="Rao"&htest$V4!="Chimpanzee"&htest$V4!="Rao,Chimpanzee"&htest$V4!="Chimpanzee,Rao") #Appears about half of these hits have nested TADs, just get rid of them though because there's not really any other good way to go about doing this...
+htest <- htest[-which(htest$V4!="Rao"&htest$V4!="Chimpanzee"&htest$V4!="Rao,Chimpanzee"&htest$V4!="Chimpanzee,Rao"),]
+
+#just separate out into the human-only and chimp-only hits, vs. the shared in any capacity hits, and compare size dist'ns:
+sum(htest$V4!="Rao"&htest$V4!="Chimpanzee")/nrow(htest) #See that ~65% of the domains are actually shared across species here.
+sum(htest$V4=="Rao")/nrow(htest) #21% human-specific
+sum(htest$V4=="Chimpanzee")/nrow(htest) #14% chimp-specific
+unique(htest$V4)
+
+#Get columns into this data frame that look at human and chimpanzee sizes separately.
+htest$Hsize <- as.numeric(ifelse(htest$V4=="Rao", htest$V5, ifelse(htest$V4=="Chimpanzee", NA, ifelse(htest$V4=="Rao,Chimpanzee", gsub(",.*", "", htest$V5), gsub(".*,", "", htest$V5)))))
+htest$Csize <- as.numeric(ifelse(htest$V4=="Chimpanzee", htest$V5, ifelse(htest$V4=="Rao", NA, ifelse(htest$V4=="Chimpanzee,Rao", gsub(",.*", "", htest$V5), gsub(".*,", "", htest$V5)))))
+
+htest$size <- htest$V3-htest$V2
+htest$group <- ifelse(htest$V4!="Rao"&htest$V4!="Chimpanzee", "Shared", ifelse(htest$V4!="Rao", "Chimpanzee", "Rao"))
+
+ggplot(data=htest, aes(group=group, x=size, color=group)) + geom_density(aes(y=..scaled..)) + coord_cartesian(xlim=c(0, 1600000)) + xlab("TAD Size") + ylab("Density") + guides(color=guide_legend(title="Species of Discovery")) + ggtitle("Orthologous Arrowhead TAD Size") + annotate(geom="text", x=1000000, y=0.7, label="Chimpanzee vs. Rao t-test: 4 e -4", size=3.5) + annotate(geom="text", x=1000000, y=0.8, label="Shared vs. Chimpanzee t-test: 4.5 e -9", size=3.5) + annotate(geom="text", x=1000000, y=0.9, label="Shared vs. Rao t-test: 1.7 e -14", size=3.5)
+
+t.test(filter(htest, group=="Rao")$size, filter(htest, group=="Chimpanzee")$size)
+t.test(filter(htest, group=="Chimpanzee")$size, filter(htest, group=="Shared")$size)
+t.test(filter(htest, group=="Rao")$size, filter(htest, group=="Shared")$size)
+```
+
+
+
+```{r DE Genes proximity to TAD Boundaries}
+#Format the gene files for both humans and chimps.
+#Humans:
+de.boundary <- select(humgenes.hic.full, genes, genechr, genepos)
+left_join(de.boundary, detable, by="genes") -> de.boundary
+hgenes <- select(de.boundary, genechr, genepos, genes)
+hgenes$end <- hgenes$genepos + 1
+hgenes <- hgenes[,c(1,2,4,3)]
+fwrite(hgenes, "/Users/ittaieres/Desktop/Hi-C/juicer_mega/ARROWHEAD/genes/hgenes.bed", quote = F, col.names=F, sep="\t")
+
+#Chimps:
+cde.boundary <- select(chimpgenes.hic.full, genes, genechr, genepos)
+left_join(cde.boundary, detable, by="genes") -> cde.boundary
+cgenes <- select(cde.boundary, genechr, genepos, genes)
+cgenes$end <- cgenes$genepos + 1
+cgenes <- cgenes[,c(1,2,4,3)]
+fwrite(cgenes, "/Users/ittaieres/Desktop/Hi-C/juicer_mega/ARROWHEAD/genes/cgenes.bed", quote = F, col.names=F, sep="\t")
+
+#Read in and visualize human TAD size questions:
+hdomainfull <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/genes/hgenes.merged_domain.overlap.bed", data.table=FALSE)
+hdomainfull$TADsize <- hdomainfull$V7-hdomainfull$V6
+hdomainfull$bound.dist <- ifelse((hdomainfull$V2-hdomainfull$V6<hdomainfull$V7-hdomainfull$V2), hdomainfull$V2-hdomainfull$V6, hdomainfull$V7-hdomainfull$V2)
+hdomain.counts <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/genes/hgenes.domain.count.bed", data.table=FALSE)
+hdomain.counts <- hdomain.counts[,c(4,5)]
+left_join(hdomainfull, hdomain.counts, by="V4") -> hdomains.final
+colnames(hdomains.final) <- c("chr", "start", "end", "genes", "chrTAD", "TADstart", "TADend", "score", "size", "distance", "count")
+select(hdomains.final, genes, distance, count, score, size) -> hgeneTAD
+left_join(detable, hgeneTAD, by="genes") -> hTADDE
+hTADDE$DE <- ifelse(hTADDE$adj.P.Val<=0.05, "yes", "no")
+sum(complete.cases(filter(hTADDE, DE=="yes")))
+sum(complete.cases(filter(hTADDE, DE=="no")))
+#Not particularly interesting b/c at least half of each class doesn't have overlap with the TADs. Just eliminate everything where we had no TAD overlap:
+hTADDE <- hTADDE[which(complete.cases(hTADDE)),]
+
+#Based on these analyses below, there isn't anything particularly interesting to see with counts here.
+ggplot(data=hTADDE) + geom_histogram(aes(x=count, group=DE, fill=DE), position="dodge")
+nrow(filter(hTADDE, DE=="yes", count==1))/nrow(filter(hTADDE, DE=="yes"))
+nrow(filter(hTADDE, DE=="yes", count==2))/nrow(filter(hTADDE, DE=="yes"))
+nrow(filter(hTADDE, DE=="yes", count==3))/nrow(filter(hTADDE, DE=="yes"))
+nrow(filter(hTADDE, DE=="yes", count==4))/nrow(filter(hTADDE, DE=="yes"))
+nrow(filter(hTADDE, DE=="yes", count==5))/nrow(filter(hTADDE, DE=="yes"))
+nrow(filter(hTADDE, DE=="no", count==1))/nrow(filter(hTADDE, DE=="no"))
+nrow(filter(hTADDE, DE=="no", count==2))/nrow(filter(hTADDE, DE=="no"))
+nrow(filter(hTADDE, DE=="no", count==3))/nrow(filter(hTADDE, DE=="no"))
+nrow(filter(hTADDE, DE=="no", count==4))/nrow(filter(hTADDE, DE=="no"))
+nrow(filter(hTADDE, DE=="no", count==5))/nrow(filter(hTADDE, DE=="no"))
+
+#Test differences in distance from TAD boundary and differences in TAD size for DE vs non-DE genes.
+ggplot(data=hTADDE) + geom_density(aes(x=distance, group=DE, color=DE, y=..scaled..)) + ggtitle("DE vs. non-DE Genes, Distance from nearest TAD Boundary") + xlab("Distance from Nearest Human TAD Boundary") + ylab("Density") + scale_color_manual(labels=c("No", "Yes"), values=c("#00BFC4", "#F8766D")) + annotate(geom="text", x=400000, y=0.5, label=signif(t.test(filter(hTADDE, DE=="yes")$distance, filter(hTADDE, DE=="no")$distance)$p.val, 2))
+t.test(filter(hTADDE, DE=="yes")$distance, filter(hTADDE, DE=="no")$distance)
+
+ggplot(data=hTADDE) + geom_density(aes(x=size, group=DE, color=DE, y=..scaled..)) + ggtitle("DE vs. non-DE Genes, TAD Size") + xlab("Size of TAD Containing Gene") + ylab("Density") + scale_color_manual(labels=c("No", "Yes"), values=c("#00BFC4", "#F8766D")) + annotate(geom="text", x=400000, y=0.5, label=signif(t.test(filter(hTADDE, DE=="yes")$size, filter(hTADDE, DE=="no")$size)$p.val, 2)) #Not interesting...
+
+########REPEAT ON CHIMPS#######:
+cdomainfull <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/genes/cgenes.merged_domain.overlap.bed", data.table=FALSE)
+cdomainfull$TADsize <- cdomainfull$V7-cdomainfull$V6
+cdomainfull$bound.dist <- ifelse((cdomainfull$V2-cdomainfull$V6<cdomainfull$V7-cdomainfull$V2), cdomainfull$V2-cdomainfull$V6, cdomainfull$V7-cdomainfull$V2)
+cdomain.counts <- fread("~/Desktop/Hi-C/juicer_mega/ARROWHEAD/genes/cgenes.domain.count.bed", data.table=FALSE)
+cdomain.counts <- cdomain.counts[,c(4,5)]
+left_join(cdomainfull, cdomain.counts, by="V4") -> cdomains.final
+colnames(cdomains.final) <- c("chr", "start", "end", "genes", "chrTAD", "TADstart", "TADend", "score", "size", "distance", "count")
+select(cdomains.final, genes, distance, count, score, size) -> cgeneTAD
+left_join(detable, cgeneTAD, by="genes") -> cTADDE
+cTADDE$DE <- ifelse(cTADDE$adj.P.Val<=0.05, "yes", "no")
+sum(complete.cases(filter(cTADDE, DE=="yes")))
+sum(complete.cases(filter(cTADDE, DE=="no")))
+#Not particularly interesting b/c at least calf of eacc class doesn't cave overlap witc tce TADs. Just eliminate everytcing wcere we cad no TAD overlap:
+cTADDE <- cTADDE[which(complete.cases(cTADDE)),]
+
+#Again, not interesting:
+ggplot(data=cTADDE) + geom_histogram(aes(x=count, group=DE, fill=DE), position="dodge")
+nrow(filter(cTADDE, DE=="yes", count==1))/nrow(filter(cTADDE, DE=="yes"))
+nrow(filter(cTADDE, DE=="yes", count==2))/nrow(filter(cTADDE, DE=="yes"))
+nrow(filter(cTADDE, DE=="yes", count==3))/nrow(filter(cTADDE, DE=="yes"))
+nrow(filter(cTADDE, DE=="yes", count==4))/nrow(filter(cTADDE, DE=="yes"))
+nrow(filter(cTADDE, DE=="yes", count==5))/nrow(filter(cTADDE, DE=="yes"))
+nrow(filter(cTADDE, DE=="no", count==1))/nrow(filter(cTADDE, DE=="no"))
+nrow(filter(cTADDE, DE=="no", count==2))/nrow(filter(cTADDE, DE=="no"))
+nrow(filter(cTADDE, DE=="no", count==3))/nrow(filter(cTADDE, DE=="no"))
+nrow(filter(cTADDE, DE=="no", count==4))/nrow(filter(cTADDE, DE=="no"))
+nrow(filter(cTADDE, DE=="no", count==5))/nrow(filter(cTADDE, DE=="no"))
+
+ggplot(data=cTADDE) + geom_density(aes(x=distance, group=DE, color=DE, y=..scaled..)) + ggtitle("DE vs. non-DE Genes, Distance from nearest TAD Boundary") + xlab("Distance from Nearest Chimpanzee TAD Boundary") + ylab("Density") + scale_color_manual(labels=c("No", "Yes"), values=c("#00BFC4", "#F8766D")) + annotate(geom="text", x=500000, y=0.5, label=signif(t.test(filter(cTADDE, DE=="yes")$distance, filter(cTADDE, DE=="no")$distance)$p.val, 2))
+
+ggplot(data=cTADDE) + geom_density(aes(x=size, group=DE, color=DE, y=..scaled..)) + ggtitle("DE vs. non-DE Genes, TAD Size") + xlab("Size of TAD Containing Gene") + ylab("Density") + scale_color_manual(labels=c("No", "Yes"), values=c("#00BFC4", "#F8766D")) + annotate(geom="text", x=1000000, y=0.5, label=signif(t.test(filter(cTADDE, DE=="yes")$size, filter(cTADDE, DE=="no")$size)$p.val, 2)) #Not interesting...
+
+
+#####Now, see about combining these two and looking for enrichments of differences between the species (TAD size and distance from boundaries).
+both.TAD <- select(hTADDE, genes, distance, count, score, size, DE)
+left_join(both.TAD, cTADDE, by="genes", suffix=c(".H", ".C")) -> both.TAD
+
+ggTAD <- data.frame(distance=c(both.TAD$distance.C, both.TAD$distance.H), species=c(rep("Chimpanzee", nrow(both.TAD)), rep("Human", nrow(both.TAD))), size=c(both.TAD$size.C, both.TAD$size.H), count=c(both.TAD$count.C, both.TAD$count.H), DE=rep(both.TAD$DE.H, 2), count.diff=rep(abs(both.TAD$count.H-both.TAD$count.C), 2))
+
+ggplot(ggTAD) + geom_density(aes(x=distance, color=DE, linetype=species, y=..scaled..)) + xlab("Distance to TAD Boundary") + ylab("Density") + ggtitle("DE Genes are Farther from TAD Boundaries")
+t.test(filter(ggTAD, DE=="yes", species=="Chimpanzee")$distance, filter(ggTAD, DE=="no", species=="Chimpanzee")$distance) #None of these comparisons are significant, although the DE genes in both cases appear to be closer to the interior of TADs.
+t.test(filter(ggTAD, DE=="yes", species=="Human")$distance, filter(ggTAD, DE=="no", species=="Human")$distance) #There is a big difference across the species, but not as much across DE status within species
+
+ggplot(ggTAD) + geom_density(aes(x=size, color=DE, linetype=species, y=..scaled..)) + xlab("TAD Size") + ylab("Density")
+t.test(filter(ggTAD, DE=="yes", species=="Chimpanzee")$size, filter(ggTAD, DE=="no", species=="Chimpanzee")$size) #No difference in size distributions aross DE status, but there probably would be on across species:
+t.test(filter(ggTAD, DE=="no", species=="Chimpanzee")$size, filter(ggTAD, DE=="no", species=="Human")$size) #Yup, significant difference in both, unsurprising. The broader size difference would be more interesting than this (if even).
+
+ggplot(ggTAD) + geom_histogram(aes(x=count.diff, fill=DE), position="dodge") #This doesn't look like it will be interesting either, but can check...
+nrow(filter(ggTAD, DE=="yes", count.diff==0))/nrow(filter(ggTAD, DE=="yes"))
+nrow(filter(ggTAD, DE=="yes", count.diff==1))/nrow(filter(ggTAD, DE=="yes"))
+nrow(filter(ggTAD, DE=="yes", count.diff==2))/nrow(filter(ggTAD, DE=="yes"))
+nrow(filter(ggTAD, DE=="yes", count.diff==3))/nrow(filter(ggTAD, DE=="yes"))
+nrow(filter(ggTAD, DE=="yes", count.diff==4))/nrow(filter(ggTAD, DE=="yes"))
+
+nrow(filter(ggTAD, DE=="no", count.diff==0))/nrow(filter(ggTAD, DE=="no"))
+nrow(filter(ggTAD, DE=="no", count.diff==1))/nrow(filter(ggTAD, DE=="no"))
+nrow(filter(ggTAD, DE=="no", count.diff==2))/nrow(filter(ggTAD, DE=="no"))
+nrow(filter(ggTAD, DE=="no", count.diff==3))/nrow(filter(ggTAD, DE=="no"))
+nrow(filter(ggTAD, DE=="no", count.diff==4))/nrow(filter(ggTAD, DE=="no"))
+
+#Yup, meaningless again. But good to know this isn't worth looking into more!
+```
+
+
+<!-- ###JUICER MEGA TAD ANALYSIS -->
+<!-- Here I take a look at the TADs called by the ARROWHEAD algorithm on juicer_mega matrices, comprised of reads from all 4 individuals within each species. -->
+<!-- ```{r JUICER MEGA TADs} -->
+<!-- megaTAD <- fread("~/Desktop/MEGAUNION.txt", data.table=FALSE) -->
+<!-- megaTAD$ID_in <- c(rep("human", 10049), rep("chimp", 9327)) -->
+<!-- megaTAD$Hsize <- megaTAD$Hend-megaTAD$Hstart -->
+<!-- megaTAD$Csize <- megaTAD$Cend-megaTAD$Cstart -->
+<!-- t.test(filter(megaTAD, ID_in=="human")$Hsize, filter(megaTAD, ID_in=="chimp")$Csize) -->
+<!-- ggmegas <- data.frame(size=c(filter(megaTAD, ID_in=="human")$Hsize, filter(megaTAD, ID_in=="chimp")$Csize), species=c(rep("human", nrow(filter(megaTAD, ID_in=="human"))), rep("chimp", nrow(filter(megaTAD, ID_in=="chimp"))))) -->
+<!-- ggplot(data=ggmegas) + geom_density(aes(x=size, color=species, y=..scaled..)) + ggtitle("Orthologous TAD Sizes, Juicer Mega") + coord_cartesian(xlim=c(0, 2500000)) + annotate("text", x = 1000000, y=0.5, label="0.004") + scale_color_manual(name="Species", labels=c( "Chimpanzee", "Human"), values=c("red", "blue")) + xlab("TAD Size") + ylab("Density") -->
+<!-- #YESSS here we go, looking at their actual sizes from beforehand reveals what I was hoping! -->
+<!-- ``` -->
+
 
 
 ###Exploration of genes with or without an upstream contact
